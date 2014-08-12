@@ -30,7 +30,6 @@ public class AllureTask implements TaskType {
         final String glob = taskContext.getConfigurationMap().get(GLOB);
         final String version = taskContext.getConfigurationMap().get(VERSION);
         final File workingDirectory = taskContext.getWorkingDirectory();
-        
         buildLogger.addBuildLogHeader("Allure Task", true);
         buildLogger.addBuildLogEntry("Trying to generate Allure " + version + " using " + workingDirectory.getAbsolutePath() + " as base directory with pattern = " + glob);
         final File[] inputDirectories = findInputDirectoriesByMask(workingDirectory, glob.split(GLOB_SEPARATOR));
@@ -42,6 +41,7 @@ public class AllureTask implements TaskType {
                 AllureReportBuilder builder = new AllureReportBuilder(version, allureReportDirectory);
                 buildLogger.addBuildLogEntry("Processing Allure XML files");
                 builder.processResults(inputDirectories);
+                buildLogger.addBuildLogEntry("Unpacking Allure report face");
                 builder.unpackFace();
             } catch (AllureReportBuilderException e) {
                 buildLogger.addErrorLogEntry("Caught an exception while generating Allure", e);

@@ -2,18 +2,24 @@
 
 This repository contains source code of Allure plugin for [Atlassian Bamboo CI](https://www.atlassian.com/software/bamboo).
 
-### Just a memo: to be removed in release
+### Building and Installing
+#### Short way
+Download precompiled JAR from [releases page](https://github.com/allure-framework/allure-bamboo-plugin/releases) and install it manually as described [here](https://confluence.atlassian.com/display/UPM/Installing+add-ons#Installingadd-ons-Installingbyfileupload). We use JDK 1.7+ to compile the plugin so be sure to use Java 1.7+ for running Bamboo.
+#### Long way
+1. Set up Atlassian plugin SDK as described [here](https://developer.atlassian.com/display/DOCS/Set+up+the+Atlassian+Plugin+SDK+and+Build+a+Project).
+2. Clone this repository
+3. Run `$ atlas-run`
+4. Access http://localhost:6990/bamboo/ to view development instance of Bamboo
+5. Verify that plugin is working as expected
+6. Install **target/allure-bamboo-plugin-VERSION.jar** manually as described [here](https://confluence.atlassian.com/display/UPM/Installing+add-ons#Installingadd-ons-Installingbyfileupload).
 
-You have successfully created an Atlassian Plugin!
-
-Here are the SDK commands you'll use immediately:
-
-* atlas-run   -- installs this plugin into the product and starts it on localhost
-* atlas-debug -- same as atlas-run, but allows a debugger to attach at port 5005
-* atlas-cli   -- after atlas-run or atlas-debug, opens a Maven command line window:
-                 - 'pi' reinstalls the plugin into the running product instance
-* atlas-help  -- prints description for all commands in the SDK
-
-Full documentation is always available at:
-
-https://developer.atlassian.com/display/DOCS/Introduction+to+the+Atlassian+Plugin+SDK
+### Usage
+When installed this plugin provides a new task called **Allure**. To use it configure your build as follows:
+1. Add Allure task to your job:
+[[/img/add_task.png]]
+2. Configure task - specify glob pattern to the folder where Allure should search for XML files and desired report version to be used:
+[[/img/task_fields.png]]
+3. Define an artifact. It's important to use exact values from the picture below for **Location** and **Copy pattern** fields. It's up to you to choose artifact name.
+[[/img/artifact_definition.png]]
+4. Run the build as usually and click on Allure report artifact on the **Artifacts** tab:
+[[/img/view_artifact.png]]
