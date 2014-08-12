@@ -16,10 +16,10 @@ Download precompiled JAR from [releases page](https://github.com/allure-framewor
 ### Usage
 When installed this plugin provides a new task called **Allure**. To use it configure your build as follows:
 1. Add Allure task to your job:
-[[/img/add_task.png]]
+![Add Task](https://raw.githubusercontent.com/allure-framework/allure-bamboo-plugin/master/img/add_task.png)
 2. Configure task - specify glob pattern to the folder where Allure should search for XML files and desired report version to be used:
-[[/img/task_fields.png]]
+![Fill Task Fields](https://raw.githubusercontent.com/allure-framework/allure-bamboo-plugin/master/img/task_fields.png)
 3. Define an artifact. It's important to use exact values from the picture below for **Location** and **Copy pattern** fields. It's up to you to choose artifact name.
-[[/img/artifact_definition.png]]
+![Define Artifact](https://raw.githubusercontent.com/allure-framework/allure-bamboo-plugin/master/img/artifact_definition.png)
 4. Run the build as usually and click on Allure report artifact on the **Artifacts** tab:
-[[/img/view_artifact.png]]
+![View Artifact](https://raw.githubusercontent.com/allure-framework/allure-bamboo-plugin/master/img/view_artifact.png)
