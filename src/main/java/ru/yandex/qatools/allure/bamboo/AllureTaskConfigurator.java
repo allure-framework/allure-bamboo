@@ -1,15 +1,22 @@
 package ru.yandex.qatools.allure.bamboo;
 
+import com.atlassian.bamboo.build.Job;
 import com.atlassian.bamboo.collections.ActionParametersMap;
+import com.atlassian.bamboo.plan.artifact.ArtifactDefinitionImpl;
+import com.atlassian.bamboo.plan.artifact.ArtifactDefinitionManager;
 import com.atlassian.bamboo.task.AbstractTaskConfigurator;
+import com.atlassian.bamboo.task.BuildTaskRequirementSupport;
 import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
+import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
 import com.atlassian.struts.TextProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 import static ru.yandex.qatools.allure.bamboo.AllureTaskConstants.GLOB;
 import static ru.yandex.qatools.allure.bamboo.AllureTaskConstants.GLOB_DEFAULT;
@@ -18,12 +25,14 @@ import static ru.yandex.qatools.allure.bamboo.AllureTaskConstants.VERSION;
 import static ru.yandex.qatools.allure.bamboo.AllureTaskConstants.VERSION_DEFAULT;
 import static ru.yandex.qatools.allure.bamboo.AllureTaskConstants.VERSION_ERROR;
 
-public class AllureTaskConfigurator extends AbstractTaskConfigurator {
+public class AllureTaskConfigurator extends AbstractTaskConfigurator implements BuildTaskRequirementSupport {
     
     private TextProvider textProvider;
+    private ArtifactDefinitionManager artifactDefinitionManager;
     
-    public AllureTaskConfigurator(final TextProvider textProvider) {
+    public AllureTaskConfigurator(TextProvider textProvider, ArtifactDefinitionManager artifactDefinitionManager) {
         this.textProvider = textProvider;
+        this.artifactDefinitionManager = artifactDefinitionManager;
     }
 
     @NotNull
@@ -71,4 +80,16 @@ public class AllureTaskConfigurator extends AbstractTaskConfigurator {
         }
     }
 
+    @NotNull
+    @Override
+    public Set<Requirement> calculateRequirements(@NotNull TaskDefinition taskDefinition, @NotNull Job job) {
+        final String ARTIFACT_NAME = "Allure Report";
+        final String ARTIFACT_COPY_PATTERN = "**";
+        if (null == artifactDefinitionManager.findArtifactDefinition(job, ARTIFACT_NAME)) {
+            ArtifactDefinitionImpl artifactDefinition = new ArtifactDefinitionImpl(ARTIFACT_NAME, AllureTask.RELATIVE_OUTPUT_DIRECTORY, ARTIFACT_COPY_PATTERN);
+            artifactDefinition.setProducerJob(job);
+            artifactDefinitionManager.saveArtifactDefinition(artifactDefinition);
+        }
+        return Collections.emptySet();
+    }
 }

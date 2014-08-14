@@ -19,7 +19,7 @@ import static ru.yandex.qatools.allure.bamboo.AllureTaskConstants.VERSION;
 public class AllureTask implements TaskType {
     
     private static final String GLOB_SEPARATOR = ",";
-    private static final String RELATIVE_OUTPUT_DIRECTORY = "allure";
+    public static final String RELATIVE_OUTPUT_DIRECTORY = "allure";
     
     @NotNull
     @Override
