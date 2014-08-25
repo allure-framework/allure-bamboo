@@ -1,6 +1,6 @@
 ## Allure Bamboo Plugin
 
-This repository contains source code of Allure plugin for [Atlassian Bamboo CI](https://www.atlassian.com/software/bamboo).
+This repository contains source code of Allure plugin for [Atlassian Bamboo CI](https://www.atlassian.com/software/bamboo). It allows you to generate Allure report from [existing Allure XML files](https://github.com/allure-framework/allure-core/wiki#gathering-information-about-tests).
 
 ### Building and Installing
 #### Short way
@@ -13,7 +13,7 @@ Download precompiled JAR from [releases page](https://github.com/allure-framewor
 5. Verify that plugin is working as expected
 6. Install **target/allure-bamboo-plugin-VERSION.jar** manually as described [here](https://confluence.atlassian.com/display/UPM/Installing+add-ons#Installingadd-ons-Installingbyfileupload).
 
-### Usage
+### Configuration and Usage
 When installed this plugin provides a new task called **Allure**. To use it configure your build as follows:
 1. Add Allure task to your job:
 ![Add Task](https://raw.githubusercontent.com/allure-framework/allure-bamboo-plugin/master/img/add_task.png)
