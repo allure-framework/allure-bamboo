@@ -2,9 +2,11 @@
     <plugin-info>
         <description>${project.description}</description>
         <version>${project.version}</version>
+        <application-version min="5.6"/>
         <vendor name="${project.organization.name}" url="${project.organization.url}" />
         <param name="plugin-icon">images/icon.png</param>
         <param name="plugin-logo">images/logo.png</param>
+        <param name="atlassian-data-center-compatible">true</param>
     </plugin-info>
 
     <resource type="i18n" name="i18n" location="allure-plugin"/>
