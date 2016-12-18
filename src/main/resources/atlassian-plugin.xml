@@ -2,26 +2,28 @@
     <plugin-info>
         <description>${project.description}</description>
         <version>${project.version}</version>
-        <application-version min="5.6"/>
         <vendor name="${project.organization.name}" url="${project.organization.url}" />
         <param name="plugin-icon">images/icon.png</param>
         <param name="plugin-logo">images/logo.png</param>
         <param name="atlassian-data-center-compatible">true</param>
     </plugin-info>
 
-    <resource type="i18n" name="i18n" location="allure-plugin"/>
+    <!-- add our i18n resource -->
+    <resource type="i18n" name="i18n" location="allure-bamboo"/>
 
-    <taskType key="allureplugin" name="Allure" class="ru.yandex.qatools.allure.bamboo.AllureTask">
+    <taskType key="allureplugin" name="Allure" class="io.qameta.allure.bamboo.AllureTask">
         <description>Generate Allure report from XML files</description>
-        <category name="test" />
         <resource type="download" name="icon" location="images/logo.png" />
-        <configuration class="ru.yandex.qatools.allure.bamboo.AllureTaskConfigurator" />
+        <category name="test" />
+        <executable key="allure"/>
+        <capabilityDefaultsHelper class="io.qameta.allure.bamboo.AllureCapabilityDefaultsHelper"/>
+        <configuration class="io.qameta.allure.bamboo.AllureTaskConfigurator" />
         <resource type="freemarker" name="edit" location="editAllureTask.ftl" />
         <resource type="freemarker" name="view" location="viewAllureTask.ftl" />
-        <help link="allureplugin.task.help.link" title="allureplugin.task.help.title" />
+        <help link="allure.task.help.link" title="allure.task.help.title" />
     </taskType>
-    
+
     <component-import key="applicationProperties" interface="com.atlassian.sal.api.ApplicationProperties" />
     <component-import key="textProvider" interface="com.atlassian.struts.TextProvider" />
-    
+
 </atlassian-plugin>
