@@ -7,6 +7,7 @@ import com.atlassian.bamboo.process.ProcessService;
 import com.atlassian.bamboo.task.*;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilityContext;
 import com.atlassian.bamboo.variable.CustomVariableContext;
+import com.atlassian.bamboo.variable.VariableDefinitionContext;
 import com.atlassian.core.util.FileUtils;
 import com.atlassian.utils.process.ExternalProcess;
 import com.google.common.base.Preconditions;
@@ -59,7 +60,6 @@ public class AllureTask implements TaskType {
         final File workingDirectory = taskContext.getWorkingDirectory();
 
         buildLogger.addBuildLogHeader("Allure Task", true);
-
         buildLogger.addBuildLogEntry("Trying to generate Allure using " + workingDirectory.getAbsolutePath() + " as base directory with pattern = " + taskContext.getConfigurationMap().get(RESULTS_DIRECTORY));
         buildLogger.addBuildLogEntry("Allure data will be saved to " + workingDirectory.getAbsolutePath() + File.separator + taskContext.getConfigurationMap().get(REPORT_PATH_PREFIX));
         try {
@@ -108,11 +108,11 @@ public class AllureTask implements TaskType {
     }
 
     private void addExecutorInfo(TaskContext taskContext) throws IOException, InterruptedException {
-        Map<String, String> buildVariables = customVariableContext.getVariables(taskContext.getCommonContext());
-        String buildResultsUrl = buildVariables.get("buildResultsUrl");
+        Map<String, VariableDefinitionContext> buildVariables = customVariableContext.getVariableContexts();
+        String buildResultsUrl = buildVariables.get("buildResultsUrl").getValue();
         String rootUrl = buildResultsUrl.substring(0, buildResultsUrl.indexOf("bamboo")+"bamboo".length());
-        String buildUrl = rootUrl + "/browse/" + buildVariables.get("planKey") + "-" + taskContext.getBuildContext().getBuildNumber();
-        String reportUrl = buildUrl + "/artifact/" + buildVariables.get("shortJobKey") + "/" + ARTIFACT_NAME.replace(" ", "-") + "/index.html";
+        String buildUrl = rootUrl + "/browse/" + buildVariables.get("planKey").getValue() + "-" + taskContext.getBuildContext().getBuildNumber();
+        String reportUrl = buildUrl + "/artifact/" + buildVariables.get("shortJobKey").getValue() + "/" + ARTIFACT_NAME.replace(" ", "-") + "/index.html";
         new AddExecutorInfo(rootUrl, taskContext.getBuildContext().getBuildResultKey(), buildUrl, reportUrl).invoke(getResultDirectory(taskContext));
     }
 
