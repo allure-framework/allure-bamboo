@@ -28,7 +28,7 @@ import static io.qameta.allure.bamboo.AllureConstants.*;
  * Provide task parameters.
  * Created by bvo2002 on 30.11.16.
  */
-public class AllureTaskConfigurator extends AbstractTaskConfigurator implements BuildTaskRequirementSupport {
+public class AllureReportTaskConfigurator extends AbstractTaskConfigurator implements BuildTaskRequirementSupport {
 
     private static final String UI_CONFIG_BEAN = "uiConfigBean";
     private TextProvider textProvider;
@@ -36,7 +36,7 @@ public class AllureTaskConfigurator extends AbstractTaskConfigurator implements 
     private UIConfigSupport uiConfigSupport;
 
 
-    public AllureTaskConfigurator(TextProvider textProvider, ArtifactDefinitionManager artifactDefinitionManager, UIConfigSupport uiConfigSupport) {
+    public AllureReportTaskConfigurator(TextProvider textProvider, ArtifactDefinitionManager artifactDefinitionManager, UIConfigSupport uiConfigSupport) {
         this.textProvider = textProvider;
         this.artifactDefinitionManager = artifactDefinitionManager;
         this.uiConfigSupport = uiConfigSupport;

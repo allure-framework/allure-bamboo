@@ -11,15 +11,15 @@
     <!-- add our i18n resource -->
     <resource type="i18n" name="i18n" location="allure-bamboo"/>
 
-    <taskType key="allureplugin" name="Allure" class="io.qameta.allure.bamboo.AllureTask">
-        <description>Generate Allure report from XML files</description>
+    <taskType key="allureReport" name="Allure Report" class="io.qameta.allure.bamboo.AllureReportTask">
+        <description>Generate Allure report</description>
         <resource type="download" name="icon" location="images/logo.png" />
         <category name="test" />
         <executable key="allure"/>
         <capabilityDefaultsHelper class="io.qameta.allure.bamboo.AllureCapabilityDefaultsHelper"/>
-        <configuration class="io.qameta.allure.bamboo.AllureTaskConfigurator" />
-        <resource type="freemarker" name="edit" location="editAllureTask.ftl" />
-        <resource type="freemarker" name="view" location="viewAllureTask.ftl" />
+        <configuration class="io.qameta.allure.bamboo.AllureReportTaskConfigurator" />
+        <resource type="freemarker" name="edit" location="editAllureReportTask.ftl" />
+        <resource type="freemarker" name="view" location="viewAllureReportTask.ftl" />
         <help link="allure.task.help.link" title="allure.task.help.title" />
     </taskType>
 

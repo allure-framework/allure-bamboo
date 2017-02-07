@@ -30,7 +30,7 @@ import static io.qameta.allure.bamboo.AllureConstants.*;
  * Executes report generation.
  * Created by bvo2002 on 30.11.16.
  */
-public class AllureTask implements TaskType {
+public class AllureReportTask implements TaskType {
 
     private final ProcessService processService;
     private final EnvironmentVariableAccessor environmentVariableAccessor;
@@ -40,9 +40,9 @@ public class AllureTask implements TaskType {
     private CustomVariableContext customVariableContext;
 
     @Autowired
-    public AllureTask(ProcessService processService,
-                      EnvironmentVariableAccessor environmentVariableAccessor,
-                      CapabilityContext capabilityContext, CustomVariableContext customVariableContext) {
+    public AllureReportTask(ProcessService processService,
+                            EnvironmentVariableAccessor environmentVariableAccessor,
+                            CapabilityContext capabilityContext, CustomVariableContext customVariableContext) {
         this.processService = processService;
         this.environmentVariableAccessor = environmentVariableAccessor;
         this.capabilityContext = capabilityContext;
@@ -56,10 +56,11 @@ public class AllureTask implements TaskType {
 
         BuildLogger buildLogger = taskContext.getBuildLogger();
         TaskResultBuilder taskResultBuilder = TaskResultBuilder.newBuilder(taskContext);
-        Map<String, String> environment = this.environmentVariableAccessor.splitEnvironmentAssignments(taskContext.getConfigurationMap().get("environmentVariables"), false);
+        Map<String, String> environment = this.environmentVariableAccessor
+                .splitEnvironmentAssignments(taskContext.getConfigurationMap().get("environmentVariables"), false);
         final File workingDirectory = taskContext.getWorkingDirectory();
 
-        buildLogger.addBuildLogHeader("Allure Task", true);
+        buildLogger.addBuildLogHeader("Allure Report", true);
         buildLogger.addBuildLogEntry("Trying to generate Allure using " + workingDirectory.getAbsolutePath() + " as base directory with pattern = " + taskContext.getConfigurationMap().get(RESULTS_DIRECTORY));
         buildLogger.addBuildLogEntry("Allure data will be saved to " + workingDirectory.getAbsolutePath() + File.separator + taskContext.getConfigurationMap().get(REPORT_PATH_PREFIX));
         try {
