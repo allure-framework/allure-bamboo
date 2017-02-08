@@ -120,7 +120,7 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
         }
 
         HashSet<Requirement> requirements = Sets.newHashSet();
-        requirements.add(new RequirementImpl( AllureCapabilityDefaultsHelper.ALLURE_CAPABILITY_PREFIX + "." + taskDefinition.getConfiguration().get(EXECUTABLE_LABEL), true, ".*"));
+        requirements.add(new RequirementImpl( AllureCapability.ALLURE_CAPABILITY_PREFIX + "." + taskDefinition.getConfiguration().get(EXECUTABLE_LABEL), true, ".*"));
         return requirements;
     }
 }
