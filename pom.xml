@@ -13,13 +13,17 @@
     <description>Allure reports right in deployment plans in Bamboo</description>
     <packaging>atlassian-plugin</packaging>
 
+    <organization>
+        <name>Allure Framework</name>
+        <url>https://github.com/allure-framework</url>
+    </organization>
+
     <properties>
         <bamboo.version>5.14.2</bamboo.version>
         <bamboo.data.version>5.14.2</bamboo.data.version>
         <amps.version>6.2.6</amps.version>
         <plugin.testrunner.version>1.2.3</plugin.testrunner.version>
         <atlassian.spring.scanner.version>1.2.13</atlassian.spring.scanner.version>
-        <!-- This key is used to keep the consistency between the key in atlassian-plugin.xml and the key to generate bundle. -->
         <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
         <compiler.version>1.8</compiler.version>
     </properties>
