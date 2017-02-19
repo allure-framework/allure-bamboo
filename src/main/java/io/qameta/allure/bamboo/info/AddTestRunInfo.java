@@ -1,4 +1,4 @@
-package io.qameta.allure.bamboo.callables;
+package io.qameta.allure.bamboo.info;
 
 import java.util.HashMap;
 

@@ -14,14 +14,14 @@ import java.io.File;
  * Define the default capability for allure.
  * Created by bvo2002 on 30.11.16.
  */
-public class AllureCapabilityDefaultsHelper extends AbstractHomeDirectoryCapabilityDefaultsHelper {
+public class AllureCapability extends AbstractHomeDirectoryCapabilityDefaultsHelper {
 
     private static final String ALLURE_HOME = "ALLURE_HOME";
     private static final String ALLURE_HOME_POSIX = "/usr/share/allure/";
     private static final String ALLURE_EXEC_NAME = "allure";
     static final String ALLURE_CAPABILITY_PREFIX = CapabilityDefaultsHelper.CAPABILITY_BUILDER_PREFIX + "." + ALLURE_EXEC_NAME;
 
-    AllureCapabilityDefaultsHelper() {
+    AllureCapability() {
         super();
     }
 
