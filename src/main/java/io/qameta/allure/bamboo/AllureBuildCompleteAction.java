@@ -5,7 +5,6 @@ import com.atlassian.bamboo.chains.Chain;
 import com.atlassian.bamboo.chains.ChainExecution;
 import com.atlassian.bamboo.chains.ChainResultsSummary;
 import com.atlassian.bamboo.chains.plugins.PostChainAction;
-import com.atlassian.bamboo.plan.PlanResultKey;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
 import com.google.common.io.Files;
 import io.qameta.allure.bamboo.config.AllureBuildConfig;
@@ -16,8 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
 import static java.util.Optional.ofNullable;
@@ -56,9 +53,8 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
         if (!allureEnabled || (isEnabledForFailedOnly && !chainResultsSummary.isFailed())) {
             return;
         }
-        final PlanResultKey planResultKey = chainResultsSummary.getPlanResultKey();
         final File artifactsTempDir = Files.createTempDir();
-        final Path allureReportDirPath = Paths.get(globalConfig.getStoragePath(), planResultKey.getKey());
+        final File allureReportDir = Files.createTempDir();
         try {
             final String executable = ofNullable(buildConfig.getExecutable()).orElseGet(() -> {
                 LOGGER.info("Allure executable has not been configured. Using default one!");
@@ -70,10 +66,10 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
             allureExecutable.provide(globalConfig, executable).map(allure -> {
                 LOGGER.info("Starting artifacts downloading into {} for {}", artifactsTempDir.getPath(), chain.getName());
                 artifactsManager.downloadAllArtifactsTo(chainResultsSummary, artifactsTempDir);
-                LOGGER.info("Starting allure generate into {} for {}", allureReportDirPath.toString(), chain.getName());
-                allure.generate(artifactsTempDir.toPath(), allureReportDirPath);
+                LOGGER.info("Starting allure generate into {} for {}", allureReportDir.getPath(), chain.getName());
+                allure.generate(artifactsTempDir.toPath(), allureReportDir.toPath());
                 LOGGER.info("Allure has been generated successfully for {}", chain.getName());
-                artifactsManager.uploadReportArtifacts(chain, chainResultsSummary, allureReportDirPath.toFile())
+                artifactsManager.uploadReportArtifacts(chain, chainResultsSummary, allureReportDir)
                         .ifPresent(result -> result.toCustomData(chainResultsSummary.getCustomBuildData()));
                 return true;
             }).orElseThrow(() -> new RuntimeException("Failed to find Allure executable by name " + executable));
@@ -84,7 +80,7 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
             result.toCustomData(chainResultsSummary.getCustomBuildData());
         } finally {
             deleteQuietly(artifactsTempDir);
-            deleteQuietly(allureReportDirPath.toFile());
+            deleteQuietly(allureReportDir);
         }
     }
 

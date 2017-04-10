@@ -17,7 +17,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -88,11 +87,5 @@ public class AllureReportServlet extends BambooHttpServlet {
         } else {
             LOGGER.info("Path {} does not match pattern", request.getRequestURI());
         }
-    }
-
-    private Optional<String> getStoragePath() {
-        return ofNullable(settingsManager).map(
-                settingsManager -> settingsManager.getSettings().getStoragePath()
-        );
     }
 }

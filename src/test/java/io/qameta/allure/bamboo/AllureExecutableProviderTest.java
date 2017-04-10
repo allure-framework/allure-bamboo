@@ -25,7 +25,7 @@ public class AllureExecutableProviderTest {
     private AllureDownloader downloader;
     @InjectMocks
     private AllureExecutableProvider provider;
-    private AllureGlobalConfig config = new AllureGlobalConfig("/tmp/reports", true, true);
+    private AllureGlobalConfig config = new AllureGlobalConfig(true, true);
 
     @Test
     public void itShouldProvideDefaultVersion() throws Exception {

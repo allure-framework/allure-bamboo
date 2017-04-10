@@ -21,8 +21,6 @@
         [@ww.checkbox labelKey='allure.config.download.enabled.label' name='custom.allure.config.download.enabled' toggle='true' /]
 
         [@ww.checkbox labelKey='allure.config.enabled.default.label' name='custom.allure.config.enabled.default' toggle='true' /]
-
-        [@ww.textfield labelKey="allure.config.storage.path.label" name="custom.allure.config.storage.path" required="true"/]
     [/@ww.form]
 </body>
 </html>
