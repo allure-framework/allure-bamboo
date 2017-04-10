@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 import static java.util.regex.Pattern.compile;
 
 public class AllureExecutableProvider {
-    static final String DEFAULT_VERSION = "2.0-BETA5";
+    static final String DEFAULT_VERSION = "2.0-BETA6";
     static final String DEFAULT_PATH = "/tmp/allure-executable";
     private static final Pattern EXEC_NAME_PATTERN = compile(".+([0-9\\.]{3,}[a-zA-Z0-9\\-]*)$");
 
