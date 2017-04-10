@@ -13,16 +13,24 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
+import static java.lang.Integer.getInteger;
 import static java.nio.file.Files.createTempFile;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static javax.ws.rs.core.UriBuilder.fromPath;
 import static org.apache.commons.io.FileUtils.copyURLToFile;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.apache.commons.io.FileUtils.moveDirectory;
 
 class AllureDownloader {
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureDownloader.class);
-    private static final int CONN_TIMEOUT_MS = (int) SECONDS.toMillis(10);
-    private static final int DOWNLOAD_TIMEOUT_MS = (int) SECONDS.toMillis(60);
+    private static final int CONN_TIMEOUT_MS = (int) SECONDS.toMillis(getInteger("allure.download.conn.timeout.sec", 10));
+    private static final int DOWNLOAD_TIMEOUT_MS = (int) SECONDS.toMillis(getInteger("allure.download.timeout.sec", 60));
+
+    private final AllureSettingsManager settingsManager;
+
+    AllureDownloader(AllureSettingsManager settingsManager) {
+        this.settingsManager = settingsManager;
+    }
 
     Optional<Path> downloadAndExtractAllureTo(String allureHomeDir, String version) {
         return downloadAllure(version).map(zipFilePath -> {
@@ -39,7 +47,7 @@ class AllureDownloader {
                 moveDirectory(extracteDir.resolve(extractedDirName).toFile(), homeDir);
                 return Paths.get(allureHomeDir);
             } catch (ZipException | IOException e) {
-                e.printStackTrace();
+                LOGGER.error("Failed to download and extract Allure of version {} to dir {}", version, allureHomeDir, e);
                 return null;
             } finally {
                 deleteQuietly(zipFilePath.toFile());
@@ -55,14 +63,14 @@ class AllureDownloader {
             copyURLToFile(url, downloadToFile.toFile(), CONN_TIMEOUT_MS, DOWNLOAD_TIMEOUT_MS);
             return Optional.of(downloadToFile);
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.error("Failed to download Allure of version {}", version, e);
         }
         return Optional.empty();
     }
 
     private URL buildAllureDownloadUrl(String version) throws MalformedURLException {
-        return new URL(
-                "https://dl.bintray.com/qameta/generic/io/qameta/allure/allure/" + version + "/allure-" + version + ".zip"
-        );
+        return fromPath(settingsManager.getSettings().getDownloadBaseUrl())
+                .path(Paths.get(version, "allure-" + version + ".zip").toString())
+                .build().toURL();
     }
 }

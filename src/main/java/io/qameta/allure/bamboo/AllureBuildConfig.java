@@ -1,4 +1,4 @@
-package io.qameta.allure.bamboo.config;
+package io.qameta.allure.bamboo;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -20,7 +20,7 @@ public class AllureBuildConfig implements Serializable {
         this.onlyForFailed = onlyForFailed;
     }
 
-    public static AllureBuildConfig fromContext(Map context) {
+    static AllureBuildConfig fromContext(Map context) {
         final String failedOnlyString = (String) context.get(ALLURE_CONFIG_FAILED_ONLY);
         final String enableAllureString = (String) context.get(ALLURE_CONFIG_ENABLED);
         return new AllureBuildConfig(
@@ -29,11 +29,11 @@ public class AllureBuildConfig implements Serializable {
                 failedOnlyString);
     }
 
-    public boolean isOnlyForFailed() {
+    boolean isOnlyForFailed() {
         return parseBoolean(onlyForFailed);
     }
 
-    public boolean isEnabledSet() {
+    boolean isEnabledSet() {
         return !isEmpty(enabled);
     }
 
@@ -41,7 +41,7 @@ public class AllureBuildConfig implements Serializable {
         return executable;
     }
 
-    public boolean isEnabled() {
+    boolean isEnabled() {
         return !isEnabledSet() || parseBoolean(enabled);
     }
 }

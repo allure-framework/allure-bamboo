@@ -3,7 +3,6 @@ package io.qameta.allure.bamboo;
 import com.atlassian.bamboo.plan.PlanResultKey;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
 import com.atlassian.bamboo.servlet.BambooHttpServlet;
-import io.qameta.allure.bamboo.info.AllureBuildResult;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +20,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.atlassian.bamboo.plan.PlanKeys.getPlanResultKey;
-import static io.qameta.allure.bamboo.info.AllureBuildResult.fromCustomData;
+import static io.qameta.allure.bamboo.AllureBuildResult.fromCustomData;
 import static java.lang.Integer.parseInt;
 import static java.util.Optional.ofNullable;
 import static org.sonatype.aether.util.StringUtils.isEmpty;
@@ -29,15 +28,12 @@ import static org.sonatype.aether.util.StringUtils.isEmpty;
 public class AllureReportServlet extends BambooHttpServlet {
     private static final Pattern URL_PATTERN = Pattern.compile(".*/plugins/servlet/allure/report/([^/]{2,})/([^/]+)/?(.*)");
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureReportServlet.class);
-    private final AllureSettingsManager settingsManager;
     private final AllureArtifactsManager artifactsManager;
     private final ResultsSummaryManager resultsSummaryManager;
 
     @Inject
-    public AllureReportServlet(AllureSettingsManager settingsManager,
-                               AllureArtifactsManager artifactsManager,
+    public AllureReportServlet(AllureArtifactsManager artifactsManager,
                                ResultsSummaryManager resultsSummaryManager) {
-        this.settingsManager = settingsManager;
         this.artifactsManager = artifactsManager;
         this.resultsSummaryManager = resultsSummaryManager;
     }
@@ -60,14 +56,13 @@ public class AllureReportServlet extends BambooHttpServlet {
                 final AllureBuildResult uploadResult = fromCustomData(results.getCustomBuildData());
                 if (uploadResult.isSuccess()) {
                     artifactsManager.getArtifactUrl(planKeyString, buildNumber, filePath).ifPresent(file -> {
-                        try (final InputStream input = new URL(file.getLeft()).openStream()) {
-                            final Path path = Paths.get(file.getLeft());
+                        try (final InputStream input = new URL(file).openStream()) {
+                            final Path path = Paths.get(file);
                             response.setHeader("Content-Type", getServletContext().getMimeType(filePath));
-//                            response.setHeader("Content-Length", String.valueOf(file.getRight()));
                             response.setHeader("Content-Disposition", "inline; filename=\"" + path.getFileName().toString() + "\"");
                             IOUtils.copy(input, response.getOutputStream());
                         } catch (IOException e) {
-                            LOGGER.error("Failed to send file {} of Allure Report ", file.getKey());
+                            LOGGER.error("Failed to send file {} of Allure Report ", file);
                         }
                     });
                 } else {

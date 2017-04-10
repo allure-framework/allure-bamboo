@@ -1,4 +1,4 @@
-package io.qameta.allure.bamboo.info;
+package io.qameta.allure.bamboo;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -9,49 +9,49 @@ import static io.qameta.allure.bamboo.AllureConstants.ALLURE_BUILD_REPORT_SUCCES
 import static java.lang.Boolean.parseBoolean;
 import static org.sonatype.aether.util.StringUtils.isEmpty;
 
-public class AllureBuildResult implements Serializable {
+class AllureBuildResult implements Serializable {
     private final boolean success;
     private String artifactHandlerClass;
     private String failureDetails;
 
-    public AllureBuildResult(boolean success) {
+    AllureBuildResult(boolean success) {
         this.success = success;
     }
 
-    public static AllureBuildResult fromCustomData(Map<String, String> data) {
+    static AllureBuildResult fromCustomData(Map<String, String> data) {
         final AllureBuildResult result = new AllureBuildResult(parseBoolean(data.get(ALLURE_BUILD_REPORT_SUCCESS)));
         result.setArtifactHandlerClass(data.get(ALLURE_BUILD_REPORT_ARTIFACT_HANDLER));
         result.setFailureDetails(data.get(ALLURE_BUILD_REPORT_FAILURE_DETAILS));
         return result;
     }
 
-    public void toCustomData(Map<String, String> data) {
+    void toCustomData(Map<String, String> data) {
         data.put(ALLURE_BUILD_REPORT_ARTIFACT_HANDLER, artifactHandlerClass);
         data.put(ALLURE_BUILD_REPORT_SUCCESS, String.valueOf(success));
         data.put(ALLURE_BUILD_REPORT_FAILURE_DETAILS, failureDetails);
     }
 
-    public String getArtifactHandlerClass() {
+    String getArtifactHandlerClass() {
         return artifactHandlerClass;
     }
 
-    public void setArtifactHandlerClass(String artifactHandlerClass) {
+    void setArtifactHandlerClass(String artifactHandlerClass) {
         this.artifactHandlerClass = artifactHandlerClass;
     }
 
-    public boolean isSuccess() {
+    boolean isSuccess() {
         return success;
     }
 
-    public String getFailureDetails() {
+    String getFailureDetails() {
         return failureDetails;
     }
 
-    public void setFailureDetails(String failureDetails) {
+    void setFailureDetails(String failureDetails) {
         this.failureDetails = failureDetails;
     }
 
-    public boolean hasInfo(){
+    boolean hasInfo(){
         return !isEmpty(this.failureDetails) || !isEmpty(artifactHandlerClass);
     }
 }

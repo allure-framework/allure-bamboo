@@ -1,6 +1,6 @@
 package io.qameta.allure.bamboo;
 
-import com.atlassian.bamboo.artifact.Artifact;
+import com.atlassian.bamboo.artifact.MutableArtifact;
 import com.atlassian.bamboo.artifact.MutableArtifactImpl;
 import com.atlassian.bamboo.build.BuildDefinition;
 import com.atlassian.bamboo.build.BuildDefinitionManager;
@@ -37,9 +37,6 @@ import com.atlassian.sal.api.UrlMode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
-import io.qameta.allure.bamboo.info.AllureBuildResult;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 import org.apache.tools.ant.types.FileSet;
 import org.jetbrains.annotations.NotNull;
@@ -59,7 +56,7 @@ import static com.atlassian.bamboo.plan.PlanKeys.getPlanKey;
 import static com.atlassian.bamboo.plan.PlanKeys.getPlanResultKey;
 import static com.google.common.collect.Iterables.size;
 import static com.google.common.io.Files.copy;
-import static io.qameta.allure.bamboo.info.AllureBuildResult.fromCustomData;
+import static io.qameta.allure.bamboo.AllureBuildResult.fromCustomData;
 import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
@@ -98,28 +95,25 @@ public class AllureArtifactsManager {
      * @param filePath      path of the artifact
      * @return empty if cannot get artifact, url if possible
      */
-    Optional<Pair<String, Long>> getArtifactUrl(final String planKeyString, final String buildNumber, final String filePath) {
+    Optional<String> getArtifactUrl(final String planKeyString, final String buildNumber, final String filePath) {
         final BuildDefinition buildDefinition = buildDefinitionManager.getBuildDefinition(getPlanKey(planKeyString));
         final Map<String, String> artifactConfig = getArtifactHandlersConfig(buildDefinition);
         final PlanResultKey planResultKey = getPlanResultKey(planKeyString, parseInt(buildNumber));
-        return ofNullable(resultsSummaryManager.getResultsSummary(planResultKey))
-                .map(resultsSummary -> {
-                    final AllureBuildResult uploadResult = fromCustomData(resultsSummary.getCustomBuildData());
-                    final Optional<Pair<String, Long>> url = getArtifactHandlerByClassName(uploadResult.getArtifactHandlerClass())
-                            .map(artifactHandler -> {
-                                final ArtifactDefinitionContextImpl artifactDef = getAllureArtifactDef();
-                                final Artifact artifact = new MutableArtifactImpl(artifactDef.getName(), planResultKey, null, false, 0L);
-                                return ofNullable(artifactHandler.getArtifactLinkDataProvider(artifact, configProvider(artifactConfig))).map(linkProvider -> {
-                                    if (linkProvider instanceof TrampolineUrlArtifactLinkDataProvider) {
-                                        final TrampolineUrlArtifactLinkDataProvider urlLinkProvider = (TrampolineUrlArtifactLinkDataProvider) linkProvider;
-                                        urlLinkProvider.setPlanResultKey(planResultKey);
-                                        urlLinkProvider.setArtifactName(artifactDef.getName());
-                                    }
-                                    return getArtifactFile(filePath, linkProvider);
-                                }).orElse(null);
-                            });
-                    return url.orElse(null);
-                });
+        return ofNullable(resultsSummaryManager.getResultsSummary(planResultKey)).map(resultsSummary ->
+                getArtifactHandlerByClassName(fromCustomData(resultsSummary.getCustomBuildData()).getArtifactHandlerClass())
+                        .map(artifactHandler -> {
+                            final ArtifactDefinitionContextImpl artifactDef = getAllureArtifactDef();
+                            return ofNullable(artifactHandler.getArtifactLinkDataProvider(
+                                    mutableArtifact(planResultKey, artifactDef.getName()), configProvider(artifactConfig)
+                            )).map(linkProvider -> {
+                                if (linkProvider instanceof TrampolineUrlArtifactLinkDataProvider) {
+                                    final TrampolineUrlArtifactLinkDataProvider urlLinkProvider = (TrampolineUrlArtifactLinkDataProvider) linkProvider;
+                                    urlLinkProvider.setPlanResultKey(planResultKey);
+                                    urlLinkProvider.setArtifactName(artifactDef.getName());
+                                }
+                                return getArtifactFile(filePath, linkProvider);
+                            }).orElse(null);
+                        }).orElse(null));
     }
 
     /**
@@ -201,7 +195,7 @@ public class AllureArtifactsManager {
     }
 
 
-    private void downloadAllArtifactsTo(ArtifactLinkDataProvider dataProvider, File tempFolder, String startFrom) {
+    private void downloadAllArtifactsTo(ArtifactLinkDataProvider dataProvider, File tempDir, String startFrom) {
         for (ArtifactFileData data : dataProvider.listObjects(startFrom)) {
             try {
                 if (data instanceof TrampolineArtifactFileData) {
@@ -209,39 +203,42 @@ public class AllureArtifactsManager {
                     data = trampolineData.getDelegate();
                     if (data.getFileType().equals(ArtifactFileData.FileType.REGULAR_FILE)) {
                         final String fileName = Paths.get(data.getName()).toFile().getName();
-                        copyURLToFile(new URL(data.getUrl()), Paths.get(tempFolder.getPath(), fileName).toFile());
+                        copyURLToFile(new URL(data.getUrl()), Paths.get(tempDir.getPath(), fileName).toFile());
                     } else {
-                        downloadAllArtifactsTo(dataProvider, tempFolder, trampolineData.getTag());
+                        downloadAllArtifactsTo(dataProvider, tempDir, trampolineData.getTag());
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                logAndThrow(e, "Failed to download artifacts to " + tempDir);
             }
         }
     }
 
-    private void downloadAllArtifactsTo(FileSystemArtifactLinkDataProvider dataProvider, File tempFolder) {
+    private void logAndThrow(Exception e, String message) {
+        LOGGER.error(message, e);
+        throw new RuntimeException(message, e);
+    }
+
+    private void downloadAllArtifactsTo(FileSystemArtifactLinkDataProvider dataProvider, File tempDir) {
         asList(dataProvider.getFile().listFiles()).forEach(file -> {
             try {
                 if (file.isFile()) {
-                    copy(file, Paths.get(tempFolder.getPath(), file.getName()).toFile());
+                    copy(file, Paths.get(tempDir.getPath(), file.getName()).toFile());
                 } else if (!file.getName().equals(".") && !file.getName().equals("..")) {
-                    copyDirectory(dataProvider.getFile(), tempFolder);
+                    copyDirectory(dataProvider.getFile(), tempDir);
                 }
             } catch (IOException e) {
-                final String message = "Failed to download artiact to " + tempFolder;
-                LOGGER.error(message, e);
-                throw new RuntimeException(message, e);
+                logAndThrow(e, "Failed to download artifacts to " + tempDir);
             }
         });
     }
 
     @Nullable
-    private Pair<String, Long> getArtifactFile(String filePath, ArtifactLinkDataProvider linkProvider) {
+    private String getArtifactFile(String filePath, ArtifactLinkDataProvider linkProvider) {
         if (linkProvider instanceof FileSystemArtifactLinkDataProvider) {
-            return ImmutablePair.of(linkProvider.getRootUrl()
+            return linkProvider.getRootUrl()
                     .replaceFirst("BASE_URL", getBaseUrl().build().toString())
-                    .replace("index.html", isEmpty(filePath) ? "index.html" : filePath), 0L);
+                    .replace("index.html", isEmpty(filePath) ? "index.html" : filePath);
         } else {
             final Iterable<ArtifactFileData> datas = linkProvider.listObjects(filePath);
             if (size(datas) == 1) {
@@ -250,7 +247,7 @@ public class AllureArtifactsManager {
                     final TrampolineArtifactFileData trampolineData = (TrampolineArtifactFileData) data;
                     data = trampolineData.getDelegate();
                     if (data.getFileType().equals(ArtifactFileData.FileType.REGULAR_FILE)) {
-                        return ImmutablePair.of(data.getUrl(), data.getSize());
+                        return data.getUrl();
                     }
                 } else {
                     return getBambooArtifactUrl(data);
@@ -262,10 +259,10 @@ public class AllureArtifactsManager {
         return null;
     }
 
-    private Pair<String, Long> getBambooArtifactUrl(ArtifactFileData data) {
+    private String getBambooArtifactUrl(ArtifactFileData data) {
         return ofNullable(data.getUrl()).map(url -> (url.startsWith("/")) ?
                 getBaseUrl().path(url).build().toString() : url)
-                .map(url -> ImmutablePair.of(url, data.getSize()))
+                .map(url -> url)
                 .orElse(null);
     }
 
@@ -290,6 +287,11 @@ public class AllureArtifactsManager {
             config.putAll(planLevelConfiguration);
         }
         return config;
+    }
+
+    @NotNull
+    private MutableArtifact mutableArtifact(PlanResultKey planResultKey, String name) {
+        return new MutableArtifactImpl(name, planResultKey, null, false, 0L);
     }
 
     private List<ArtifactHandler> getArtifactHandlers() {

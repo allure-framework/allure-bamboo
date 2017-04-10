@@ -7,9 +7,6 @@ import com.atlassian.bamboo.chains.ChainResultsSummary;
 import com.atlassian.bamboo.chains.plugins.PostChainAction;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
 import com.google.common.io.Files;
-import io.qameta.allure.bamboo.config.AllureBuildConfig;
-import io.qameta.allure.bamboo.config.AllureGlobalConfig;
-import io.qameta.allure.bamboo.info.AllureBuildResult;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,8 +40,6 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
 
     @Override
     public void execute(@NotNull Chain chain, @NotNull ChainResultsSummary chainResultsSummary, @NotNull ChainExecution chainExecution) throws InterruptedException, Exception {
-        LOGGER.info("Build has completed");
-
         final BuildDefinition buildDef = chain.getBuildDefinition();
         final AllureGlobalConfig globalConfig = settingsManager.getSettings();
         final AllureBuildConfig buildConfig = AllureBuildConfig.fromContext(buildDef.getCustomConfiguration());
@@ -61,7 +56,7 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
                 return executablesManager.getDefaultAllureExecutable().orElseThrow(() ->
                         new RuntimeException("Could not find default Allure executable! Please configure plugin properly!"));
             });
-            LOGGER.info("Allure Report was enabled for {}", chain.getName());
+            LOGGER.info("Allure Report is enabled for {}", chain.getName());
             LOGGER.info("Trying to get executable by name {} for {}", executable, chain.getName());
             allureExecutable.provide(globalConfig, executable).map(allure -> {
                 LOGGER.info("Starting artifacts downloading into {} for {}", artifactsTempDir.getPath(), chain.getName());

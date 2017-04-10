@@ -3,7 +3,6 @@ package io.qameta.allure.bamboo;
 import com.atlassian.bamboo.configuration.GlobalAdminAction;
 import com.opensymphony.xwork2.ActionContext;
 import com.opensymphony.xwork2.Preparable;
-import io.qameta.allure.bamboo.config.AllureGlobalConfig;
 
 import java.util.Map;
 
@@ -28,8 +27,8 @@ public class ConfigureAllureReportAction extends GlobalAdminAction implements Pr
     public void validate() {
         super.validate();
         final Map<String, String[]> valuesMap = getStringArrayMap();
-        if (!valuesMap.containsKey(AllureConstants.ALLURE_CONFIG_STORAGE_TYPE)) {
-            addActionError(getText("allure.config.storage.path.error.required"));
+        if (!valuesMap.containsKey(AllureConstants.ALLURE_CONFIG_DOWNLOAD_BASE_URL)) {
+            addActionError(getText("allure.config.download.url.error.required"));
         }
     }
 

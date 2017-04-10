@@ -5,12 +5,14 @@ import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
 import com.atlassian.plugin.PluginParseException;
 import com.atlassian.plugin.web.Condition;
-import io.qameta.allure.bamboo.info.AllureBuildResult;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 public class AllureViewReportCondition implements Condition {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AllureViewReportCondition.class);
 
     private final ResultsSummaryManager resultsSummaryManager;
 
@@ -34,10 +36,10 @@ public class AllureViewReportCondition implements Condition {
                     final AllureBuildResult buildResult = AllureBuildResult.fromCustomData(resultsSummary.getCustomBuildData());
                     return (buildResult.hasInfo() && (resultsSummary.isFinished() || resultsSummary.isNotBuilt()));
                 }
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                LOGGER.error("Failed to evaluate condition", e);
             }
         }
-
         return false;
     }
 }

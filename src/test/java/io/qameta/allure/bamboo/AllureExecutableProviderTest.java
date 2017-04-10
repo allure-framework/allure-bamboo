@@ -1,6 +1,5 @@
 package io.qameta.allure.bamboo;
 
-import io.qameta.allure.bamboo.config.AllureGlobalConfig;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -25,7 +24,7 @@ public class AllureExecutableProviderTest {
     private AllureDownloader downloader;
     @InjectMocks
     private AllureExecutableProvider provider;
-    private AllureGlobalConfig config = new AllureGlobalConfig(true, true);
+    private AllureGlobalConfig config = new AllureGlobalConfig();
 
     @Test
     public void itShouldProvideDefaultVersion() throws Exception {
