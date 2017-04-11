@@ -10,6 +10,7 @@ import static java.lang.Boolean.parseBoolean;
 import static org.apache.commons.lang.StringUtils.isEmpty;
 
 public class AllureBuildConfig implements Serializable {
+    static final boolean DEFAULT_ONLY_FOR_FAILED = true;
     private final String enabled;
     private final String onlyForFailed;
     private final String executable;
@@ -30,7 +31,7 @@ public class AllureBuildConfig implements Serializable {
     }
 
     boolean isOnlyForFailed() {
-        return parseBoolean(onlyForFailed);
+        return isEmpty(onlyForFailed) ? DEFAULT_ONLY_FOR_FAILED : parseBoolean(onlyForFailed);
     }
 
     boolean isEnabledSet() {
