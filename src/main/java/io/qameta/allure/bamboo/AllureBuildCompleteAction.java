@@ -64,15 +64,20 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
             allureExecutable.provide(globalConfig, executable).map(allure -> {
                 LOGGER.info("Starting artifacts downloading into {} for {}", artifactsTempDir.getPath(), chain.getName());
                 artifactsManager.downloadAllArtifactsTo(chainResultsSummary, artifactsTempDir);
-                LOGGER.info("Starting allure generate into {} for {}", allureReportDir.getPath(), chain.getName());
-                final AllureGenerateResult genRes = allure.generate(artifactsTempDir.toPath(), allureReportDir.toPath());
-                if (!genRes.isContainsTestcases()) {
-                    allureBuildResult(false, "No Allure results found! Please ensure that build artifacts contain Allure results!\n" +
-                            "Allure generate output: \n" + genRes.getOutput()).dumpToCustomData(customBuildData);
+                if (artifactsTempDir.list().length == 0) {
+                    allureBuildResult(false, "Build result does not have any uploaded artifacts!")
+                            .dumpToCustomData(customBuildData);
                 } else {
-                    LOGGER.info("Allure has been generated successfully for {}", chain.getName());
-                    artifactsManager.uploadReportArtifacts(chain, chainResultsSummary, allureReportDir)
-                            .ifPresent(result -> result.dumpToCustomData(customBuildData));
+                    LOGGER.info("Starting allure generate into {} for {}", allureReportDir.getPath(), chain.getName());
+                    final AllureGenerateResult genRes = allure.generate(artifactsTempDir.toPath(), allureReportDir.toPath());
+                    if (!genRes.isContainsTestcases()) {
+                        allureBuildResult(false, "No Allure results found! Please ensure that build artifacts contain " +
+                                "Allure results!\nAllure generate output: \n" + genRes.getOutput()).dumpToCustomData(customBuildData);
+                    } else {
+                        LOGGER.info("Allure has been generated successfully for {}", chain.getName());
+                        artifactsManager.uploadReportArtifacts(chain, chainResultsSummary, allureReportDir)
+                                .ifPresent(result -> result.dumpToCustomData(customBuildData));
+                    }
                 }
                 return true;
             }).orElseThrow(() -> new RuntimeException("Failed to find Allure executable by name " + executable));

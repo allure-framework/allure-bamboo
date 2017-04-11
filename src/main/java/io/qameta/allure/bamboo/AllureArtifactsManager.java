@@ -47,6 +47,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -60,7 +61,6 @@ import static io.qameta.allure.bamboo.AllureBuildResult.allureBuildResult;
 import static io.qameta.allure.bamboo.AllureBuildResult.fromCustomData;
 import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
 import static java.lang.Integer.parseInt;
-import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
 import static javax.ws.rs.core.UriBuilder.fromPath;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
@@ -218,17 +218,18 @@ public class AllureArtifactsManager {
     }
 
     private void downloadAllArtifactsTo(FileSystemArtifactLinkDataProvider dataProvider, File tempDir) {
-        asList(dataProvider.getFile().listFiles()).forEach(file -> {
-            try {
-                if (file.isFile()) {
-                    copy(file, Paths.get(tempDir.getPath(), file.getName()).toFile());
-                } else if (!file.getName().equals(".") && !file.getName().equals("..")) {
-                    copyDirectory(dataProvider.getFile(), tempDir);
+        ofNullable(dataProvider.getFile().listFiles()).map(Arrays::asList).ifPresent(list -> list.forEach(file -> {
+                    try {
+                        if (file.isFile()) {
+                            copy(file, Paths.get(tempDir.getPath(), file.getName()).toFile());
+                        } else if (!file.getName().equals(".") && !file.getName().equals("..")) {
+                            copyDirectory(dataProvider.getFile(), tempDir);
+                        }
+                    } catch (IOException e) {
+                        logAndThrow(e, "Failed to download artifacts to " + tempDir);
+                    }
                 }
-            } catch (IOException e) {
-                logAndThrow(e, "Failed to download artifacts to " + tempDir);
-            }
-        });
+        ));
     }
 
     @Nullable
