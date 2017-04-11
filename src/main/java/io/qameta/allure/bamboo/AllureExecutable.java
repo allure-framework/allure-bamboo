@@ -3,39 +3,45 @@ package io.qameta.allure.bamboo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.LinkedList;
 
 import static java.util.Arrays.asList;
 import static org.apache.commons.io.FileUtils.forceMkdir;
-import static org.apache.commons.lang3.SystemUtils.IS_OS_LINUX;
-import static org.buildobjects.process.ProcBuilder.run;
 
 class AllureExecutable {
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureExecutable.class);
+    private static final String BASH_CMD = "/bin/bash";
     private final Path cmdPath;
+    private final AllureCommandLineSupport cmdLine;
 
-    AllureExecutable(Path cmdPath) {
+    AllureExecutable(Path cmdPath, AllureCommandLineSupport commandLine) {
         this.cmdPath = cmdPath;
+        this.cmdLine = commandLine;
     }
 
-    String generate(Path sourceDir, Path targetDir) {
+    @Nonnull
+    AllureGenerateResult generate(Path sourceDir, Path targetDir) {
         try {
             forceMkdir(targetDir.toFile());
             final LinkedList<String> args = new LinkedList<>(asList("generate", "-o", targetDir.toString(), "-v", sourceDir.toString()));
             String output;
-            if (IS_OS_LINUX && Paths.get("/bin/bash").toFile().exists()) {
+            if (cmdLine.isUnix() && cmdLine.hasCommand(BASH_CMD)) {
                 args.addFirst(cmdPath.toString());
-                output = run("/bin/bash", args.toArray(new String[args.size()]));
+                output = cmdLine.runCommand("/bin/bash", args.toArray(new String[args.size()]));
             } else {
-                output = run(cmdPath.toString(), args.toArray(new String[args.size()]));
+                output = cmdLine.runCommand(cmdPath.toString(), args.toArray(new String[args.size()]));
             }
             LOGGER.info(output);
-            return output;
+            return cmdLine.parseGenerateOutput(output);
         } catch (IOException e) {
             throw new RuntimeException("Failed to generate allure report", e);
         }
+    }
+
+    Path getCmdPath() {
+        return cmdPath;
     }
 }

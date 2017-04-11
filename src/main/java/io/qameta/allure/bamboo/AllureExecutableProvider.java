@@ -10,7 +10,6 @@ import java.util.regex.Pattern;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.regex.Pattern.compile;
-import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
 public class AllureExecutableProvider {
     static final String DEFAULT_VERSION = "2.0-BETA6";
@@ -19,28 +18,31 @@ public class AllureExecutableProvider {
 
     private final BambooExecutablesManager bambooExecutablesManager;
     private final AllureDownloader allureDownloader;
+    private final AllureCommandLineSupport cmdLine;
 
     public AllureExecutableProvider(BambooExecutablesManager bambooExecutablesManager,
-                                    AllureDownloader allureDownloader) {
+                                    AllureDownloader allureDownloader,
+                                    AllureCommandLineSupport cmdLine) {
         this.bambooExecutablesManager = requireNonNull(bambooExecutablesManager);
         this.allureDownloader = requireNonNull(allureDownloader);
+        this.cmdLine = requireNonNull(cmdLine);
     }
 
     Optional<AllureExecutable> provide(AllureGlobalConfig globalConfig, String executableName) {
         return bambooExecutablesManager.getExecutableByName(executableName)
                 .map(allureHomeDir -> {
                     final Path cmdPath = Paths.get(allureHomeDir, "bin", getAllureExecutableName());
-                    if (!cmdPath.toFile().exists() && globalConfig.isDownloadEnabled()) {
+                    if (!cmdLine.hasCommand(cmdPath.toString()) && globalConfig.isDownloadEnabled()) {
                         final Matcher nameMatcher = EXEC_NAME_PATTERN.matcher(executableName);
                         allureDownloader.downloadAndExtractAllureTo(allureHomeDir,
                                 nameMatcher.matches() ? nameMatcher.group(1) : DEFAULT_VERSION);
                     }
-                    return (cmdPath.toFile().exists()) ? new AllureExecutable(cmdPath) : null;
+                    return (cmdLine.hasCommand(cmdPath.toString())) ? new AllureExecutable(cmdPath, cmdLine) : null;
                 });
     }
 
     @NotNull
     private String getAllureExecutableName() {
-        return (IS_OS_WINDOWS) ? "allure.bat" : "allure";
+        return (cmdLine.isWindows()) ? "allure.bat" : "allure";
     }
 }

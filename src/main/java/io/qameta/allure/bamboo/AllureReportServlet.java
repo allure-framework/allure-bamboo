@@ -68,7 +68,7 @@ public class AllureReportServlet extends BambooHttpServlet {
                 } else {
                     final String errorMessage = isEmpty(uploadResult.getFailureDetails()) ?
                             "Unknown error has occurred during Allure Build. Please refer the server logs for details." :
-                            uploadResult.getFailureDetails();
+                            "Something went wrong with Allure Report generation. Here are some details: \n" + uploadResult.getFailureDetails();
                     try {
                         response.setHeader("Content-Type", "text/plain");
                         response.setHeader("Content-Length", String.valueOf(errorMessage.length()));

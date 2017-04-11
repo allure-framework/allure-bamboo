@@ -12,7 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.Map;
 
+import static io.qameta.allure.bamboo.AllureBuildResult.allureBuildResult;
 import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
@@ -50,6 +52,7 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
         }
         final File artifactsTempDir = Files.createTempDir();
         final File allureReportDir = Files.createTempDir();
+        final Map<String, String> customBuildData = chainResultsSummary.getCustomBuildData();
         try {
             final String executable = ofNullable(buildConfig.getExecutable()).orElseGet(() -> {
                 LOGGER.info("Allure executable has not been configured. Using default one!");
@@ -62,17 +65,20 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
                 LOGGER.info("Starting artifacts downloading into {} for {}", artifactsTempDir.getPath(), chain.getName());
                 artifactsManager.downloadAllArtifactsTo(chainResultsSummary, artifactsTempDir);
                 LOGGER.info("Starting allure generate into {} for {}", allureReportDir.getPath(), chain.getName());
-                allure.generate(artifactsTempDir.toPath(), allureReportDir.toPath());
-                LOGGER.info("Allure has been generated successfully for {}", chain.getName());
-                artifactsManager.uploadReportArtifacts(chain, chainResultsSummary, allureReportDir)
-                        .ifPresent(result -> result.toCustomData(chainResultsSummary.getCustomBuildData()));
+                final AllureGenerateResult genRes = allure.generate(artifactsTempDir.toPath(), allureReportDir.toPath());
+                if (!genRes.isContainsTestcases()) {
+                    allureBuildResult(false, "No Allure results found! Please ensure that build artifacts contain Allure results!\n" +
+                            "Allure generate output: \n" + genRes.getOutput()).dumpToCustomData(customBuildData);
+                } else {
+                    LOGGER.info("Allure has been generated successfully for {}", chain.getName());
+                    artifactsManager.uploadReportArtifacts(chain, chainResultsSummary, allureReportDir)
+                            .ifPresent(result -> result.dumpToCustomData(customBuildData));
+                }
                 return true;
             }).orElseThrow(() -> new RuntimeException("Failed to find Allure executable by name " + executable));
         } catch (Exception e) {
             LOGGER.error("Failed to build allure report for {}", chain.getName(), e);
-            final AllureBuildResult result = new AllureBuildResult(false);
-            result.setFailureDetails(stackTraceToString(e));
-            result.toCustomData(chainResultsSummary.getCustomBuildData());
+            allureBuildResult(false, stackTraceToString(e)).dumpToCustomData(customBuildData);
         } finally {
             deleteQuietly(artifactsTempDir);
             deleteQuietly(allureReportDir);

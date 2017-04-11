@@ -56,6 +56,7 @@ import static com.atlassian.bamboo.plan.PlanKeys.getPlanKey;
 import static com.atlassian.bamboo.plan.PlanKeys.getPlanResultKey;
 import static com.google.common.collect.Iterables.size;
 import static com.google.common.io.Files.copy;
+import static io.qameta.allure.bamboo.AllureBuildResult.allureBuildResult;
 import static io.qameta.allure.bamboo.AllureBuildResult.fromCustomData;
 import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
 import static java.lang.Integer.parseInt;
@@ -180,16 +181,13 @@ public class AllureArtifactsManager {
                     continue;
                 }
                 publishingResult.setArtifactHandlerKey(artifactHandler.getModuleDescriptor().getCompleteKey());
-                final AllureBuildResult result = new AllureBuildResult(publishingResult.isSuccessful());
-                result.setArtifactHandlerClass(artifactHandler.getClass().getName());
-                return Optional.of(result);
+                return Optional.of(allureBuildResult(publishingResult.isSuccessful(), null)
+                        .withHandlerClass(artifactHandler.getClass().getName()));
             }
         } catch (Exception e) {
             final String message = "Failed to publish Allure Report from directory " + reportDir;
             LOGGER.error(message, e);
-            final AllureBuildResult result = new AllureBuildResult(false);
-            result.setFailureDetails(message + "\n" + stackTraceToString(e));
-            return Optional.of(result);
+            return Optional.of(allureBuildResult(false, message + "\n" + stackTraceToString(e)));
         }
         return Optional.empty();
     }

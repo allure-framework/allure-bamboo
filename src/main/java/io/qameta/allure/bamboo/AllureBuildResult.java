@@ -18,6 +18,15 @@ class AllureBuildResult implements Serializable {
         this.success = success;
     }
 
+    public AllureBuildResult(boolean success, String failureDetails) {
+        this.success = success;
+        this.failureDetails = failureDetails;
+    }
+
+    static AllureBuildResult allureBuildResult(boolean success, String failureDetails){
+        return new AllureBuildResult(success, failureDetails);
+    }
+
     static AllureBuildResult fromCustomData(Map<String, String> data) {
         final AllureBuildResult result = new AllureBuildResult(parseBoolean(data.get(ALLURE_BUILD_REPORT_SUCCESS)));
         result.setArtifactHandlerClass(data.get(ALLURE_BUILD_REPORT_ARTIFACT_HANDLER));
@@ -25,10 +34,15 @@ class AllureBuildResult implements Serializable {
         return result;
     }
 
-    void toCustomData(Map<String, String> data) {
+    void dumpToCustomData(Map<String, String> data) {
         data.put(ALLURE_BUILD_REPORT_ARTIFACT_HANDLER, artifactHandlerClass);
         data.put(ALLURE_BUILD_REPORT_SUCCESS, String.valueOf(success));
         data.put(ALLURE_BUILD_REPORT_FAILURE_DETAILS, failureDetails);
+    }
+
+    AllureBuildResult withHandlerClass(String artifactHandlerClass){
+        setArtifactHandlerClass(artifactHandlerClass);
+        return this;
     }
 
     String getArtifactHandlerClass() {
