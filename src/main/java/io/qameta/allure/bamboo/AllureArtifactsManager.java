@@ -4,6 +4,7 @@ import com.atlassian.bamboo.artifact.MutableArtifact;
 import com.atlassian.bamboo.artifact.MutableArtifactImpl;
 import com.atlassian.bamboo.build.BuildDefinition;
 import com.atlassian.bamboo.build.BuildDefinitionManager;
+import com.atlassian.bamboo.build.artifact.AgentLocalArtifactHandler;
 import com.atlassian.bamboo.build.artifact.ArtifactFileData;
 import com.atlassian.bamboo.build.artifact.ArtifactHandler;
 import com.atlassian.bamboo.build.artifact.ArtifactHandlerPublishingResult;
@@ -160,7 +161,7 @@ public class AllureArtifactsManager {
                 if (!artifactHandler.canHandleArtifact(artifact, artifactConfig)) {
                     continue;
                 }
-                if (artifactHandler instanceof BambooRemoteArtifactHandler) {
+                if (artifactHandler instanceof BambooRemoteArtifactHandler || artifactHandler instanceof AgentLocalArtifactHandler) {
                     throw new RuntimeException("Bamboo Remote Artifact Handler is not supported!");
                 }
                 final ArtifactPublishingConfig artifactPublishingConfig = new ArtifactPublishingConfig(sourceFileSet, artifactConfig);
