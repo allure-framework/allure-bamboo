@@ -2,9 +2,10 @@
     <plugin-info>
         <description>${project.description}</description>
         <version>${project.version}</version>
-        <vendor name="${project.organization.name}" url="${project.organization.url}" />
+        <vendor name="${project.organization.name}" url="${project.organization.url}"/>
         <param name="plugin-icon">images/icon.png</param>
         <param name="plugin-logo">images/logo.png</param>
+        <param name="build">1</param>
         <param name="atlassian-data-center-compatible">true</param>
     </plugin-info>
 
@@ -13,17 +14,115 @@
 
     <taskType key="allureReport" name="Allure Report" class="io.qameta.allure.bamboo.AllureReportTask">
         <description>Generate Allure report</description>
-        <resource type="download" name="icon" location="images/logo.png" />
-        <category name="test" />
+        <resource type="download" name="icon" location="images/logo.png"/>
+        <category name="test"/>
         <executable key="allure"/>
         <capabilityDefaultsHelper class="io.qameta.allure.bamboo.AllureCapability"/>
-        <configuration class="io.qameta.allure.bamboo.AllureReportTaskConfigurator" />
-        <resource type="freemarker" name="edit" location="editAllureReportTask.ftl" />
-        <resource type="freemarker" name="view" location="viewAllureReportTask.ftl" />
-        <help link="allure.task.help.link" title="allure.task.help.title" />
+        <configuration class="io.qameta.allure.bamboo.AllureReportTaskConfigurator"/>
+        <resource type="freemarker" name="edit" location="templates/editAllureReportTask.ftl"/>
+        <resource type="freemarker" name="view" location="templates/viewAllureReportTask.ftl"/>
+        <help link="allure.task.help.link" title="allure.task.help.title"/>
     </taskType>
 
-    <component-import key="applicationProperties" interface="com.atlassian.sal.api.ApplicationProperties" />
-    <component-import key="textProvider" interface="com.atlassian.struts.TextProvider" />
+    <postChainAction key="allureBuildCompleteAction" class="io.qameta.allure.bamboo.AllureBuildCompleteAction">
+        <description>Tears down and saves data for MyBambooPlugin if the Chain has the plugin enabled</description>
+    </postChainAction>
+
+    <additionalBuildConfigurationPlugin key="allureConfig" name="Allure Report Configuration"
+                                        class="io.qameta.allure.bamboo.AllureBuildConfigurator">
+        <description>Plugin to configure Allure build</description>
+        <resource type="freemarker" name="edit" location="templates/editAllureBambooConfiguration.ftl"/>
+        <resource type="freemarker" name="view" location="templates/viewAllureBambooConfiguration.ftl"/>
+    </additionalBuildConfigurationPlugin>
+
+    <web-item key="allure:${immutablePlan.key}-${resultsSummary.buildNumber}" name="allure"
+              section="chainResults.subMenu/chainResults" weight="20">
+        <label key="Allure Report"/>
+        <link linkId="allure:${planKey}-${buildNumber}">/chain/result/viewAllure.action?buildKey=${planKey}&amp;buildNumber=${buildNumber}</link>
+        <condition class="io.qameta.allure.bamboo.AllureViewReportCondition"/>
+        <link linkId="allure:${immutablePlan.key}-${resultsSummary.buildNumber}">
+            /chain/result/viewAllure.action?buildKey=${immutablePlan.key}&amp;buildNumber=${resultsSummary.buildNumber}
+        </link>
+    </web-item>
+    <web-item key="allure:${buildKey}-${buildNumber}" name="allure" section="results.subMenu/results" weight="70">
+        <label key="Allure Report"/>
+        <link linkId="allure:${buildKey}-${buildNumber}">/chain/result/viewAllure.action?buildKey=${planKey}&amp;buildNumber=${buildNumber}</link>
+        <condition class="io.qameta.allure.bamboo.AllureViewReportCondition"/>
+    </web-item>
+
+    <xwork key="viewAllureReport" name="View Allure Report">
+        <package name="chainViewAllureReport" extends="chainViewResult" namespace="/chain/result">
+            <action key="allure:${immutablePlan.key}-${buildNumber}" name="viewAllure"
+                    class="io.qameta.allure.bamboo.ViewAllureReport">
+                <param name="chainEquiv">/chain/result/viewAllure.action?buildKey=${planKey}&amp;buildNumber=${buildNumber}</param>
+                <param name="jobEquiv">/chain/result/viewAllure.action?buildKey=${planKey}&amp;buildNumber=${buildNumber}</param>
+                <result name="success" type="freemarker">/templates/viewAllureReport.ftl</result>
+                <result name="error" type="freemarker">/error.ftl</result>
+            </action>
+        </package>
+    </xwork>
+
+    <servlet name="Allure Report Servlet" key="allureReportServlet" class="io.qameta.allure.bamboo.AllureReportServlet">
+        <url-pattern>/allure/report/*</url-pattern>
+    </servlet>
+
+
+    <web-item key="allureReportConfig" name="Allure Report" section="system.admin/builds" weight="30">
+        <label key="webitems.system.admin.build.allureReport"/>
+        <link linkId="editAllureReportConfig">/admin/editAllureReportConfig.action</link>
+    </web-item>
+    <xwork key="configAllureReport" name="Config Allure Report">
+        <package name="allureConfig" extends="admin" namespace="/admin">
+
+            <action name="editAllureReportConfig" class="io.qameta.allure.bamboo.ConfigureAllureReportAction"
+                    method="doDefault">
+                <result name="input" type="freemarker">/templates/editAllureReportConfig.ftl</result>
+                <result name="error" type="freemarker">/templates/editAllureReportConfig.ftl</result>
+            </action>
+
+            <action name="saveAllureReportConfig" class="io.qameta.allure.bamboo.ConfigureAllureReportAction">
+                <result name="input" type="freemarker">/templates/editAllureReportConfig.ftl</result>
+                <result name="error" type="freemarker">/templates/editAllureReportConfig.ftl</result>
+                <result name="success" type="redirect">/admin/editAllureReportConfig.action</result>
+            </action>
+        </package>
+    </xwork>
+
+    <component key="allureInstallTask" name="Allure Install Task"
+               class="io.qameta.allure.bamboo.AllurePluginInstallTask" public="true">
+        <interface>com.atlassian.sal.api.upgrade.PluginUpgradeTask</interface>
+    </component>
+
+    <component key="allureDownloader" name="Allure Downloader" class="io.qameta.allure.bamboo.AllureDownloader"/>
+    <component key="allureSettings" name="Allure Settings" class="io.qameta.allure.bamboo.AllureSettingsManager"/>
+    <component key="allureExecutableProvider" name="Allure Executable Provider"
+               class="io.qameta.allure.bamboo.AllureExecutableProvider"/>
+    <component key="bambooExecutableManager" name="Bamboo Executable Manager"
+               class="io.qameta.allure.bamboo.BambooExecutablesManager"/>
+    <component key="allureArtifactsUploader" name="Allure Artifacts Uploader"
+               class="io.qameta.allure.bamboo.AllureArtifactsManager"/>
+    <component key="allureCommandLineSupport" name="Allure Command Line Support"
+               class="io.qameta.allure.bamboo.AllureCommandLineSupport"/>
+
+    <component-import key="applicationProperties" interface="com.atlassian.sal.api.ApplicationProperties"/>
+    <component-import key="textProvider" interface="com.atlassian.struts.TextProvider"/>
+    <component-import key="artifactLinkManager" interface="com.atlassian.bamboo.build.artifact.ArtifactLinkManager"/>
+    <component-import key="capabilitySetManager"
+                      interface="com.atlassian.bamboo.v2.build.agent.capability.CapabilitySetManager"/>
+    <component-import key="resultsSummaryManager" interface="com.atlassian.bamboo.resultsummary.ResultsSummaryManager"/>
+    <component-import key="errorAccessor" interface="com.atlassian.bamboo.logger.ErrorAccessor"/>
+    <component-import key="commentsService" interface="com.atlassian.bamboo.comment.CommentService"/>
+    <component-import key="deploymentProjectService"
+                      interface="com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService"/>
+    <component-import key="buildDefinitionManager" interface="com.atlassian.bamboo.build.BuildDefinitionManager"/>
+    <component-import key="renderer" interface="com.atlassian.templaterenderer.TemplateRenderer"/>
+    <component-import key="loginUriProvider" interface="com.atlassian.sal.api.auth.LoginUriProvider"/>
+    <component-import key="userManager" interface="com.atlassian.sal.api.user.UserManager"/>
+    <component-import key="pluginSettingsFactory"
+                      interface="com.atlassian.sal.api.pluginsettings.PluginSettingsFactory"/>
+
+    <component-import key="pluginAccessor" interface="com.atlassian.plugin.PluginAccessor"/>
+    <component-import key="artifactHandlersService"
+                      interface="com.atlassian.bamboo.build.artifact.handlers.ArtifactHandlersService"/>
 
 </atlassian-plugin>
