@@ -6,10 +6,13 @@ pipeline {
         maven 'default'
     }
     stages {
-        stage("Build") {
+        stage('Build') {
             steps {
-                sh 'mvn -Dmaven.test.failure.ignore=true clean install'
+                sh 'mvn -Dmaven.test.failure.ignore=true clean verify'
             }
+        }
+        stage('Archive') {
+            archiveArtifacts 'target/*.jar'
         }
     }
     post {
