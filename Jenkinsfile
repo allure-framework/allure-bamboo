@@ -11,6 +11,11 @@ pipeline {
                 sh 'mvn -Dmaven.test.failure.ignore=true clean verify'
             }
         }
+        stage('') {
+            steps {
+                junit 'target/surefire-reports/*.xml'
+            }
+        }
         stage('Archive') {
             steps{
                 archiveArtifacts 'target/*.jar'
