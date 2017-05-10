@@ -26,7 +26,7 @@ class AllureExecutable {
     AllureGenerateResult generate(Path sourceDir, Path targetDir) {
         try {
             forceMkdir(targetDir.toFile());
-            final LinkedList<String> args = new LinkedList<>(asList("generate", "-o", targetDir.toString(), "-v", sourceDir.toString()));
+            final LinkedList<String> args = new LinkedList<>(asList("generate", "-c", "-o", targetDir.toString(), sourceDir.toString()));
             String output;
             if (cmdLine.isUnix() && cmdLine.hasCommand(BASH_CMD)) {
                 args.addFirst(cmdPath.toString());

@@ -43,7 +43,7 @@ public class AllureExecutableTest {
 
         executable.generate(fromDir, toDir);
 
-        verify(cmdLine).runCommand("/bin/bash", path.toString(), "generate", "-o", toDir.toString(), "-v", fromDir.toString());
+        verify(cmdLine).runCommand("/bin/bash", path.toString(), "generate", "-c", "-o", toDir.toString(), fromDir.toString());
     }
 
     @Test
@@ -53,7 +53,7 @@ public class AllureExecutableTest {
 
         executable.generate(fromDir, toDir);
 
-        verify(cmdLine).runCommand(path.toString(), "generate", "-o", toDir.toString(), "-v", fromDir.toString());
+        verify(cmdLine).runCommand(path.toString(), "generate", "-c", "-o", toDir.toString(), fromDir.toString());
     }
 
     @Test
@@ -62,7 +62,7 @@ public class AllureExecutableTest {
 
         executable.generate(fromDir, toDir);
 
-        verify(cmdLine).runCommand(path.toString(), "generate", "-o", toDir.toString(), "-v", fromDir.toString());
+        verify(cmdLine).runCommand(path.toString(), "generate", "-c", "-o", toDir.toString(), fromDir.toString());
 
     }
 }
