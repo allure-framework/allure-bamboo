@@ -6,7 +6,6 @@ import com.atlassian.bamboo.chains.ChainExecution;
 import com.atlassian.bamboo.chains.ChainResultsSummary;
 import com.atlassian.bamboo.chains.plugins.PostChainAction;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
-import com.google.common.io.Files;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.Map;
 
+import static com.google.common.io.Files.createTempDir;
 import static io.qameta.allure.bamboo.AllureBuildResult.allureBuildResult;
 import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
 import static java.util.Optional.ofNullable;
@@ -50,8 +50,8 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
         if (!allureEnabled || (isEnabledForFailedOnly && !chainResultsSummary.isFailed())) {
             return;
         }
-        final File artifactsTempDir = Files.createTempDir();
-        final File allureReportDir = Files.createTempDir();
+        final File artifactsTempDir = createTempDir();
+        final File allureReportDir = new File(createTempDir(), "report");
         final Map<String, String> customBuildData = chainResultsSummary.getCustomBuildData();
         try {
             final String executable = ofNullable(buildConfig.getExecutable()).orElseGet(() -> {

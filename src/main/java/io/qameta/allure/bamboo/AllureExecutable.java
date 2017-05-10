@@ -4,12 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.LinkedList;
 
 import static java.util.Arrays.asList;
-import static org.apache.commons.io.FileUtils.forceMkdir;
 
 class AllureExecutable {
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureExecutable.class);
@@ -25,8 +23,7 @@ class AllureExecutable {
     @Nonnull
     AllureGenerateResult generate(Path sourceDir, Path targetDir) {
         try {
-            forceMkdir(targetDir.toFile());
-            final LinkedList<String> args = new LinkedList<>(asList("generate", "-c", "-o", targetDir.toString(), sourceDir.toString()));
+            final LinkedList<String> args = new LinkedList<>(asList("generate", "-o", targetDir.toString(), sourceDir.toString()));
             String output;
             if (cmdLine.isUnix() && cmdLine.hasCommand(BASH_CMD)) {
                 args.addFirst(cmdPath.toString());
@@ -36,7 +33,7 @@ class AllureExecutable {
             }
             LOGGER.info(output);
             return cmdLine.parseGenerateOutput(output);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException("Failed to generate allure report", e);
         }
     }
