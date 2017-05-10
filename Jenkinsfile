@@ -1,19 +1,10 @@
 pipeline {
-    agent {
-        label 'java'
-    }
-    tools {
-        maven 'default'
-    }
+    agent { docker 'maven:3' }
+    environment { HOME = pwd() }
     stages {
         stage('Build') {
             steps {
                 sh 'mvn -Dmaven.test.failure.ignore=true clean verify'
-            }
-        }
-        stage('Report') {
-            steps {
-                junit 'target/surefire-reports/*.xml'
             }
         }
         stage('Archive') {
