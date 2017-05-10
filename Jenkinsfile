@@ -1,6 +1,6 @@
 pipeline {
-    agent { docker 'maven:3' }
-    environment { HOME = pwd() }
+    agent { label 'java' }
+    tools { maven '3' }
     stages {
         stage('Build') {
             steps {
