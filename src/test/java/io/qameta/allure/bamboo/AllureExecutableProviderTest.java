@@ -50,7 +50,19 @@ public class AllureExecutableProviderTest {
     }
 
     @Test
-    public void itShouldProvideTheGivenVersionWithoutMilestone() throws Exception {
+    public void itShouldProvideTheGivenVersionWithFullSemverWithoutName() throws Exception {
+        provide("2.0.0");
+        verify(downloader).downloadAndExtractAllureTo(homeDir, "2.0.0");
+    }
+
+    @Test
+    public void itShouldProvideTheGivenVersionWithFullSemverWithoutMilestone() throws Exception {
+        provide("Allure 2.0.0");
+        verify(downloader).downloadAndExtractAllureTo(homeDir, "2.0.0");
+    }
+
+    @Test
+    public void itShouldProvideTheGivenVersionWithMajorMinorWithoutMilestone() throws Exception {
         provide("Allure 2.0");
         verify(downloader).downloadAndExtractAllureTo(homeDir, "2.0");
     }
@@ -77,7 +89,7 @@ public class AllureExecutableProviderTest {
         when(cmdLine.hasCommand(allureBatCmdPath.toString())).thenReturn(true);
         when(cmdLine.isWindows()).thenReturn(true);
 
-        final Optional<AllureExecutable> res = provide("Allure 2.0");
+        final Optional<AllureExecutable> res = provide("Allure 2.0.0");
 
         assertThat(res.isPresent(), equalTo(true));
         assertThat(res.get().getCmdPath(), equalTo(allureBatCmdPath));
