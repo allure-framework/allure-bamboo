@@ -5,7 +5,6 @@ import net.lingala.zip4j.exception.ZipException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -39,14 +38,14 @@ class AllureDownloader {
     Optional<Path> downloadAndExtractAllureTo(String home, String version) {
         return downloadAllure(version).map(zipFilePath -> {
             try {
-                LOGGER.info("Extracting file " + zipFilePath + " to " + home + "...");
+                LOGGER.info("Extracting file {} to {}...", zipFilePath, home);
                 final String extractedDirName = "allure-" + version;
                 final Path allureHome = Paths.get(home);
                 final Path extractDir = zipFilePath.getParent();
                 new ZipFile(zipFilePath.toFile()).extractAll(extractDir.toString());
                 if (Files.exists(allureHome)) {
-                    LOGGER.info("Directory " + allureHome + " already exists, removing it..");
-                    deleteQuietly(allureHome.toFile());
+                    LOGGER.info("Directory {} already exists, skipping it..", allureHome);
+                    return null;
                 }
                 moveDirectory(extractDir.resolve(extractedDirName).toFile(), allureHome.toFile());
                 addExecutablePermissions(allureHome);
@@ -64,7 +63,7 @@ class AllureDownloader {
         try {
             final URL url = buildAllureDownloadUrl(version);
             final Path downloadToFile = createTempFile("allure", "zip");
-            LOGGER.info("Downloading allure.zip from " + url + " to " + downloadToFile);
+            LOGGER.info("Downloading allure.zip from {} to {}...", url, downloadToFile);
             copyURLToFile(url, downloadToFile.toFile(), CONN_TIMEOUT_MS, DOWNLOAD_TIMEOUT_MS);
             return Optional.of(downloadToFile);
         } catch (IOException e) {
@@ -76,8 +75,6 @@ class AllureDownloader {
     private void addExecutablePermissions(Path allureHome) {
         Set<PosixFilePermission> perms = new HashSet<>();
         perms.add(PosixFilePermission.OWNER_EXECUTE);
-        perms.add(PosixFilePermission.OWNER_READ);
-        perms.add(PosixFilePermission.OWNER_WRITE);
         Path binaries = allureHome.resolve("bin");
         try {
             Files.setPosixFilePermissions(binaries.resolve("allure"), perms);
@@ -89,7 +86,7 @@ class AllureDownloader {
 
     private URL buildAllureDownloadUrl(String version) throws MalformedURLException {
         return fromPath(settingsManager.getSettings().getDownloadBaseUrl())
-                .path(Paths.get(version, "allure-" + version + ".zip").toString())
+                .path(version).path(String.format("allure-%s.zip", version))
                 .build().toURL();
     }
 }
