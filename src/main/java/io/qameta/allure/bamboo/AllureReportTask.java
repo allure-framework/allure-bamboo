@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 import static io.qameta.allure.bamboo.AllureConstants.*;
@@ -88,10 +87,10 @@ public class AllureReportTask implements TaskType {
     }
 
     private void copyHistory(TaskContext taskContext) throws IOException {
-        Path source = Paths.get(getReportDirectory(taskContext).getAbsolutePath() + "/data/history.json");
+        Path source = Paths.get(getReportDirectory(taskContext).getAbsolutePath()).resolve("history");
         if (Files.exists(source)) {
-            Path destination = Paths.get(getResultDirectory(taskContext).getAbsolutePath() + "/history.json");
-            Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
+            Path destination = Paths.get(getResultDirectory(taskContext).getAbsolutePath()).resolve("history");
+            FileUtils.copyDirectory(source.toFile(), destination.toFile(), true);
         }
     }
 
