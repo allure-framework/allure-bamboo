@@ -5,6 +5,11 @@ package io.qameta.allure.bamboo;
  */
 final class AllureConstants {
     /**
+     * The name of artifact.
+     */
+    static String ARTIFACT_NAME = "Allure Report";
+
+    /**
      * The directory with allure results relative from build directory.
      */
     static String RESULTS_DIRECTORY = "allureResultDirectory";
@@ -15,7 +20,7 @@ final class AllureConstants {
     /**
      * The subdirectory (or subdirectories) to put generated report into.
      */
-    static String REPORT_PATH_PREFIX = "allureReportPathPrefix";
+    static String REPORT_DIRECTORY = "allureReportPathPrefix";
     /**
      * The default subdirectory (or subdirectories) to put generated report into.
      */
@@ -24,10 +29,6 @@ final class AllureConstants {
      * The name of executable.
      */
     static String EXECUTABLE_LABEL = "executableLabel";
-    /**
-     * The name of artifact.
-     */
-    static String ARTIFACT_NAME = "Allure Report";
     static String ALLURE_BUILD_REPORT_SUCCESS = "custom.allure.build.report.success";
     static String ALLURE_BUILD_REPORT_ARTIFACT_HANDLER = "custom.allure.build.report.artifact.handler";
     static String ALLURE_BUILD_REPORT_FAILURE_DETAILS = "custom.allure.build.report.output";

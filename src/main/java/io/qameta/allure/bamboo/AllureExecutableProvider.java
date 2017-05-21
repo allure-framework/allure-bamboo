@@ -28,17 +28,21 @@ public class AllureExecutableProvider {
         this.cmdLine = requireNonNull(cmdLine);
     }
 
-    Optional<AllureExecutable> provide(AllureGlobalConfig globalConfig, String executableName) {
+    Optional<AllureExecutable> provide(boolean isDownloadEnabled, String executableName) {
         return bambooExecutablesManager.getExecutableByName(executableName)
                 .map(allureHomeDir -> {
                     final Path cmdPath = Paths.get(allureHomeDir, "bin", getAllureExecutableName());
-                    if (!cmdLine.hasCommand(cmdPath.toString()) && globalConfig.isDownloadEnabled()) {
+                    if (!cmdLine.hasCommand(cmdPath.toString()) && isDownloadEnabled) {
                         final Matcher nameMatcher = EXEC_NAME_PATTERN.matcher(executableName);
                         allureDownloader.downloadAndExtractAllureTo(allureHomeDir,
                                 nameMatcher.matches() ? nameMatcher.group(1) : DEFAULT_VERSION);
                     }
                     return (cmdLine.hasCommand(cmdPath.toString())) ? new AllureExecutable(cmdPath, cmdLine) : null;
                 });
+    }
+
+    Optional<AllureExecutable> provide(AllureGlobalConfig globalConfig, String executableName) {
+        return provide(globalConfig.isDownloadEnabled(), executableName);
     }
 
     @NotNull

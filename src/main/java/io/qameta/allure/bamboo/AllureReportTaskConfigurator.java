@@ -47,7 +47,7 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
     public Map<String, String> generateTaskConfigMap(@NotNull ActionParametersMap params, @Nullable TaskDefinition previousTaskDefinition) {
         final Map<String, String> config = super.generateTaskConfigMap(params, previousTaskDefinition);
         config.put(RESULTS_DIRECTORY, params.getString(RESULTS_DIRECTORY));
-        config.put(REPORT_PATH_PREFIX, params.getString(REPORT_PATH_PREFIX));
+        config.put(REPORT_DIRECTORY, params.getString(REPORT_DIRECTORY));
         config.put(EXECUTABLE_LABEL, params.getString(EXECUTABLE_LABEL));
         return config;
     }
@@ -57,7 +57,7 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
         super.populateContextForCreate(context);
         context.put(UI_CONFIG_BEAN, this.uiConfigSupport);
         context.put(RESULTS_DIRECTORY, RESULTS_DIRECTORY_DEFAULT);
-        context.put(REPORT_PATH_PREFIX, REPORT_PATH_PREFIX_DEFAULT);
+        context.put(REPORT_DIRECTORY, REPORT_PATH_PREFIX_DEFAULT);
     }
 
     @Override
@@ -65,7 +65,7 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
         super.populateContextForEdit(context, taskDefinition);
         context.put(UI_CONFIG_BEAN, this.uiConfigSupport);
         context.put(RESULTS_DIRECTORY, taskDefinition.getConfiguration().get(RESULTS_DIRECTORY));
-        context.put(REPORT_PATH_PREFIX, taskDefinition.getConfiguration().get(REPORT_PATH_PREFIX));
+        context.put(REPORT_DIRECTORY, taskDefinition.getConfiguration().get(REPORT_DIRECTORY));
     }
 
     @Override
@@ -73,10 +73,10 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
         super.validate(params, errorCollection);
 
         validateNotEmpty(params, RESULTS_DIRECTORY, errorCollection);
-        validateNotEmpty(params, REPORT_PATH_PREFIX, errorCollection);
+        validateNotEmpty(params, REPORT_DIRECTORY, errorCollection);
 
         validateRelative(params, RESULTS_DIRECTORY, errorCollection);
-        validateRelative(params, REPORT_PATH_PREFIX, errorCollection);
+        validateRelative(params, REPORT_DIRECTORY, errorCollection);
     }
 
     /**
@@ -114,7 +114,7 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
         final String ARTIFACT_COPY_PATTERN = "**";
         if (null == artifactDefinitionManager.findArtifactDefinition(job, ARTIFACT_NAME)) {
             ArtifactDefinitionImpl artifactDefinition =
-                    new ArtifactDefinitionImpl(ARTIFACT_NAME, taskDefinition.getConfiguration().get(REPORT_PATH_PREFIX), ARTIFACT_COPY_PATTERN);
+                    new ArtifactDefinitionImpl(ARTIFACT_NAME, taskDefinition.getConfiguration().get(REPORT_DIRECTORY), ARTIFACT_COPY_PATTERN);
             artifactDefinition.setProducerJob(job);
             artifactDefinitionManager.saveArtifactDefinition(artifactDefinition);
         }
