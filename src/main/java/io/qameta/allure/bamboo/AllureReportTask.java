@@ -8,7 +8,6 @@ import com.atlassian.core.util.FileUtils;
 import io.qameta.allure.bamboo.info.AddExecutorInfo;
 import io.qameta.allure.bamboo.info.AddTestRunInfo;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,7 +27,6 @@ public class AllureReportTask implements TaskType {
     private final AllureExecutableProvider allureProvider;
     private CustomVariableContext customVariableContext;
 
-    @Autowired
     public AllureReportTask(final AllureExecutableProvider allureProvider,
                             final CustomVariableContext customVariableContext) {
         this.customVariableContext = customVariableContext;
@@ -93,13 +91,17 @@ public class AllureReportTask implements TaskType {
         new AddTestRunInfo(buildName, start, stop).invoke(getResultDirectory(taskContext));
     }
 
+    @SuppressWarnings("ConstantConditions")
     private void addExecutorInfo(TaskContext taskContext) throws IOException, InterruptedException {
         Map<String, VariableDefinitionContext> buildVariables = customVariableContext.getVariableContexts();
         String buildResultsUrl = buildVariables.get("buildResultsUrl").getValue();
+
         String rootUrl = buildResultsUrl.substring(0, buildResultsUrl.indexOf("bamboo") + "bamboo".length());
-        String buildUrl = rootUrl + "/browse/" + buildVariables.get("planKey").getValue() + "-" + taskContext.getBuildContext().getBuildNumber();
         String buildName = taskContext.getBuildContext().getDisplayName();
-        String reportUrl = buildUrl + "/artifact/" + buildVariables.get("shortJobKey").getValue() + "/" + ARTIFACT_NAME.replace(" ", "-") + "/index.html";
+        String buildUrl = String.format("%s/browse/%s-%s", rootUrl, buildVariables.get("planKey").getValue(),
+                taskContext.getBuildContext().getBuildNumber());
+        String reportUrl = String.format("%s/artifact/%s/%s/index.html", buildUrl,
+                buildVariables.get("shortJobKey").getValue(), ARTIFACT_NAME.replace(" ", "-"));
         new AddExecutorInfo(rootUrl, buildName, buildUrl, reportUrl).invoke(getResultDirectory(taskContext));
     }
 
