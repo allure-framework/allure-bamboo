@@ -24,15 +24,15 @@ class AllureGlobalConfig implements Serializable {
     }
 
     AllureGlobalConfig(String downloadEnabled, String enabledByDefault, String downloadBaseUrl) {
-        this.downloadEnabled = isEmpty(downloadEnabled) || parseBoolean(downloadEnabled);
-        this.enabledByDefault = isEmpty(enabledByDefault) || parseBoolean(enabledByDefault);
+        this.downloadEnabled = isEmpty(downloadEnabled) ? TRUE : parseBoolean(downloadEnabled);
+        this.enabledByDefault = isEmpty(enabledByDefault) ? FALSE : parseBoolean(enabledByDefault);
         this.downloadBaseUrl = isEmpty(downloadBaseUrl) ? DEFAULT_DOWNLOAD_BASE_URL : downloadBaseUrl;
     }
 
 
     static AllureGlobalConfig fromContext(Map context) {
         return new AllureGlobalConfig(
-                getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_ENABLED, FALSE.toString()),
+                getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_ENABLED, TRUE.toString()),
                 getSingleValue(context, ALLURE_CONFIG_ENABLED_BY_DEFAULT, FALSE.toString()),
                 getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_URL, null)
         );
