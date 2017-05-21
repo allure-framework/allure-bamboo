@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.atlassian.bamboo.v2.build.agent.capability.CapabilitySetManagerUtils.getSharedCapabilitySet;
+import static io.qameta.allure.bamboo.AllureConstants.ALLURE_EXECUTION_PREFIX;
 import static io.qameta.allure.bamboo.AllureExecutableProvider.DEFAULT_PATH;
 import static io.qameta.allure.bamboo.AllureExecutableProvider.DEFAULT_VERSION;
 import static java.lang.String.format;
@@ -19,7 +20,6 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
 public class BambooExecutablesManager {
-    private static final String ALLURE_EXEC_PREFIX = "system.builder.allure.";
     private final CapabilitySetManager capabilitySetManager;
 
     public BambooExecutablesManager(CapabilitySetManager capabilitySetManager) {
@@ -28,12 +28,12 @@ public class BambooExecutablesManager {
 
     List<String> getAllureExecutables() {
         return getCapabilityKeys().stream()
-                .filter(capKey -> capKey.toLowerCase().startsWith(ALLURE_EXEC_PREFIX.toLowerCase()))
+                .filter(capKey -> capKey.toLowerCase().startsWith(ALLURE_EXECUTION_PREFIX.toLowerCase()))
                 .map(this::getCapability)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .map(Capability::getKey)
-                .map(cap -> cap.replaceFirst(ALLURE_EXEC_PREFIX, ""))
+                .map(cap -> cap.replaceFirst(ALLURE_EXECUTION_PREFIX, ""))
                 .collect(toList());
     }
 
@@ -56,7 +56,7 @@ public class BambooExecutablesManager {
 
     void addDefaultAllureExecutableCapability() {
         ofNullable(getSharedCapabilitySet(capabilitySetManager, LocalCapabilitySet.class)).ifPresent(capSet -> {
-            final CapabilityImpl capability = new CapabilityImpl(format("%sAllure %s", ALLURE_EXEC_PREFIX, DEFAULT_VERSION), DEFAULT_PATH);
+            final CapabilityImpl capability = new CapabilityImpl(format("%sallure-%s", ALLURE_EXECUTION_PREFIX, DEFAULT_VERSION), DEFAULT_PATH);
             capSet.addCapability(capability);
             capabilitySetManager.saveCapabilitySet(capSet);
         });

@@ -16,7 +16,7 @@ final class AllureConstants {
     /**
      * The default directory with allure results.
      */
-    static String RESULTS_DIRECTORY_DEFAULT = "allure-results/";
+    static String RESULTS_DIRECTORY_DEFAULT = "allure-results";
     /**
      * The subdirectory (or subdirectories) to put generated report into.
      */
@@ -24,7 +24,11 @@ final class AllureConstants {
     /**
      * The default subdirectory (or subdirectories) to put generated report into.
      */
-    static String REPORT_PATH_PREFIX_DEFAULT = "allure-report/";
+    static String REPORT_PATH_PREFIX_DEFAULT = "allure-report";
+    /**
+     * The executable prefix.
+     */
+    static String ALLURE_EXECUTION_PREFIX = "system.builder.allure.";
     /**
      * The name of executable.
      */
