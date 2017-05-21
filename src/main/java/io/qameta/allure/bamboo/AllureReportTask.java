@@ -107,13 +107,13 @@ public class AllureReportTask implements TaskType {
 
     @NotNull
     private File getResultDirectory(TaskContext taskContext) {
-        return new File(taskContext.getWorkingDirectory().getAbsolutePath()
-                + File.separator + taskContext.getConfigurationMap().get(RESULTS_DIRECTORY));
+        return Paths.get(taskContext.getWorkingDirectory().getAbsolutePath())
+                .resolve(taskContext.getConfigurationMap().get(RESULTS_DIRECTORY)).toFile();
     }
 
     @NotNull
     private File getReportDirectory(TaskContext taskContext) {
-        return new File(taskContext.getWorkingDirectory().getAbsolutePath()
-                + File.separator + taskContext.getConfigurationMap().get(REPORT_DIRECTORY));
+        return Paths.get(taskContext.getWorkingDirectory().getAbsolutePath())
+                .resolve(taskContext.getConfigurationMap().get(REPORT_DIRECTORY)).toFile();
     }
 }
