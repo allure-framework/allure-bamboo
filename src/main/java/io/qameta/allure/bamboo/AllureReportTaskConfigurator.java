@@ -51,7 +51,7 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
         final Map<String, String> config = super.generateTaskConfigMap(params, previousTaskDefinition);
         config.put(RESULTS_DIRECTORY, params.getString(RESULTS_DIRECTORY));
         config.put(REPORT_DIRECTORY, params.getString(REPORT_DIRECTORY));
-        config.put(EXECUTABLE_LABEL, params.getString(EXECUTABLE_LABEL));
+        config.put(ALLURE_CONFIG_EXECUTABLE, params.getString(ALLURE_CONFIG_EXECUTABLE));
         return config;
     }
 
@@ -70,7 +70,7 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
         context.put(UI_CONFIG_BEAN, this.uiConfigSupport);
         context.put(RESULTS_DIRECTORY, taskDefinition.getConfiguration().get(RESULTS_DIRECTORY));
         context.put(REPORT_DIRECTORY, taskDefinition.getConfiguration().get(REPORT_DIRECTORY));
-        context.put(EXECUTABLE_LABEL, taskDefinition.getConfiguration().get(EXECUTABLE_LABEL));
+        context.put(ALLURE_CONFIG_EXECUTABLE, taskDefinition.getConfiguration().get(ALLURE_CONFIG_EXECUTABLE));
     }
 
     @Override
@@ -81,7 +81,7 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
         validateNotEmpty(params, REPORT_DIRECTORY, errorCollection);
         validateRelative(params, RESULTS_DIRECTORY, errorCollection);
         validateRelative(params, REPORT_DIRECTORY, errorCollection);
-        validateNotEmpty(params, EXECUTABLE_LABEL, errorCollection);
+        validateNotEmpty(params, ALLURE_CONFIG_EXECUTABLE, errorCollection);
     }
 
     /**
@@ -127,7 +127,7 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
             artifactDefinitionManager.saveArtifactDefinition(artifactDefinition);
         }
         String key = AllureCapability.ALLURE_CAPABILITY_PREFIX + "." +
-                taskDefinition.getConfiguration().get(EXECUTABLE_LABEL);
+                taskDefinition.getConfiguration().get(ALLURE_CONFIG_EXECUTABLE);
         HashSet<Requirement> requirements = Sets.newHashSet();
         requirements.add(new RequirementImpl(key, true, ".*"));
         return requirements;
