@@ -14,10 +14,10 @@ import org.slf4j.LoggerFactory;
 import java.util.Set;
 
 import static com.atlassian.bamboo.plan.PlanClassHelper.isChain;
-import static io.qameta.allure.bamboo.AllureBuildConfig.DEFAULT_ONLY_FOR_FAILED;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_ENABLED;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_EXECUTABLE;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_FAILED_ONLY;
+import static java.lang.Boolean.TRUE;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang.StringUtils.isEmpty;
 
@@ -60,7 +60,7 @@ public class AllureBuildConfigurator
                     buildConfiguration.setProperty(ALLURE_CONFIG_ENABLED, settings.isEnabledByDefault()));
         }
         if (buildConfiguration.getProperty(ALLURE_CONFIG_FAILED_ONLY) == null) {
-            buildConfiguration.setProperty(ALLURE_CONFIG_FAILED_ONLY, DEFAULT_ONLY_FOR_FAILED);
+            buildConfiguration.setProperty(ALLURE_CONFIG_FAILED_ONLY, TRUE);
         }
         if (buildConfiguration.getProperty(ALLURE_CONFIG_EXECUTABLE) == null) {
             ofNullable(executablesManager).map(manager -> manager.getDefaultAllureExecutable().orElse(null))
