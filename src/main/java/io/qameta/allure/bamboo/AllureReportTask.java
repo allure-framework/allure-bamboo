@@ -24,12 +24,15 @@ import static io.qameta.allure.bamboo.AllureConstants.*;
  */
 public class AllureReportTask implements TaskType {
 
+    private final CustomVariableContext customVariableContext;
     private final AllureExecutableProvider allureProvider;
-    private CustomVariableContext customVariableContext;
+    private final AllureGlobalConfig allureGlobalConfig;
 
-    public AllureReportTask(final AllureExecutableProvider allureProvider,
+    public AllureReportTask(final AllureSettingsManager allureSettings,
+                            final AllureExecutableProvider allureProvider,
                             final CustomVariableContext customVariableContext) {
         this.customVariableContext = customVariableContext;
+        this.allureGlobalConfig = allureSettings.getSettings();
         this.allureProvider = allureProvider;
     }
 
@@ -49,9 +52,9 @@ public class AllureReportTask implements TaskType {
         buildLogger.addBuildLogEntry(String.format("Report path: %s", reportPath));
 
         try {
-            final AllureExecutable allure = allureProvider.provide(true, config.getExecutable()).orElseThrow(
-                    () -> new RuntimeException("Failed to find Allure executable by name " + config.getExecutable())
-            );
+            final AllureExecutable allure = allureProvider
+                    .provide(allureGlobalConfig.isDownloadEnabled(), config.getExecutable())
+                    .orElseThrow(() -> new RuntimeException("Allure executable is missing: " + config.getExecutable()));
             prepareResults(taskContext);
             allure.generate(resultsPath, reportPath);
         } catch (Exception e) {
