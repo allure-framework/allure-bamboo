@@ -70,6 +70,7 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
         context.put(UI_CONFIG_BEAN, this.uiConfigSupport);
         context.put(RESULTS_DIRECTORY, taskDefinition.getConfiguration().get(RESULTS_DIRECTORY));
         context.put(REPORT_DIRECTORY, taskDefinition.getConfiguration().get(REPORT_DIRECTORY));
+        context.put(EXECUTABLE_LABEL, taskDefinition.getConfiguration().get(EXECUTABLE_LABEL));
     }
 
     @Override
@@ -80,6 +81,7 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
         validateNotEmpty(params, REPORT_DIRECTORY, errorCollection);
         validateRelative(params, RESULTS_DIRECTORY, errorCollection);
         validateRelative(params, REPORT_DIRECTORY, errorCollection);
+        validateNotEmpty(params, EXECUTABLE_LABEL, errorCollection);
     }
 
     /**
