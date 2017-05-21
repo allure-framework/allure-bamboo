@@ -27,7 +27,7 @@ public class ConfigureAllureReportAction extends GlobalAdminAction implements Pr
     public void validate() {
         super.validate();
         final Map<String, String[]> valuesMap = getStringArrayMap();
-        if (!valuesMap.containsKey(AllureConstants.ALLURE_CONFIG_DOWNLOAD_BASE_URL)) {
+        if (!valuesMap.containsKey(AllureConstants.ALLURE_CONFIG_DOWNLOAD_URL)) {
             addActionError(getText("allure.config.download.url.error.required"));
         }
     }

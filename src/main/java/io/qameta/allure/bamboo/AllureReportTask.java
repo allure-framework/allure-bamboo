@@ -104,19 +104,19 @@ public class AllureReportTask implements TaskType {
         String buildUrl = String.format("%s/browse/%s-%s", rootUrl, buildVariables.get("planKey").getValue(),
                 taskContext.getBuildContext().getBuildNumber());
         String reportUrl = String.format("%s/artifact/%s/%s/index.html", buildUrl,
-                buildVariables.get("shortJobKey").getValue(), ARTIFACT_NAME.replace(" ", "-"));
+                buildVariables.get("shortJobKey").getValue(), ALLURE_ARTIFACT_NAME.replace(" ", "-"));
         new AddExecutorInfo(rootUrl, buildName, buildUrl, reportUrl).invoke(getResultDirectory(taskContext));
     }
 
     @NotNull
     private File getResultDirectory(TaskContext taskContext) {
         return Paths.get(taskContext.getWorkingDirectory().getAbsolutePath())
-                .resolve(taskContext.getConfigurationMap().get(RESULTS_DIRECTORY)).toFile();
+                .resolve(taskContext.getConfigurationMap().get(ALLURE_RESULTS_DIRECTORY)).toFile();
     }
 
     @NotNull
     private File getReportDirectory(TaskContext taskContext) {
         return Paths.get(taskContext.getWorkingDirectory().getAbsolutePath())
-                .resolve(taskContext.getConfigurationMap().get(REPORT_DIRECTORY)).toFile();
+                .resolve(taskContext.getConfigurationMap().get(ALLURE_REPORT_DIRECTORY)).toFile();
     }
 }

@@ -56,7 +56,8 @@ public class BambooExecutablesManager {
 
     void addDefaultAllureExecutableCapability() {
         ofNullable(getSharedCapabilitySet(capabilitySetManager, LocalCapabilitySet.class)).ifPresent(capSet -> {
-            final CapabilityImpl capability = new CapabilityImpl(format("%sallure-%s", ALLURE_EXECUTION_PREFIX, DEFAULT_VERSION), DEFAULT_PATH);
+            final String key = format("%s.allure-%s", ALLURE_EXECUTION_PREFIX, DEFAULT_VERSION);
+            final CapabilityImpl capability = new CapabilityImpl(key, DEFAULT_PATH);
             capSet.addCapability(capability);
             capabilitySetManager.saveCapabilitySet(capSet);
         });

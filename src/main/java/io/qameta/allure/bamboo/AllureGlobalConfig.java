@@ -4,7 +4,7 @@ import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Map;
 
-import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_DOWNLOAD_BASE_URL;
+import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_DOWNLOAD_URL;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_DOWNLOAD_ENABLED;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_ENABLED_BY_DEFAULT;
 import static java.lang.Boolean.FALSE;
@@ -34,7 +34,7 @@ class AllureGlobalConfig implements Serializable {
         return new AllureGlobalConfig(
                 getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_ENABLED, FALSE.toString()),
                 getSingleValue(context, ALLURE_CONFIG_ENABLED_BY_DEFAULT, FALSE.toString()),
-                getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_BASE_URL, null)
+                getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_URL, null)
         );
     }
 
@@ -56,7 +56,7 @@ class AllureGlobalConfig implements Serializable {
     void toContext(Map<String, Object> context) {
         context.put(ALLURE_CONFIG_DOWNLOAD_ENABLED, isDownloadEnabled());
         context.put(ALLURE_CONFIG_ENABLED_BY_DEFAULT, isEnabledByDefault());
-        context.put(ALLURE_CONFIG_DOWNLOAD_BASE_URL, getDownloadBaseUrl());
+        context.put(ALLURE_CONFIG_DOWNLOAD_URL, getDownloadBaseUrl());
     }
 
     String getDownloadBaseUrl() {

@@ -4,8 +4,8 @@ import java.io.Serializable;
 import java.util.Map;
 
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_EXECUTABLE;
-import static io.qameta.allure.bamboo.AllureConstants.REPORT_DIRECTORY;
-import static io.qameta.allure.bamboo.AllureConstants.RESULTS_DIRECTORY;
+import static io.qameta.allure.bamboo.AllureConstants.ALLURE_REPORT_DIRECTORY;
+import static io.qameta.allure.bamboo.AllureConstants.ALLURE_RESULTS_DIRECTORY;
 
 class AllureReportConfig implements Serializable {
 
@@ -34,8 +34,8 @@ class AllureReportConfig implements Serializable {
     }
 
     static AllureReportConfig fromContext(Map<String, String> context) {
-        final String resultsPath = context.get(RESULTS_DIRECTORY);
-        final String reportPath = context.get(REPORT_DIRECTORY);
+        final String resultsPath = context.get(ALLURE_RESULTS_DIRECTORY);
+        final String reportPath = context.get(ALLURE_REPORT_DIRECTORY);
         final String executable = context.get(ALLURE_CONFIG_EXECUTABLE);
         return new AllureReportConfig(resultsPath, reportPath, executable);
     }

@@ -4,31 +4,24 @@ package io.qameta.allure.bamboo;
  * The internal class with some constants needed to Allure plugin.
  */
 final class AllureConstants {
+
     /**
      * The name of artifact.
      */
-    static String ARTIFACT_NAME = "Allure Report";
+    static String ALLURE_ARTIFACT_NAME = "Allure Report";
+    /**
+     * The executable prefix.
+     */
+    static String ALLURE_EXECUTION_PREFIX = "system.builder.allure";
 
     /**
      * The directory with allure results relative from build directory.
      */
-    static String RESULTS_DIRECTORY = "allureResultDirectory";
-    /**
-     * The default directory with allure results.
-     */
-    static String RESULTS_DIRECTORY_DEFAULT = "allure-results";
+    static String ALLURE_RESULTS_DIRECTORY = "allureResultDirectory";
     /**
      * The subdirectory (or subdirectories) to put generated report into.
      */
-    static String REPORT_DIRECTORY = "allureReportPathPrefix";
-    /**
-     * The default subdirectory (or subdirectories) to put generated report into.
-     */
-    static String REPORT_PATH_PREFIX_DEFAULT = "allure-report";
-    /**
-     * The executable prefix.
-     */
-    static String ALLURE_EXECUTION_PREFIX = "system.builder.allure.";
+    static String ALLURE_REPORT_DIRECTORY = "allureReportPathPrefix";
     /**
      * The name of executable.
      */
@@ -41,7 +34,7 @@ final class AllureConstants {
     static String ALLURE_CONFIG_STORAGE_TYPE = "custom.allure.config.storage.type";
     static String ALLURE_CONFIG_DOWNLOAD_ENABLED = "custom.allure.config.download.enabled";
     static String ALLURE_CONFIG_ENABLED_BY_DEFAULT = "custom.allure.config.enabled.default";
-    static String ALLURE_CONFIG_DOWNLOAD_BASE_URL = "custom.allure.config.download.url";
+    static String ALLURE_CONFIG_DOWNLOAD_URL = "custom.allure.config.download.url";
 
     private AllureConstants() {
     }

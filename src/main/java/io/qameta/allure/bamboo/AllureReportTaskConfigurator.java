@@ -49,8 +49,8 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
     public Map<String, String> generateTaskConfigMap(@NotNull final ActionParametersMap params,
                                                      @Nullable final TaskDefinition previousTaskDefinition) {
         final Map<String, String> config = super.generateTaskConfigMap(params, previousTaskDefinition);
-        config.put(RESULTS_DIRECTORY, params.getString(RESULTS_DIRECTORY));
-        config.put(REPORT_DIRECTORY, params.getString(REPORT_DIRECTORY));
+        config.put(ALLURE_RESULTS_DIRECTORY, params.getString(ALLURE_RESULTS_DIRECTORY));
+        config.put(ALLURE_REPORT_DIRECTORY, params.getString(ALLURE_REPORT_DIRECTORY));
         config.put(ALLURE_CONFIG_EXECUTABLE, params.getString(ALLURE_CONFIG_EXECUTABLE));
         return config;
     }
@@ -59,8 +59,8 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
     public void populateContextForCreate(@NotNull final Map<String, Object> context) {
         super.populateContextForCreate(context);
         context.put(UI_CONFIG_BEAN, this.uiConfigSupport);
-        context.put(RESULTS_DIRECTORY, RESULTS_DIRECTORY_DEFAULT);
-        context.put(REPORT_DIRECTORY, REPORT_PATH_PREFIX_DEFAULT);
+        context.put(ALLURE_RESULTS_DIRECTORY, "allure-results");
+        context.put(ALLURE_REPORT_DIRECTORY, "allure-report");
     }
 
     @Override
@@ -68,8 +68,8 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
                                        @NotNull final TaskDefinition taskDefinition) {
         super.populateContextForEdit(context, taskDefinition);
         context.put(UI_CONFIG_BEAN, this.uiConfigSupport);
-        context.put(RESULTS_DIRECTORY, taskDefinition.getConfiguration().get(RESULTS_DIRECTORY));
-        context.put(REPORT_DIRECTORY, taskDefinition.getConfiguration().get(REPORT_DIRECTORY));
+        context.put(ALLURE_RESULTS_DIRECTORY, taskDefinition.getConfiguration().get(ALLURE_RESULTS_DIRECTORY));
+        context.put(ALLURE_REPORT_DIRECTORY, taskDefinition.getConfiguration().get(ALLURE_REPORT_DIRECTORY));
         context.put(ALLURE_CONFIG_EXECUTABLE, taskDefinition.getConfiguration().get(ALLURE_CONFIG_EXECUTABLE));
     }
 
@@ -77,10 +77,10 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
     public void validate(@NotNull final ActionParametersMap params, @NotNull final ErrorCollection errorCollection) {
         super.validate(params, errorCollection);
 
-        validateNotEmpty(params, RESULTS_DIRECTORY, errorCollection);
-        validateNotEmpty(params, REPORT_DIRECTORY, errorCollection);
-        validateRelative(params, RESULTS_DIRECTORY, errorCollection);
-        validateRelative(params, REPORT_DIRECTORY, errorCollection);
+        validateNotEmpty(params, ALLURE_RESULTS_DIRECTORY, errorCollection);
+        validateNotEmpty(params, ALLURE_REPORT_DIRECTORY, errorCollection);
+        validateRelative(params, ALLURE_RESULTS_DIRECTORY, errorCollection);
+        validateRelative(params, ALLURE_REPORT_DIRECTORY, errorCollection);
         validateNotEmpty(params, ALLURE_CONFIG_EXECUTABLE, errorCollection);
     }
 
@@ -120,14 +120,13 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
     public Set<Requirement> calculateRequirements(@NotNull final TaskDefinition taskDefinition,
                                                   @NotNull final Job job) {
         final String ARTIFACT_COPY_PATTERN = "**";
-        if (null == artifactDefinitionManager.findArtifactDefinition(job, ARTIFACT_NAME)) {
-            ArtifactDefinitionImpl artifactDefinition = new ArtifactDefinitionImpl(ARTIFACT_NAME,
-                    taskDefinition.getConfiguration().get(REPORT_DIRECTORY), ARTIFACT_COPY_PATTERN);
+        if (null == artifactDefinitionManager.findArtifactDefinition(job, ALLURE_ARTIFACT_NAME)) {
+            ArtifactDefinitionImpl artifactDefinition = new ArtifactDefinitionImpl(ALLURE_ARTIFACT_NAME,
+                    taskDefinition.getConfiguration().get(ALLURE_REPORT_DIRECTORY), ARTIFACT_COPY_PATTERN);
             artifactDefinition.setProducerJob(job);
             artifactDefinitionManager.saveArtifactDefinition(artifactDefinition);
         }
-        String key = AllureCapability.ALLURE_CAPABILITY_PREFIX + "." +
-                taskDefinition.getConfiguration().get(ALLURE_CONFIG_EXECUTABLE);
+        String key = ALLURE_EXECUTION_PREFIX + "." + taskDefinition.getConfiguration().get(ALLURE_CONFIG_EXECUTABLE);
         HashSet<Requirement> requirements = Sets.newHashSet();
         requirements.add(new RequirementImpl(key, true, ".*"));
         return requirements;
