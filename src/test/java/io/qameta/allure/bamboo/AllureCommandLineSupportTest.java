@@ -24,7 +24,7 @@ public class AllureCommandLineSupportTest {
                 "Creating index.html...\n" +
                 "Couldn't find template in cache for \"index.html.ftl\"(\"en_US\", UTF-8, parsed); will try to load it.\n" +
                 "TemplateLoader.findTemplateSource(\"index.html.ftl\"): Found");
-        assertThat(result.isContainsTestcases(), equalTo(false));
+        assertThat(result.isContainsTestCases(), equalTo(false));
     }
 
     @Test
@@ -42,7 +42,7 @@ public class AllureCommandLineSupportTest {
                 "Creating index.html...\n" +
                 "Couldn't find template in cache for \"index.html.ftl\"(\"en_US\", UTF-8, parsed); will try to load it.\n" +
                 "TemplateLoader.findTemplateSource(\"index.html.ftl\"): Found");
-        assertThat(result.isContainsTestcases(), equalTo(true));
+        assertThat(result.isContainsTestCases(), equalTo(true));
 
     }
 }
