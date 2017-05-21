@@ -20,7 +20,7 @@ class AllureGlobalConfig implements Serializable {
     private final String downloadBaseUrl;
 
     AllureGlobalConfig() {
-        this(TRUE.toString(), TRUE.toString(), DEFAULT_DOWNLOAD_BASE_URL);
+        this(TRUE.toString(), FALSE.toString(), DEFAULT_DOWNLOAD_BASE_URL);
     }
 
     AllureGlobalConfig(String downloadEnabled, String enabledByDefault, String downloadBaseUrl) {
@@ -40,13 +40,9 @@ class AllureGlobalConfig implements Serializable {
 
     @Nullable
     private static String getSingleValue(Map context, String key, String defaultVal) {
-        return ofNullable(context.get(key)).map(value -> {
-            if (value instanceof String[]) {
-                return ((String[]) value)[0];
-            } else {
-                return (String) value;
-            }
-        }).orElse(defaultVal);
+        return ofNullable(context.get(key))
+                .map(value -> value instanceof String[] ? ((String[]) value)[0] : (String) value)
+                .orElse(defaultVal);
     }
 
     boolean isDownloadEnabled() {
