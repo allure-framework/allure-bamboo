@@ -33,7 +33,7 @@ public class BambooExecutablesManager {
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .map(Capability::getKey)
-                .map(cap -> cap.replaceFirst(ALLURE_EXECUTION_PREFIX, ""))
+                .map(cap -> cap.replaceFirst(ALLURE_EXECUTION_PREFIX + ".", ""))
                 .collect(toList());
     }
 
