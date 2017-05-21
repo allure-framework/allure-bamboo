@@ -13,15 +13,14 @@ final class AllureConstants {
      * The executable prefix.
      */
     static String ALLURE_EXECUTION_PREFIX = "system.builder.allure";
-
     /**
      * The directory with allure results relative from build directory.
      */
-    static String ALLURE_RESULTS_DIRECTORY = "allureResultDirectory";
+    static String ALLURE_CONFIG_RESULTS_PATH = "allureResultDirectory";
     /**
      * The subdirectory (or subdirectories) to put generated report into.
      */
-    static String ALLURE_REPORT_DIRECTORY = "allureReportPathPrefix";
+    static String ALLURE_CONFIG_REPORT_PATH = "allureReportPathPrefix";
     /**
      * The name of executable.
      */
