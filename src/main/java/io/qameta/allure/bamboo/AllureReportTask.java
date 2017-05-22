@@ -1,20 +1,13 @@
 package io.qameta.allure.bamboo;
 
 import com.atlassian.bamboo.build.logger.BuildLogger;
-import com.atlassian.bamboo.process.EnvironmentVariableAccessor;
-import com.atlassian.bamboo.process.ExternalProcessBuilder;
-import com.atlassian.bamboo.process.ProcessService;
 import com.atlassian.bamboo.task.*;
-import com.atlassian.bamboo.v2.build.agent.capability.CapabilityContext;
 import com.atlassian.bamboo.variable.CustomVariableContext;
 import com.atlassian.bamboo.variable.VariableDefinitionContext;
 import com.atlassian.core.util.FileUtils;
-import com.atlassian.utils.process.ExternalProcess;
-import com.google.common.base.Preconditions;
 import io.qameta.allure.bamboo.info.AddExecutorInfo;
 import io.qameta.allure.bamboo.info.AddTestRunInfo;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,51 +24,44 @@ import static io.qameta.allure.bamboo.AllureConstants.*;
  */
 public class AllureReportTask implements TaskType {
 
-    private final ProcessService processService;
-    private final EnvironmentVariableAccessor environmentVariableAccessor;
-    private final CapabilityContext capabilityContext;
-    private final AllureCapability helper;
+    private final CustomVariableContext customVariableContext;
+    private final AllureExecutableProvider allureProvider;
+    private final AllureGlobalConfig allureGlobalConfig;
 
-    private CustomVariableContext customVariableContext;
-
-    @Autowired
-    public AllureReportTask(ProcessService processService,
-                            EnvironmentVariableAccessor environmentVariableAccessor,
-                            CapabilityContext capabilityContext, CustomVariableContext customVariableContext) {
-        this.processService = processService;
-        this.environmentVariableAccessor = environmentVariableAccessor;
-        this.capabilityContext = capabilityContext;
-        this.helper = new AllureCapability();
+    public AllureReportTask(final AllureSettingsManager allureSettings,
+                            final AllureExecutableProvider allureProvider,
+                            final CustomVariableContext customVariableContext) {
         this.customVariableContext = customVariableContext;
+        this.allureGlobalConfig = allureSettings.getSettings();
+        this.allureProvider = allureProvider;
     }
 
     @NotNull
     @Override
     public TaskResult execute(@NotNull TaskContext taskContext) throws TaskException {
-
-        BuildLogger buildLogger = taskContext.getBuildLogger();
-        TaskResultBuilder taskResultBuilder = TaskResultBuilder.newBuilder(taskContext);
-        Map<String, String> environment = this.environmentVariableAccessor
-                .splitEnvironmentAssignments(taskContext.getConfigurationMap().get("environmentVariables"), false);
+        final BuildLogger buildLogger = taskContext.getBuildLogger();
         final File workingDirectory = taskContext.getWorkingDirectory();
+        final AllureReportConfig config = AllureReportConfig.fromContext(taskContext.getConfigurationMap());
 
         buildLogger.addBuildLogHeader("Allure Report", true);
-        buildLogger.addBuildLogEntry("Trying to generate Allure using " + workingDirectory.getAbsolutePath() + " as base directory with pattern = " + taskContext.getConfigurationMap().get(RESULTS_DIRECTORY));
-        buildLogger.addBuildLogEntry("Allure data will be saved to " + workingDirectory.getAbsolutePath() + File.separator + taskContext.getConfigurationMap().get(REPORT_PATH_PREFIX));
-        try {
-            prepareResults(taskContext);
 
-            ExternalProcessBuilder e = new ExternalProcessBuilder();
-            e.workingDirectory(taskContext.getWorkingDirectory());
-            e.env(environment);
-            e.command(this.getCommandList(taskContext));
-            ExternalProcess externalProcess = this.processService.executeExternalProcess(taskContext, e);
-            taskResultBuilder.checkReturnCode(externalProcess);
+        Path resultsPath = Paths.get(workingDirectory.getAbsolutePath()).resolve(config.getResultsPath());
+        Path reportPath = Paths.get(workingDirectory.getAbsolutePath()).resolve(config.getReportPath());
+
+        buildLogger.addBuildLogEntry(String.format("Results path: %s", resultsPath));
+        buildLogger.addBuildLogEntry(String.format("Report path: %s", reportPath));
+
+        try {
+            final AllureExecutable allure = allureProvider
+                    .provide(allureGlobalConfig.isDownloadEnabled(), config.getExecutable())
+                    .orElseThrow(() -> new RuntimeException("Allure executable is missing: " + config.getExecutable()));
+            prepareResults(taskContext);
+            allure.generate(resultsPath, reportPath);
         } catch (Exception e) {
             buildLogger.addErrorLogEntry("Caught an exception while generating Allure", e);
             return TaskResultBuilder.newBuilder(taskContext).failedWithError().build();
         }
-        buildLogger.addBuildLogEntry("Successfully generated Allure report");
+        buildLogger.addBuildLogEntry("Allure report generated successfully");
         return TaskResultBuilder.newBuilder(taskContext).success().build();
     }
 
@@ -108,61 +94,29 @@ public class AllureReportTask implements TaskType {
         new AddTestRunInfo(buildName, start, stop).invoke(getResultDirectory(taskContext));
     }
 
+    @SuppressWarnings("ConstantConditions")
     private void addExecutorInfo(TaskContext taskContext) throws IOException, InterruptedException {
         Map<String, VariableDefinitionContext> buildVariables = customVariableContext.getVariableContexts();
         String buildResultsUrl = buildVariables.get("buildResultsUrl").getValue();
+
         String rootUrl = buildResultsUrl.substring(0, buildResultsUrl.indexOf("bamboo") + "bamboo".length());
-        String buildUrl = rootUrl + "/browse/" + buildVariables.get("planKey").getValue() + "-" + taskContext.getBuildContext().getBuildNumber();
         String buildName = taskContext.getBuildContext().getDisplayName();
-        String reportUrl = buildUrl + "/artifact/" + buildVariables.get("shortJobKey").getValue() + "/" + ARTIFACT_NAME.replace(" ", "-") + "/index.html";
+        String buildUrl = String.format("%s/browse/%s-%s", rootUrl, buildVariables.get("planKey").getValue(),
+                taskContext.getBuildContext().getBuildNumber());
+        String reportUrl = String.format("%s/artifact/%s/%s/index.html", buildUrl,
+                buildVariables.get("shortJobKey").getValue(), ALLURE_ARTIFACT_NAME.replace(" ", "-"));
         new AddExecutorInfo(rootUrl, buildName, buildUrl, reportUrl).invoke(getResultDirectory(taskContext));
     }
 
     @NotNull
     private File getResultDirectory(TaskContext taskContext) {
-        return new File(taskContext.getWorkingDirectory().getAbsolutePath()
-                + File.separator + taskContext.getConfigurationMap().get(RESULTS_DIRECTORY));
+        return Paths.get(taskContext.getWorkingDirectory().getAbsolutePath())
+                .resolve(taskContext.getConfigurationMap().get(ALLURE_CONFIG_RESULTS_PATH)).toFile();
     }
 
     @NotNull
     private File getReportDirectory(TaskContext taskContext) {
-        return new File(taskContext.getWorkingDirectory().getAbsolutePath()
-                + File.separator + taskContext.getConfigurationMap().get(REPORT_PATH_PREFIX));
-    }
-
-    private List<String> getCommandList(TaskContext taskContext) throws TaskException {
-        List<String> list = new ArrayList<>();
-        list.add(this.getExecutable(taskContext));
-        list.add("generate");
-        list.add(taskContext.getConfigurationMap().get(RESULTS_DIRECTORY));
-        list.add("-o");
-        list.add(taskContext.getConfigurationMap().get(REPORT_PATH_PREFIX));
-        return list;
-    }
-
-    private String getExecutable(TaskContext taskContext) {
-
-        BuildLogger buildLogger = taskContext.getBuildLogger();
-
-        String path = this.getCapabilityPath(taskContext);
-        String executableName = this.helper.getExecutableName();
-
-        String executableFile = path + File.separatorChar + "bin" + File.separatorChar + executableName;
-        File file = new File(executableFile);
-        if (!file.isAbsolute())
-            file = new File(taskContext.getWorkingDirectory(), executableFile);
-
-        buildLogger.addBuildLogEntry("Allure executable file: " + executableFile);
-        if (!file.exists())
-            throw new IllegalStateException("Cannot find executable \'" + executableFile + "\'");
-        return file.getAbsolutePath();
-    }
-
-    @NotNull
-    private String getCapabilityPath(CommonTaskContext taskContext) {
-        String builderLabel = Preconditions.checkNotNull(taskContext.getConfigurationMap().get(EXECUTABLE_LABEL),
-                "Executable label is not defined");
-        return Preconditions.checkNotNull(this.capabilityContext.getCapabilityValue(AllureCapability.ALLURE_CAPABILITY_PREFIX + "." + builderLabel),
-                "Executable path is not defined");
+        return Paths.get(taskContext.getWorkingDirectory().getAbsolutePath())
+                .resolve(taskContext.getConfigurationMap().get(ALLURE_CONFIG_REPORT_PATH)).toFile();
     }
 }

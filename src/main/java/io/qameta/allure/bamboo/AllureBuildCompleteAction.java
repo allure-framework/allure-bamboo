@@ -70,7 +70,7 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
                 } else {
                     LOGGER.info("Starting allure generate into {} for {}", allureReportDir.getPath(), chain.getName());
                     final AllureGenerateResult genRes = allure.generate(artifactsTempDir.toPath(), allureReportDir.toPath());
-                    if (!genRes.isContainsTestcases()) {
+                    if (!genRes.isContainsTestCases()) {
                         allureBuildResult(false, "No Allure results found! Please ensure that build artifacts contain " +
                                 "Allure results!\nAllure generate output: \n" + genRes.getOutput()).dumpToCustomData(customBuildData);
                     } else {

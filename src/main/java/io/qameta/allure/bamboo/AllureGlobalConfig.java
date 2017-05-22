@@ -4,7 +4,7 @@ import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Map;
 
-import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_DOWNLOAD_BASE_URL;
+import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_DOWNLOAD_URL;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_DOWNLOAD_ENABLED;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_ENABLED_BY_DEFAULT;
 import static java.lang.Boolean.FALSE;
@@ -20,33 +20,29 @@ class AllureGlobalConfig implements Serializable {
     private final String downloadBaseUrl;
 
     AllureGlobalConfig() {
-        this(TRUE.toString(), TRUE.toString(), DEFAULT_DOWNLOAD_BASE_URL);
+        this(TRUE.toString(), FALSE.toString(), DEFAULT_DOWNLOAD_BASE_URL);
     }
 
     AllureGlobalConfig(String downloadEnabled, String enabledByDefault, String downloadBaseUrl) {
-        this.downloadEnabled = isEmpty(downloadEnabled) || parseBoolean(downloadEnabled);
-        this.enabledByDefault = isEmpty(enabledByDefault) || parseBoolean(enabledByDefault);
+        this.downloadEnabled = isEmpty(downloadEnabled) ? TRUE : parseBoolean(downloadEnabled);
+        this.enabledByDefault = isEmpty(enabledByDefault) ? FALSE : parseBoolean(enabledByDefault);
         this.downloadBaseUrl = isEmpty(downloadBaseUrl) ? DEFAULT_DOWNLOAD_BASE_URL : downloadBaseUrl;
     }
 
 
     static AllureGlobalConfig fromContext(Map context) {
         return new AllureGlobalConfig(
-                getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_ENABLED, FALSE.toString()),
+                getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_ENABLED, TRUE.toString()),
                 getSingleValue(context, ALLURE_CONFIG_ENABLED_BY_DEFAULT, FALSE.toString()),
-                getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_BASE_URL, null)
+                getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_URL, null)
         );
     }
 
     @Nullable
     private static String getSingleValue(Map context, String key, String defaultVal) {
-        return ofNullable(context.get(key)).map(value -> {
-            if (value instanceof String[]) {
-                return ((String[]) value)[0];
-            } else {
-                return (String) value;
-            }
-        }).orElse(defaultVal);
+        return ofNullable(context.get(key))
+                .map(value -> value instanceof String[] ? ((String[]) value)[0] : (String) value)
+                .orElse(defaultVal);
     }
 
     boolean isDownloadEnabled() {
@@ -60,7 +56,7 @@ class AllureGlobalConfig implements Serializable {
     void toContext(Map<String, Object> context) {
         context.put(ALLURE_CONFIG_DOWNLOAD_ENABLED, isDownloadEnabled());
         context.put(ALLURE_CONFIG_ENABLED_BY_DEFAULT, isEnabledByDefault());
-        context.put(ALLURE_CONFIG_DOWNLOAD_BASE_URL, getDownloadBaseUrl());
+        context.put(ALLURE_CONFIG_DOWNLOAD_URL, getDownloadBaseUrl());
     }
 
     String getDownloadBaseUrl() {

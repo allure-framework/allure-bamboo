@@ -17,7 +17,6 @@
         <resource type="download" name="icon" location="images/logo.png"/>
         <category name="test"/>
         <executable key="allure"/>
-        <capabilityDefaultsHelper class="io.qameta.allure.bamboo.AllureCapability"/>
         <configuration class="io.qameta.allure.bamboo.AllureReportTaskConfigurator"/>
         <resource type="freemarker" name="edit" location="templates/editAllureReportTask.ftl"/>
         <resource type="freemarker" name="view" location="templates/viewAllureReportTask.ftl"/>

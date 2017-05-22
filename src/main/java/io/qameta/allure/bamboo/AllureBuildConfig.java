@@ -6,36 +6,36 @@ import java.util.Map;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_ENABLED;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_EXECUTABLE;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_FAILED_ONLY;
-import static java.lang.Boolean.parseBoolean;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static org.apache.commons.lang.StringUtils.isEmpty;
 
 public class AllureBuildConfig implements Serializable {
-    static final boolean DEFAULT_ONLY_FOR_FAILED = true;
-    private final String enabled;
-    private final String onlyForFailed;
+    private final boolean onlyForFailed;
     private final String executable;
+    private final boolean enabled;
 
     private AllureBuildConfig(String executable, String enabled, String onlyForFailed) {
+        this.onlyForFailed = isEmpty(onlyForFailed) ? TRUE : Boolean.parseBoolean(onlyForFailed);
+        this.enabled = isEmpty(enabled) ? FALSE : Boolean.parseBoolean(enabled);
         this.executable = executable;
-        this.enabled = enabled;
-        this.onlyForFailed = onlyForFailed;
     }
 
-    static AllureBuildConfig fromContext(Map context) {
-        final String failedOnlyString = (String) context.get(ALLURE_CONFIG_FAILED_ONLY);
-        final String enableAllureString = (String) context.get(ALLURE_CONFIG_ENABLED);
+    static AllureBuildConfig fromContext(Map<String, String> context) {
+        final String failedOnlyString = context.get(ALLURE_CONFIG_FAILED_ONLY);
+        final String enableAllureString = context.get(ALLURE_CONFIG_ENABLED);
         return new AllureBuildConfig(
-                (String) context.get(ALLURE_CONFIG_EXECUTABLE),
+                context.get(ALLURE_CONFIG_EXECUTABLE),
                 enableAllureString,
                 failedOnlyString);
     }
 
     boolean isOnlyForFailed() {
-        return isEmpty(onlyForFailed) ? DEFAULT_ONLY_FOR_FAILED : parseBoolean(onlyForFailed);
+        return onlyForFailed;
     }
 
     boolean isEnabledSet() {
-        return !isEmpty(enabled);
+        return enabled;
     }
 
     public String getExecutable() {
@@ -43,6 +43,6 @@ public class AllureBuildConfig implements Serializable {
     }
 
     boolean isEnabled() {
-        return !isEnabledSet() || parseBoolean(enabled);
+        return enabled;
     }
 }

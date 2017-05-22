@@ -36,7 +36,9 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
     private UIConfigSupport uiConfigSupport;
 
 
-    public AllureReportTaskConfigurator(TextProvider textProvider, ArtifactDefinitionManager artifactDefinitionManager, UIConfigSupport uiConfigSupport) {
+    public AllureReportTaskConfigurator(final TextProvider textProvider,
+                                        final ArtifactDefinitionManager artifactDefinitionManager,
+                                        final UIConfigSupport uiConfigSupport) {
         this.textProvider = textProvider;
         this.artifactDefinitionManager = artifactDefinitionManager;
         this.uiConfigSupport = uiConfigSupport;
@@ -44,11 +46,12 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
 
     @NotNull
     @Override
-    public Map<String, String> generateTaskConfigMap(@NotNull ActionParametersMap params, @Nullable TaskDefinition previousTaskDefinition) {
+    public Map<String, String> generateTaskConfigMap(@NotNull final ActionParametersMap params,
+                                                     @Nullable final TaskDefinition previousTaskDefinition) {
         final Map<String, String> config = super.generateTaskConfigMap(params, previousTaskDefinition);
-        config.put(RESULTS_DIRECTORY, params.getString(RESULTS_DIRECTORY));
-        config.put(REPORT_PATH_PREFIX, params.getString(REPORT_PATH_PREFIX));
-        config.put(EXECUTABLE_LABEL, params.getString(EXECUTABLE_LABEL));
+        config.put(ALLURE_CONFIG_RESULTS_PATH, params.getString(ALLURE_CONFIG_RESULTS_PATH));
+        config.put(ALLURE_CONFIG_REPORT_PATH, params.getString(ALLURE_CONFIG_REPORT_PATH));
+        config.put(ALLURE_CONFIG_EXECUTABLE, params.getString(ALLURE_CONFIG_EXECUTABLE));
         return config;
     }
 
@@ -56,37 +59,40 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
     public void populateContextForCreate(@NotNull final Map<String, Object> context) {
         super.populateContextForCreate(context);
         context.put(UI_CONFIG_BEAN, this.uiConfigSupport);
-        context.put(RESULTS_DIRECTORY, RESULTS_DIRECTORY_DEFAULT);
-        context.put(REPORT_PATH_PREFIX, REPORT_PATH_PREFIX_DEFAULT);
+        context.put(ALLURE_CONFIG_RESULTS_PATH, "allure-results");
+        context.put(ALLURE_CONFIG_REPORT_PATH, "allure-report");
     }
 
     @Override
-    public void populateContextForEdit(@NotNull final Map<String, Object> context, @NotNull final TaskDefinition taskDefinition) {
+    public void populateContextForEdit(@NotNull final Map<String, Object> context,
+                                       @NotNull final TaskDefinition taskDefinition) {
         super.populateContextForEdit(context, taskDefinition);
         context.put(UI_CONFIG_BEAN, this.uiConfigSupport);
-        context.put(RESULTS_DIRECTORY, taskDefinition.getConfiguration().get(RESULTS_DIRECTORY));
-        context.put(REPORT_PATH_PREFIX, taskDefinition.getConfiguration().get(REPORT_PATH_PREFIX));
+        context.put(ALLURE_CONFIG_RESULTS_PATH, taskDefinition.getConfiguration().get(ALLURE_CONFIG_RESULTS_PATH));
+        context.put(ALLURE_CONFIG_REPORT_PATH, taskDefinition.getConfiguration().get(ALLURE_CONFIG_REPORT_PATH));
+        context.put(ALLURE_CONFIG_EXECUTABLE, taskDefinition.getConfiguration().get(ALLURE_CONFIG_EXECUTABLE));
     }
 
     @Override
-    public void validate(@NotNull ActionParametersMap params, @NotNull ErrorCollection errorCollection) {
+    public void validate(@NotNull final ActionParametersMap params, @NotNull final ErrorCollection errorCollection) {
         super.validate(params, errorCollection);
 
-        validateNotEmpty(params, RESULTS_DIRECTORY, errorCollection);
-        validateNotEmpty(params, REPORT_PATH_PREFIX, errorCollection);
-
-        validateRelative(params, RESULTS_DIRECTORY, errorCollection);
-        validateRelative(params, REPORT_PATH_PREFIX, errorCollection);
+        validateNotEmpty(params, ALLURE_CONFIG_RESULTS_PATH, errorCollection);
+        validateNotEmpty(params, ALLURE_CONFIG_REPORT_PATH, errorCollection);
+        validateRelative(params, ALLURE_CONFIG_RESULTS_PATH, errorCollection);
+        validateRelative(params, ALLURE_CONFIG_REPORT_PATH, errorCollection);
+        validateNotEmpty(params, ALLURE_CONFIG_EXECUTABLE, errorCollection);
     }
 
     /**
      * Validate the property with given key are exists and not empty.
      *
-     * @param params the properties map to find the validated property by key.
-     * @param key        the key of property to validate.
-     * @param errorCollection   the list of problems to add problem if needed.
+     * @param params          the properties map to find the validated property by key.
+     * @param key             the key of property to validate.
+     * @param errorCollection the list of problems to add problem if needed.
      */
-    private void validateNotEmpty(ActionParametersMap params, String key, ErrorCollection errorCollection) {
+    private void validateNotEmpty(final ActionParametersMap params, final String key,
+                                  final ErrorCollection errorCollection) {
         String value = params.getString(key);
         if (StringUtils.isEmpty(value)) {
             errorCollection.addError(key, textProvider.getText("error.property.empty"));
@@ -97,11 +103,12 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
      * Validate the value of the property with given key. The validated value should be valid
      * relative path.
      *
-     * @param params the properties map to find the validated property by key.
-     * @param key        the key of property to validate.
-     * @param errorCollection   the list of problems to add problem if needed.
+     * @param params          the properties map to find the validated property by key.
+     * @param key             the key of property to validate.
+     * @param errorCollection the list of problems to add problem if needed.
      */
-    private void validateRelative(ActionParametersMap params, String key, ErrorCollection errorCollection) {
+    private void validateRelative(final ActionParametersMap params, final String key,
+                                  final ErrorCollection errorCollection) {
         String value = params.getString(key);
         if (StringUtils.isEmpty(value) || Paths.get(value).isAbsolute()) {
             errorCollection.addError(key, textProvider.getText("error.path.absolute"));
@@ -110,17 +117,18 @@ public class AllureReportTaskConfigurator extends AbstractTaskConfigurator imple
 
     @NotNull
     @Override
-    public Set<Requirement> calculateRequirements(@NotNull TaskDefinition taskDefinition, @NotNull Job job) {
+    public Set<Requirement> calculateRequirements(@NotNull final TaskDefinition taskDefinition,
+                                                  @NotNull final Job job) {
         final String ARTIFACT_COPY_PATTERN = "**";
-        if (null == artifactDefinitionManager.findArtifactDefinition(job, ARTIFACT_NAME)) {
-            ArtifactDefinitionImpl artifactDefinition =
-                    new ArtifactDefinitionImpl(ARTIFACT_NAME, taskDefinition.getConfiguration().get(REPORT_PATH_PREFIX), ARTIFACT_COPY_PATTERN);
+        if (null == artifactDefinitionManager.findArtifactDefinition(job, ALLURE_ARTIFACT_NAME)) {
+            ArtifactDefinitionImpl artifactDefinition = new ArtifactDefinitionImpl(ALLURE_ARTIFACT_NAME,
+                    taskDefinition.getConfiguration().get(ALLURE_CONFIG_REPORT_PATH), ARTIFACT_COPY_PATTERN);
             artifactDefinition.setProducerJob(job);
             artifactDefinitionManager.saveArtifactDefinition(artifactDefinition);
         }
-
+        String key = ALLURE_EXECUTION_PREFIX + "." + taskDefinition.getConfiguration().get(ALLURE_CONFIG_EXECUTABLE);
         HashSet<Requirement> requirements = Sets.newHashSet();
-        requirements.add(new RequirementImpl( AllureCapability.ALLURE_CAPABILITY_PREFIX + "." + taskDefinition.getConfiguration().get(EXECUTABLE_LABEL), true, ".*"));
+        requirements.add(new RequirementImpl(key, true, ".*"));
         return requirements;
     }
 }

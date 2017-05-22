@@ -4,16 +4,16 @@ class AllureGenerateResult {
     private final String output;
     private final boolean containsTestcases;
 
-    AllureGenerateResult(String output, boolean containsTestcases) {
+    AllureGenerateResult(String output, boolean containsTestCases) {
         this.output = output;
-        this.containsTestcases = containsTestcases;
+        this.containsTestcases = containsTestCases;
     }
 
     String getOutput() {
         return output;
     }
 
-    boolean isContainsTestcases() {
+    boolean isContainsTestCases() {
         return containsTestcases;
     }
 }
