@@ -30,6 +30,9 @@ public class ConfigureAllureReportAction extends GlobalAdminAction implements Pr
         if (!valuesMap.containsKey(AllureConstants.ALLURE_CONFIG_DOWNLOAD_URL)) {
             addActionError(getText("allure.config.download.url.error.required"));
         }
+        if (!valuesMap.containsKey(AllureConstants.ALLURE_CONFIG_LOCAL_STORAGE)) {
+            addActionError(getText("allure.config.download.local.storage.required"));
+        }
     }
 
     private AllureGlobalConfig getAllureConfig() {
