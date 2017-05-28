@@ -1,6 +1,5 @@
 pipeline {
     agent { label 'java' }
-    tools { maven 'default' }
     parameters {
         booleanParam(name: 'RELEASE', defaultValue: false, description: 'Perform release?')
         string(name: 'RELEASE_VERSION', defaultValue: '', description: 'Release version')
@@ -9,7 +8,7 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                sh 'mvn -Dmaven.test.failure.ignore=true clean verify'
+                sh './mvnw -Dmaven.test.failure.ignore=true clean verify'
             }
         }
         stage('Archive') {
@@ -23,7 +22,7 @@ pipeline {
                 configFileProvider([configFile(fileId: 'bintray-settings.xml', variable: 'SETTINGS')]) {
                     sshagent(['qameta-ci_ssh']) {
                         sh 'git checkout master && git pull origin master'
-                        sh "mvn release:prepare release:perform -B -s ${env.SETTINGS} " +
+                        sh "./mvnw release:prepare release:perform -B -s ${env.SETTINGS} " +
                                 "-DreleaseVersion=${params.RELEASE_VERSION} " +
                                 "-DdevelopmentVersion=${params.DEVELOPMENT_VERSION}-SNAPSHOT"
                     }
