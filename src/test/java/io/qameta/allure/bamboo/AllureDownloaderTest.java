@@ -39,13 +39,17 @@ public class AllureDownloaderTest {
         downloader.downloadAndExtractAllureTo(homeDir, "2.0-BETA5");
 
         assertTrue(Paths.get(homeDir, "bin", "allure").toFile().exists());
+        assertTrue(Paths.get(homeDir, "bin", "allure").toFile().canExecute());
+        assertTrue(Paths.get(homeDir, "bin", "allure.bat").toFile().canExecute());
     }
 
     @Test
     public void itShouldDownloadAndExtractAllureRelease() throws Exception {
-        downloader.downloadAndExtractAllureTo(homeDir, "2.0.0");
+        downloader.downloadAndExtractAllureTo(homeDir, "2.0.1");
 
         assertTrue(Paths.get(homeDir, "bin", "allure").toFile().exists());
+        assertTrue(Paths.get(homeDir, "bin", "allure").toFile().canExecute());
+        assertTrue(Paths.get(homeDir, "bin", "allure.bat").toFile().canExecute());
     }
 
     @After
