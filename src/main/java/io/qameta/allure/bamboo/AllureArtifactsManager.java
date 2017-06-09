@@ -64,6 +64,7 @@ import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
 import static java.lang.Integer.parseInt;
 import static java.util.Optional.ofNullable;
 import static javax.ws.rs.core.UriBuilder.fromPath;
+import static org.apache.commons.io.FileUtils.moveDirectory;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.codehaus.plexus.util.FileUtils.copyDirectory;
 import static org.codehaus.plexus.util.FileUtils.copyURLToFile;
@@ -77,16 +78,19 @@ public class AllureArtifactsManager {
     private final ResultsSummaryManager resultsSummaryManager;
     private final ArtifactLinkManager artifactLinkManager;
     private final ApplicationProperties appProperties;
+    private final AllureSettingsManager settingsManager;
 
     public AllureArtifactsManager(PluginAccessor pluginAccessor, ArtifactHandlersService artifactHandlersService,
                                   BuildDefinitionManager buildDefinitionManager, ResultsSummaryManager resultsSummaryManager,
-                                  ArtifactLinkManager artifactLinkManager, ApplicationProperties appProperties) {
+                                  ArtifactLinkManager artifactLinkManager, ApplicationProperties appProperties,
+                                  AllureSettingsManager settingsManager) {
         this.pluginAccessor = pluginAccessor;
         this.artifactHandlersService = artifactHandlersService;
         this.buildDefinitionManager = buildDefinitionManager;
         this.resultsSummaryManager = resultsSummaryManager;
         this.artifactLinkManager = artifactLinkManager;
         this.appProperties = appProperties;
+        this.settingsManager = settingsManager;
     }
 
     /**
@@ -104,6 +108,9 @@ public class AllureArtifactsManager {
         return ofNullable(resultsSummaryManager.getResultsSummary(planResultKey)).map(resultsSummary ->
                 getArtifactHandlerByClassName(fromCustomData(resultsSummary.getCustomBuildData()).getArtifactHandlerClass())
                         .map(artifactHandler -> {
+                            if (isAgentArtifactHandler(artifactHandler)) {
+                                return getLocalStorageURL(planKeyString, buildNumber, filePath);
+                            }
                             final ArtifactDefinitionContextImpl artifactDef = getAllureArtifactDef();
                             return ofNullable(artifactHandler.getArtifactLinkDataProvider(
                                     mutableArtifact(planResultKey, artifactDef.getName()), configProvider(artifactConfig)
@@ -116,6 +123,14 @@ public class AllureArtifactsManager {
                                 return getArtifactFile(filePath, linkProvider);
                             }).orElse(null);
                         }).orElse(null));
+    }
+
+    @Nullable
+    private String getLocalStorageURL(String planKeyString, String buildNumber, String filePath) {
+        final AllureGlobalConfig settings = settingsManager.getSettings();
+        final File file = Paths.get(settings.getLocalStoragePath(), planKeyString, buildNumber).resolve(filePath).toFile();
+        final String fullPath = (file.isDirectory()) ? new File(file, "index.html").getAbsolutePath() : file.getAbsolutePath();
+        return String.format("file://%s", fullPath);
     }
 
     /**
@@ -161,8 +176,14 @@ public class AllureArtifactsManager {
                 if (!artifactHandler.canHandleArtifact(artifact, artifactConfig)) {
                     continue;
                 }
-                if (artifactHandler instanceof BambooRemoteArtifactHandler || artifactHandler instanceof AgentLocalArtifactHandler) {
-                    throw new RuntimeException("Bamboo Remote Artifact Handler is not supported!");
+                if (isAgentArtifactHandler(artifactHandler)) {
+                    final AllureGlobalConfig settings = settingsManager.getSettings();
+                    final String planKey = chain.getPlanKey().getKey();
+                    final String buildNumber = String.valueOf(summary.getBuildNumber());
+                    final File destDir = Paths.get(settings.getLocalStoragePath(), planKey, buildNumber).toFile();
+                    moveDirectory(reportDir, destDir);
+                    return Optional.of(allureBuildResult(true, null)
+                            .withHandlerClass(artifactHandler.getClass().getName()));
                 }
                 final ArtifactPublishingConfig artifactPublishingConfig = new ArtifactPublishingConfig(sourceFileSet, artifactConfig);
                 final String errorMessage = "Unable to publish artifact via " + artifactHandler;
@@ -301,6 +322,11 @@ public class AllureArtifactsManager {
         predicate.append(new EnabledModulePredicate<>());
 
         return ImmutableList.copyOf(pluginAccessor.getModules(predicate));
+    }
+
+
+    private boolean isAgentArtifactHandler(ArtifactHandler artifactHandler) {
+        return artifactHandler instanceof BambooRemoteArtifactHandler || artifactHandler instanceof AgentLocalArtifactHandler;
     }
 
     @SuppressWarnings("unchecked")
