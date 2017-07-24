@@ -2,13 +2,13 @@ package io.qameta.allure.bamboo;
 
 import com.atlassian.bamboo.plan.PlanResultKey;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
-import com.atlassian.bamboo.servlet.BambooHttpServlet;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -25,7 +25,7 @@ import static java.lang.Integer.parseInt;
 import static java.util.Optional.ofNullable;
 import static org.sonatype.aether.util.StringUtils.isEmpty;
 
-public class AllureReportServlet extends BambooHttpServlet {
+public class AllureReportServlet extends HttpServlet {
     private static final Pattern URL_PATTERN = Pattern.compile(".*/plugins/servlet/allure/report/([^/]{2,})/([^/]+)/?(.*)");
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureReportServlet.class);
     private final AllureArtifactsManager artifactsManager;
