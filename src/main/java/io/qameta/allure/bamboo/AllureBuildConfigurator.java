@@ -1,19 +1,15 @@
 package io.qameta.allure.bamboo;
 
-import com.atlassian.bamboo.plan.cache.ImmutablePlan;
-import com.atlassian.bamboo.plan.configuration.MiscellaneousPlanConfigurationPlugin;
+import com.atlassian.bamboo.plan.Plan;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
-import com.atlassian.bamboo.v2.build.ImportExportAwarePlugin;
+import com.atlassian.bamboo.v2.build.configuration.MiscellaneousBuildConfigurationPlugin;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
-import com.google.common.collect.ImmutableSet;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Set;
-
-import static com.atlassian.bamboo.plan.PlanClassHelper.isChain;
+ import static com.atlassian.bamboo.plan.PlanClassHelper.isChain;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_ENABLED;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_EXECUTABLE;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_FAILED_ONLY;
@@ -22,15 +18,17 @@ import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang.StringUtils.isEmpty;
 
 @SuppressWarnings("unchecked")
-public class AllureBuildConfigurator
-        extends BaseConfigurablePlugin
-        implements MiscellaneousPlanConfigurationPlugin, ImportExportAwarePlugin {
+public class AllureBuildConfigurator extends BaseConfigurablePlugin
+        implements MiscellaneousBuildConfigurationPlugin {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureBuildConfigurator.class);
-    private AllureSettingsManager settingsManager;
+
     private BambooExecutablesManager executablesManager;
 
+    private AllureSettingsManager settingsManager;
+
     @Override
-    public boolean isApplicableTo(@NotNull final ImmutablePlan plan) {
+    public boolean isApplicableTo(@NotNull final Plan plan) {
         return isChain(plan);
     }
 
@@ -44,12 +42,6 @@ public class AllureBuildConfigurator
             }
         }
         return collection;
-    }
-
-    @NotNull
-    @Override
-    public Set<String> getConfigurationKeys() {
-        return ImmutableSet.of(ALLURE_CONFIG_ENABLED, ALLURE_CONFIG_EXECUTABLE, ALLURE_CONFIG_FAILED_ONLY);
     }
 
     @Override
