@@ -12,8 +12,8 @@ import static java.util.Objects.requireNonNull;
 import static java.util.regex.Pattern.compile;
 
 public class AllureExecutableProvider {
-    static final String DEFAULT_VERSION = "2.0.1";
-    static final String DEFAULT_PATH = "/tmp/allure/2.0.1";
+    static final String DEFAULT_VERSION = "2.2.1";
+    static final String DEFAULT_PATH = "/tmp/allure/2.2.1";
     private static final Pattern EXEC_NAME_PATTERN = compile("[^\\d]*(\\d[0-9\\.]{2,}[a-zA-Z0-9\\-]*)$");
 
     private final BambooExecutablesManager bambooExecutablesManager;
