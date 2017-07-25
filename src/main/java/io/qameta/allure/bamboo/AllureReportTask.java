@@ -100,12 +100,12 @@ public class AllureReportTask implements TaskType {
         String buildResultsUrl = buildVariables.get("buildResultsUrl").getValue();
 
         String rootUrl = buildResultsUrl.substring(0, buildResultsUrl.indexOf("bamboo") + "bamboo".length());
+        String buildId = taskContext.getBuildContext().getBuildNumber() + "";
         String buildName = taskContext.getBuildContext().getDisplayName();
-        String buildUrl = String.format("%s/browse/%s-%s", rootUrl, buildVariables.get("planKey").getValue(),
-                taskContext.getBuildContext().getBuildNumber());
+        String buildUrl = String.format("%s/browse/%s-%s", rootUrl, buildVariables.get("planKey").getValue(), buildId);
         String reportUrl = String.format("%s/artifact/%s/%s/index.html", buildUrl,
                 buildVariables.get("shortJobKey").getValue(), ALLURE_ARTIFACT_NAME.replace(" ", "-"));
-        new AddExecutorInfo(rootUrl, buildName, buildUrl, reportUrl).invoke(getResultDirectory(taskContext));
+        new AddExecutorInfo(rootUrl, buildId, buildName, buildUrl, reportUrl).invoke(getResultDirectory(taskContext));
     }
 
     @NotNull

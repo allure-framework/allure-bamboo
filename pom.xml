@@ -13,9 +13,9 @@
         <url>https://github.com/allure-framework</url>
     </organization>
     <properties>
-        <bamboo.version>5.14.2</bamboo.version>
-        <bamboo.data.version>5.14.2</bamboo.data.version>
         <amps.version>6.2.11</amps.version>
+        <bamboo.version>5.10.3</bamboo.version>
+        <bamboo.data.version>5.10.3</bamboo.data.version>
         <plugin.testrunner.version>1.2.3</plugin.testrunner.version>
         <atlassian.spring.scanner.version>1.2.13</atlassian.spring.scanner.version>
         <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
