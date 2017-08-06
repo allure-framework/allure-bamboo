@@ -1,5 +1,6 @@
 package io.qameta.allure.bamboo;
 
+import org.buildobjects.process.ProcBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Paths;
@@ -7,15 +8,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.lang.Integer.parseInt;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_UNIX;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
-import static org.buildobjects.process.ProcBuilder.run;
 
 public class AllureCommandLineSupport {
     private static final Pattern RESULT_TC_COUNT_REGEX = Pattern.compile(".+Found (\\d+) test cases.+", Pattern.DOTALL);
+    private static final int GENERATE_TIMEOUT_MS = (int) SECONDS.toMillis(60);
 
     String runCommand(String cmd, String... args) {
-        return run(cmd, args);
+        return new ProcBuilder(cmd)
+                .withArgs(args).withTimeoutMillis(GENERATE_TIMEOUT_MS)
+                .run().getOutputString();
     }
 
     @NotNull
