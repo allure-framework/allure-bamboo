@@ -64,6 +64,7 @@ import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
 import static java.lang.Integer.parseInt;
 import static java.util.Optional.ofNullable;
 import static javax.ws.rs.core.UriBuilder.fromPath;
+import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.apache.commons.io.FileUtils.moveDirectory;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.codehaus.plexus.util.FileUtils.copyDirectory;
@@ -181,6 +182,9 @@ public class AllureArtifactsManager {
                     final String planKey = chain.getPlanKey().getKey();
                     final String buildNumber = String.valueOf(summary.getBuildNumber());
                     final File destDir = Paths.get(settings.getLocalStoragePath(), planKey, buildNumber).toFile();
+                    if (destDir.exists()) {
+                        deleteQuietly(destDir);
+                    }
                     moveDirectory(reportDir, destDir);
                     return Optional.of(allureBuildResult(true, null)
                             .withHandlerClass(artifactHandler.getClass().getName()));
