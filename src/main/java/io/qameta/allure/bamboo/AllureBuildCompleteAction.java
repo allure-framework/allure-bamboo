@@ -5,6 +5,7 @@ import com.atlassian.bamboo.chains.Chain;
 import com.atlassian.bamboo.chains.ChainExecution;
 import com.atlassian.bamboo.chains.ChainResultsSummary;
 import com.atlassian.bamboo.chains.plugins.PostChainAction;
+import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -28,16 +29,19 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
     private final AllureSettingsManager settingsManager;
     private final AllureArtifactsManager artifactsManager;
     private final BambooExecutablesManager executablesManager;
+    private final ResultsSummaryManager resulsSummaryManager;
 
 
     public AllureBuildCompleteAction(AllureExecutableProvider allureExecutable,
                                      AllureSettingsManager settingsManager,
                                      AllureArtifactsManager artifactsManager,
-                                     BambooExecutablesManager executablesManager) {
+                                     BambooExecutablesManager executablesManager,
+                                     ResultsSummaryManager resultsSummaryManager) {
         this.allureExecutable = allureExecutable;
         this.settingsManager = settingsManager;
         this.artifactsManager = artifactsManager;
         this.executablesManager = executablesManager;
+        this.resulsSummaryManager = resultsSummaryManager;
     }
 
     @Override

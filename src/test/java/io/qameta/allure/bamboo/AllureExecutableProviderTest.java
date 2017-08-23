@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.util.Optional;
 
 import static io.qameta.allure.bamboo.AllureExecutableProvider.DEFAULT_VERSION;
+import static io.qameta.allure.bamboo.AllureExecutableProvider.getAllureSubDir;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.verify;
@@ -22,6 +23,7 @@ import static org.mockito.junit.MockitoJUnit.rule;
 public class AllureExecutableProviderTest {
 
     private final String homeDir = "/home/allure";
+    private final String binaryDir = Paths.get(this.homeDir, getAllureSubDir()).toString();
     @Rule
     public MockitoRule mockitoRule = rule();
     @Mock
@@ -39,38 +41,38 @@ public class AllureExecutableProviderTest {
     @Before
     public void setUp() throws Exception {
         config = new AllureGlobalConfig();
-        allureCmdPath = Paths.get(homeDir, "bin", "allure");
-        allureBatCmdPath = Paths.get(homeDir, "bin", "allure.bat");
+        allureCmdPath = Paths.get(binaryDir, "bin", "allure");
+        allureBatCmdPath = Paths.get(binaryDir, "bin", "allure.bat");
     }
 
     @Test
     public void itShouldProvideDefaultVersion() throws Exception {
         provide("Allure WITHOUT VERSION");
-        verify(downloader).downloadAndExtractAllureTo(homeDir, DEFAULT_VERSION);
+        verify(downloader).downloadAndExtractAllureTo(binaryDir, DEFAULT_VERSION);
     }
 
     @Test
     public void itShouldProvideTheGivenVersionWithFullSemverWithoutName() throws Exception {
         provide("2.0.0");
-        verify(downloader).downloadAndExtractAllureTo(homeDir, "2.0.0");
+        verify(downloader).downloadAndExtractAllureTo(binaryDir, "2.0.0");
     }
 
     @Test
     public void itShouldProvideTheGivenVersionWithFullSemverWithoutMilestone() throws Exception {
         provide("Allure 2.0.0");
-        verify(downloader).downloadAndExtractAllureTo(homeDir, "2.0.0");
+        verify(downloader).downloadAndExtractAllureTo(binaryDir, "2.0.0");
     }
 
     @Test
     public void itShouldProvideTheGivenVersionWithMajorMinorWithoutMilestone() throws Exception {
         provide("Allure 2.0");
-        verify(downloader).downloadAndExtractAllureTo(homeDir, "2.0");
+        verify(downloader).downloadAndExtractAllureTo(binaryDir, "2.0");
     }
 
     @Test
     public void itShouldProvideTheGivenVersionWithMilestone() throws Exception {
         provide("Allure 2.0-BETA4");
-        verify(downloader).downloadAndExtractAllureTo(homeDir, "2.0-BETA4");
+        verify(downloader).downloadAndExtractAllureTo(binaryDir, "2.0-BETA4");
     }
 
     @Test

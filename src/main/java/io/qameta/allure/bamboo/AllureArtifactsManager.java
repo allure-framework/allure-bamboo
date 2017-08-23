@@ -47,6 +47,7 @@ import javax.ws.rs.core.UriBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
@@ -64,6 +65,7 @@ import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
 import static java.lang.Integer.parseInt;
 import static java.util.Optional.ofNullable;
 import static javax.ws.rs.core.UriBuilder.fromPath;
+import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.apache.commons.io.FileUtils.moveDirectory;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.codehaus.plexus.util.FileUtils.copyDirectory;
@@ -71,6 +73,7 @@ import static org.codehaus.plexus.util.FileUtils.copyURLToFile;
 
 public class AllureArtifactsManager {
     private static final Logger LOGGER = Logger.getLogger(AllureArtifactsManager.class);
+    private static final String REPORTS_SUBDIR = "allure-reports";
 
     private final PluginAccessor pluginAccessor;
     private final ArtifactHandlersService artifactHandlersService;
@@ -127,8 +130,7 @@ public class AllureArtifactsManager {
 
     @Nullable
     private String getLocalStorageURL(String planKeyString, String buildNumber, String filePath) {
-        final AllureGlobalConfig settings = settingsManager.getSettings();
-        final File file = Paths.get(settings.getLocalStoragePath(), planKeyString, buildNumber).resolve(filePath).toFile();
+        final File file = getLocalStoragePath(planKeyString, buildNumber).resolve(filePath).toFile();
         final String fullPath = (file.isDirectory()) ? new File(file, "index.html").getAbsolutePath() : file.getAbsolutePath();
         return String.format("file://%s", fullPath);
     }
@@ -177,10 +179,12 @@ public class AllureArtifactsManager {
                     continue;
                 }
                 if (isAgentArtifactHandler(artifactHandler)) {
-                    final AllureGlobalConfig settings = settingsManager.getSettings();
                     final String planKey = chain.getPlanKey().getKey();
                     final String buildNumber = String.valueOf(summary.getBuildNumber());
-                    final File destDir = Paths.get(settings.getLocalStoragePath(), planKey, buildNumber).toFile();
+                    final File destDir = getLocalStoragePath(planKey, buildNumber).toFile();
+                    if (destDir.exists()) {
+                        deleteQuietly(destDir);
+                    }
                     moveDirectory(reportDir, destDir);
                     return Optional.of(allureBuildResult(true, null)
                             .withHandlerClass(artifactHandler.getClass().getName()));
@@ -214,6 +218,9 @@ public class AllureArtifactsManager {
         return Optional.empty();
     }
 
+    private Path getLocalStoragePath(String planKey, String buildNumber) {
+        return Paths.get(settingsManager.getSettings().getLocalStoragePath(), REPORTS_SUBDIR, planKey, buildNumber);
+    }
 
     private void downloadAllArtifactsTo(ArtifactLinkDataProvider dataProvider, File tempDir, String startFrom) {
         for (ArtifactFileData data : dataProvider.listObjects(startFrom)) {
