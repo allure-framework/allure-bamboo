@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.google.common.io.Files.createTempDir;
 import static io.qameta.allure.bamboo.AllureBuildResult.allureBuildResult;
@@ -62,21 +63,17 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
         final Map<String, String> customBuildData = chainResultsSummary.getCustomBuildData();
         try {
 
-            String executable = buildConfig.getExecutable();
-            if (executable == null) {
-                LOGGER.info("Allure executable has not been configured. Using default one!");
-                executable = executablesManager.getDefaultAllureExecutable().get();
-                if (executable == null) {
-                    throw new RuntimeException("Could not find default Allure executable! Please configure plugin properly!");
-                }
-            }
+            final String executable = Optional.ofNullable(buildConfig.getExecutable())
+                    .orElse(executablesManager.getDefaultAllureExecutable()
+                            .orElseThrow(() -> new RuntimeException("Could not find default Allure executable!" +
+                                    " Please configure plugin properly!")));
+
             LOGGER.info("Allure Report is enabled for {}", chain.getName());
             LOGGER.info("Trying to get executable by name {} for {}", executable, chain.getName());
 
-            AllureExecutable allure = allureExecutable.provide(globalConfig, executable).get();
-            if (allure == null) {
-                throw new RuntimeException("Failed to find Allure executable by name " + executable);
-            }
+            AllureExecutable allure = allureExecutable.provide(globalConfig, executable).orElseThrow(() ->
+                    new RuntimeException("Failed to find Allure executable by name " + executable));
+
             LOGGER.info("Starting artifacts downloading into {} for {}", artifactsTempDir.getPath(), chain.getName());
             artifactsManager.downloadAllArtifactsTo(chainResultsSummary, artifactsTempDir);
             if (artifactsTempDir.list().length == 0) {
@@ -85,15 +82,11 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
             } else {
                 LOGGER.info("Starting allure generate into {} for {}", allureReportDir.getPath(), chain.getName());
                 prepareResults(artifactsTempDir, chain, chainExecution);
-                final AllureGenerateResult genRes = allure.generate(artifactsTempDir.toPath(), allureReportDir.toPath());
-                if (!genRes.isContainsTestCases()) {
-                    allureBuildResult(false, "No Allure results found! Please ensure that build artifacts contain " +
-                            "Allure results!\nAllure generate output: \n" + genRes.getOutput()).dumpToCustomData(customBuildData);
-                } else {
-                    LOGGER.info("Allure has been generated successfully for {}", chain.getName());
-                    artifactsManager.uploadReportArtifacts(chain, chainResultsSummary, allureReportDir)
+                allure.generate(artifactsTempDir.toPath(), allureReportDir.toPath());
+                LOGGER.info("Allure has been generated successfully for {}", chain.getName());
+                artifactsManager.uploadReportArtifacts(chain, chainResultsSummary, allureReportDir)
                             .ifPresent(result -> result.dumpToCustomData(customBuildData));
-                }
+
             }
         } catch (Exception e) {
             LOGGER.error("Failed to build allure report for {}", chain.getName(), e);
