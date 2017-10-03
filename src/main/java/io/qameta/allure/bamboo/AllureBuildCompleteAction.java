@@ -24,19 +24,23 @@ import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import static com.google.common.io.Files.createTempDir;
 import static io.qameta.allure.bamboo.AllureBuildResult.allureBuildResult;
 import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
 import static java.lang.String.format;
+import static java.util.Arrays.*;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
 
 @SuppressWarnings("ConstantConditions")
 public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements PostChainAction {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureBuildCompleteAction.class);
+    private static final List<String> HISTORY_FILES = asList("history.json", "history-trend.json");
 
     private final AllureExecutableProvider allureExecutable;
     private final AllureSettingsManager settingsManager;
@@ -94,7 +98,7 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
                 allure.generate(artifactsTempDir.toPath(), allureReportDir.toPath());
                 LOGGER.info("Allure has been generated successfully for {}", chain.getName());
                 artifactsManager.uploadReportArtifacts(chain, chainResultsSummary, allureReportDir)
-                            .ifPresent(result -> result.dumpToCustomData(customBuildData));
+                        .ifPresent(result -> result.dumpToCustomData(customBuildData));
 
             }
         } catch (Exception e) {
@@ -115,28 +119,29 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
      * Write the history file to results directory.
      */
     private void copyHistory(File artifactsTempDir, Chain chain, ChainExecution chainExecution) {
-        try {
-            Path historyDir = artifactsTempDir.toPath().resolve("history");
-            Integer lastBuildNumber = getLastBuildNumberWithHistory(chain.getPlanKey().getKey(), chainExecution.getPlanResultKey().getBuildNumber());
-            for (String historyFile : new String[] {"history.json", "history-trend.json"}) {
-                copyArtifactToHistoryFolder(historyDir, historyFile, chain.getPlanKey().getKey(), lastBuildNumber);
-            }
-        } catch (Exception e) {
-            LOGGER.info("Cannot copy history files.", e);
-        }
+        Path historyDir = artifactsTempDir.toPath().resolve("history");
+        Optional<Integer> lastBuild = getLastBuildNumberWithHistory(
+                chain.getPlanKey().getKey(), chainExecution.getPlanResultKey().getBuildNumber()
+        );
+        lastBuild.ifPresent(buildNumber -> copyHistoryFiles(chain, historyDir, buildNumber));
     }
 
-    private Integer getLastBuildNumberWithHistory(String planKey, int buildNumber) {
-        while (true) {
-            ResultsSummary lastBuild = Optional.ofNullable(resultsSummaryManager.findLastBuildResultBefore(
-                    planKey, buildNumber)).orElseThrow(
-                    () -> new RuntimeException("Could not found a previous buildId with the history artifact."));
-            if (historyArtifactExists(planKey, lastBuild.getBuildNumber())) {
-                return lastBuild.getBuildNumber();
-            } else {
-                buildNumber = lastBuild.getBuildNumber();
+    private void copyHistoryFiles(Chain chain, Path historyDir, Integer buildNumber) {
+        HISTORY_FILES.forEach(historyFile ->
+                copyArtifactToHistoryFolder(historyDir, historyFile, chain.getPlanKey().getKey(), buildNumber)
+        );
+    }
+
+    private Optional<Integer> getLastBuildNumberWithHistory(String planKey, int buildNumber) {
+        int currentBuild = buildNumber;
+        do {
+            ResultsSummary lastBuild = resultsSummaryManager.findLastBuildResultBefore(planKey, currentBuild);
+            if (Objects.isNull(lastBuild)) {
+                return Optional.empty();
             }
-        }
+            currentBuild = lastBuild.getBuildNumber();
+        } while (!historyArtifactExists(planKey, currentBuild));
+        return Optional.of(currentBuild);
     }
 
     private boolean historyArtifactExists(String planKey, int buildId) {
@@ -152,15 +157,19 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
         }
     }
 
-    private void copyArtifactToHistoryFolder(Path historyFolder, String fileName, String planKey, int buildId) throws Exception {
+    private void copyArtifactToHistoryFolder(Path historyFolder, String fileName, String planKey, int buildId) {
+        try (InputStream inputStream = getArtifactContent(fileName, planKey, buildId)) {
+            Files.createDirectories(historyFolder);
+            Files.copy(inputStream, historyFolder.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            LOGGER.error("Could not copy file {}", fileName);
+        }
+    }
+
+    private InputStream getArtifactContent(String fileName, String planKey, int buildId) throws IOException {
         URL artifactUrl = new URL(getHistoryArtifactUrl(fileName, planKey, buildId));
         URLConnection uc = artifactUrl.openConnection();
-        try(InputStream inputStream = uc.getInputStream()) {
-            if (!historyFolder.toFile().exists()) {
-                historyFolder.toFile().mkdir();
-            }
-            Files.copy(inputStream, historyFolder.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
-        }
+        return uc.getInputStream();
     }
 
     @NotNull
