@@ -66,21 +66,55 @@ public class AllureReportServlet extends HttpServlet {
                         }
                     });
                 } else {
-                    final String errorMessage = isEmpty(uploadResult.getFailureDetails()) ?
-                            "Unknown error has occurred during Allure Build. Please refer the server logs for details." :
-                            "Something went wrong with Allure Report generation. Here are some details: \n" + uploadResult.getFailureDetails();
-                    try {
-                        response.setHeader("Content-Type", "text/plain");
-                        response.setHeader("Content-Length", String.valueOf(errorMessage.length()));
-                        response.setHeader("Content-Disposition", "inline");
-                        response.getWriter().write(errorMessage);
-                    } catch (IOException e) {
-                        LOGGER.error("Failed to render error of Allure Report build ", e);
-                    }
+                    uploadResultIsNotSuccess(response, uploadResult);
                 }
             });
         } else {
             LOGGER.info("Path {} does not match pattern", request.getRequestURI());
+        }
+    }
+
+    @Override
+    protected void doHead(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        final Matcher matcher = URL_PATTERN.matcher(request.getRequestURI());
+        if (matcher.matches()) {
+            response.setHeader("X-Frame-Options", "ALLOWALL");
+            final String planKeyString = matcher.group(1);
+            final String buildNumber = matcher.group(2);
+            final String filePath = matcher.group(3);
+            final PlanResultKey planResultKey = getPlanResultKey(planKeyString, parseInt(buildNumber));
+            ofNullable(resultsSummaryManager.getResultsSummary(planResultKey)).ifPresent(results -> {
+                final AllureBuildResult uploadResult = fromCustomData(results.getCustomBuildData());
+                if (uploadResult.isSuccess()) {
+                    artifactsManager.getArtifactUrl(planKeyString, buildNumber, filePath).ifPresent(file -> {
+                        try (final InputStream input = new URL(file).openStream()) {
+                            response.setStatus(HttpServletResponse.SC_OK);
+                        } catch (IOException e) {
+                            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                            LOGGER.error("Failed to send file {} of Allure Report ", file);
+                        }
+                    });
+                } else {
+                    uploadResultIsNotSuccess(response, uploadResult);
+                }
+            });
+        } else {
+            LOGGER.info("Path {} does not match pattern", request.getRequestURI());
+        }
+    }
+
+    private void uploadResultIsNotSuccess(HttpServletResponse response, AllureBuildResult uploadResult) {
+        final String errorMessage = isEmpty(uploadResult.getFailureDetails()) ?
+                "Unknown error has occurred during Allure Build. Please refer the server logs for details." :
+                "Something went wrong with Allure Report generation. Here are some details: \n" + uploadResult.getFailureDetails();
+        try {
+            response.setHeader("Content-Type", "text/plain");
+            response.setHeader("Content-Length", String.valueOf(errorMessage.length()));
+            response.setHeader("Content-Disposition", "inline");
+            response.getWriter().write(errorMessage);
+        } catch (IOException e) {
+            LOGGER.error("Failed to render error of Allure Report build ", e);
         }
     }
 }
