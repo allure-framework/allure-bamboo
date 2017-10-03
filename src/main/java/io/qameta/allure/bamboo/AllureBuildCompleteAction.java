@@ -116,36 +116,36 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
      */
     private void copyHistory(File artifactsTempDir, Chain chain, ChainExecution chainExecution) {
         try {
-            File historyDir = new File(artifactsTempDir.toPath().resolve("history").toString());
-            if(!historyDir.mkdir()) {
-                return;
-            }
-            boolean historyFilesNotFound = true;
-            int buildNumber = chainExecution.getPlanResultKey().getBuildNumber();
-            while (historyFilesNotFound) {
-                ResultsSummary lastBuild = Optional.ofNullable(resultsSummaryManager.findLastBuildResultBefore(
-                        chain.getPlanKey().getKey(), buildNumber)).orElseThrow(
-                        () -> new RuntimeException("Could not find previous buildId"));
-                if (historyArtifactExists(chain.getPlanKey().getKey(), lastBuild.getBuildNumber())) {
-                    copyArtifactToHistoryFolder(historyDir.toPath(), "history.json", chain.getPlanKey().getKey(), lastBuild.getBuildNumber());
-                    copyArtifactToHistoryFolder(historyDir.toPath(), "history-trend.json", chain.getPlanKey().getKey(), lastBuild.getBuildNumber());
-                    historyFilesNotFound = false;
-                } else {
-                    buildNumber = lastBuild.getBuildNumber();
-                }
+            Path historyDir = artifactsTempDir.toPath().resolve("history");
+            Integer lastBuildNumber = getLastBuildNumberWithHistory(chain.getPlanKey().getKey(), chainExecution.getPlanResultKey().getBuildNumber());
+            for (String historyFile : new String[] {"history.json", "history-trend.json"}) {
+                copyArtifactToHistoryFolder(historyDir, historyFile, chain.getPlanKey().getKey(), lastBuildNumber);
             }
         } catch (Exception e) {
             LOGGER.info("Cannot copy history files.", e);
         }
     }
 
+    private Integer getLastBuildNumberWithHistory(String planKey, int buildNumber) {
+        while (true) {
+            ResultsSummary lastBuild = Optional.ofNullable(resultsSummaryManager.findLastBuildResultBefore(
+                    planKey, buildNumber)).orElseThrow(
+                    () -> new RuntimeException("Could not found a previous buildId with the history artifact."));
+            if (historyArtifactExists(planKey, lastBuild.getBuildNumber())) {
+                return lastBuild.getBuildNumber();
+            } else {
+                buildNumber = lastBuild.getBuildNumber();
+            }
+        }
+    }
+
     private boolean historyArtifactExists(String planKey, int buildId) {
-        String artifactUrl= getHistoryArtifactUrl("history.json", planKey, buildId);
+        String artifactUrl = getHistoryArtifactUrl("history.json", planKey, buildId);
         try {
             HttpURLConnection.setFollowRedirects(false);
             HttpURLConnection con = (HttpURLConnection) new URL(artifactUrl).openConnection();
             con.setRequestMethod("HEAD");
-            return (con.getResponseCode() == HttpURLConnection.HTTP_OK);
+            return con.getResponseCode() == HttpURLConnection.HTTP_OK;
         } catch (Exception e) {
             LOGGER.info("Cannot connect to artifact {}.", artifactUrl, e);
             return false;
@@ -155,8 +155,12 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
     private void copyArtifactToHistoryFolder(Path historyFolder, String fileName, String planKey, int buildId) throws Exception {
         URL artifactUrl = new URL(getHistoryArtifactUrl(fileName, planKey, buildId));
         URLConnection uc = artifactUrl.openConnection();
-        InputStream inputStream = uc.getInputStream();
-        Files.copy(inputStream, historyFolder.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+        try(InputStream inputStream = uc.getInputStream()) {
+            if (!historyFolder.toFile().exists()) {
+                historyFolder.toFile().mkdir();
+            }
+            Files.copy(inputStream, historyFolder.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 
     @NotNull
