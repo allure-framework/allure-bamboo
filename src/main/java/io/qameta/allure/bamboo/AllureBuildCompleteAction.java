@@ -11,6 +11,7 @@ import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
 import com.atlassian.spring.container.ContainerManager;
 import io.qameta.allure.bamboo.info.AddExecutorInfo;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +48,7 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
     private final AllureArtifactsManager artifactsManager;
     private final BambooExecutablesManager executablesManager;
     private final ResultsSummaryManager resultsSummaryManager;
-
+    private final AdministrationConfiguration adminConfiguration;
 
     public AllureBuildCompleteAction(AllureExecutableProvider allureExecutable,
                                      AllureSettingsManager settingsManager,
@@ -59,6 +60,7 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
         this.artifactsManager = artifactsManager;
         this.executablesManager = executablesManager;
         this.resultsSummaryManager = resultsSummaryManager;
+        this.adminConfiguration = (AdministrationConfiguration) ContainerManager.getComponent("administrationConfiguration");
     }
 
     @Override
@@ -111,24 +113,24 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
     }
 
     private void prepareResults(File artifactsTempDir, Chain chain, ChainExecution chainExecution) throws IOException, InterruptedException {
-        copyHistory(artifactsTempDir, chain, chainExecution);
-        addExecutorInfo(artifactsTempDir, chain, chainExecution);
+        copyHistory(artifactsTempDir, chain.getPlanKey().getKey(), chainExecution.getPlanResultKey().getBuildNumber());
+        addExecutorInfo(artifactsTempDir, chain, chainExecution.getPlanResultKey().getBuildNumber());
     }
 
     /**
      * Write the history file to results directory.
      */
-    private void copyHistory(File artifactsTempDir, Chain chain, ChainExecution chainExecution) {
+    private void copyHistory(File artifactsTempDir, String planKey, int buildNumber) {
         Path historyDir = artifactsTempDir.toPath().resolve("history");
         Optional<Integer> lastBuild = getLastBuildNumberWithHistory(
-                chain.getPlanKey().getKey(), chainExecution.getPlanResultKey().getBuildNumber()
+                planKey, buildNumber
         );
-        lastBuild.ifPresent(buildNumber -> copyHistoryFiles(chain, historyDir, buildNumber));
+        lastBuild.ifPresent(buildId -> copyHistoryFiles(planKey, historyDir, buildId));
     }
 
-    private void copyHistoryFiles(Chain chain, Path historyDir, Integer buildNumber) {
+    private void copyHistoryFiles(String planKey, Path historyDir, Integer buildNumber) {
         HISTORY_FILES.forEach(historyFile ->
-                copyArtifactToHistoryFolder(historyDir, historyFile, chain.getPlanKey().getKey(), buildNumber)
+                copyArtifactToHistoryFolder(historyDir, historyFile, planKey, buildNumber)
         );
     }
 
@@ -178,14 +180,13 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
                 getBambooBaseUrl(), planKey, buildId, fileName);
     }
 
-    private void addExecutorInfo(File artifactsTempDir, Chain chain, ChainExecution chainExecution) throws IOException, InterruptedException {
+    private void addExecutorInfo(File artifactsTempDir, Chain chain, int buildNumber) throws IOException, InterruptedException {
         String rootUrl = getBambooBaseUrl();
-        int buildId = chainExecution.getPlanResultKey().getBuildNumber();
         String buildName = chain.getBuildName();
-        String buildUrl = String.format("%s/browse/%s-%s", rootUrl, chain.getPlanKey().getKey(), buildId);
+        String buildUrl = String.format("%s/browse/%s-%s", rootUrl, chain.getPlanKey().getKey(), buildNumber);
         String reportUrl = String.format("%s/plugins/servlet/allure/report/%s/%s/", rootUrl,
-                chain.getPlanKey().getKey(), buildId);
-        new AddExecutorInfo(rootUrl, Integer.toString(buildId), buildName, buildUrl, reportUrl).invoke(artifactsTempDir);
+                chain.getPlanKey().getKey(), buildNumber);
+        new AddExecutorInfo(rootUrl, Integer.toString(buildNumber), buildName, buildUrl, reportUrl).invoke(artifactsTempDir);
     }
 
     /**
@@ -193,10 +194,9 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
      */
     @NotNull
     private String getBambooBaseUrl() {
-        return getAdministrationConfiguration().getBaseUrl();
-    }
-
-    private AdministrationConfiguration getAdministrationConfiguration() {
-        return (AdministrationConfiguration) ContainerManager.getComponent("administrationConfiguration");
+        if (this.adminConfiguration != null) {
+            return StringUtils.isNoneBlank(this.adminConfiguration.getBaseUrl()) ? this.adminConfiguration.getBaseUrl() : "";
+        }
+        return "";
     }
 }
