@@ -59,7 +59,7 @@ class AllureDownloader {
         try {
             final URL url = buildAllureDownloadUrl(version);
             final Path downloadToFile = createTempFile("allure", "zip");
-            LOGGER.info("Downloading allure.zip from " + url + " to " + downloadToFile);
+            LOGGER.info("Downloading allure.zip from {} to {}", url, downloadToFile);
             copyURLToFile(url, downloadToFile.toFile(), CONN_TIMEOUT_MS, DOWNLOAD_TIMEOUT_MS);
             return Optional.of(downloadToFile);
         } catch (IOException e) {
