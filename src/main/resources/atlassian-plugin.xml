@@ -12,20 +12,18 @@
     <!-- add our i18n resource -->
     <resource type="i18n" name="i18n" location="allure-bamboo"/>
 
+    <postChainAction key="allureBuildCompleteAction" class="io.qameta.allure.bamboo.AllureBuildCompleteAction">
+        <description>Tears down and saves data for MyBambooPlugin if the Chain has the plugin enabled</description>
+    </postChainAction>
+
     <taskType key="allureReport" name="Allure Report" class="io.qameta.allure.bamboo.AllureReportTask">
         <description>Generate Allure report</description>
         <resource type="download" name="icon" location="images/logo.png"/>
         <category name="test"/>
         <executable key="allure"/>
         <configuration class="io.qameta.allure.bamboo.AllureReportTaskConfigurator"/>
-        <resource type="freemarker" name="edit" location="templates/editAllureReportTask.ftl"/>
-        <resource type="freemarker" name="view" location="templates/viewAllureReportTask.ftl"/>
         <help link="allure.task.help.link" title="allure.task.help.title"/>
     </taskType>
-
-    <postChainAction key="allureBuildCompleteAction" class="io.qameta.allure.bamboo.AllureBuildCompleteAction">
-        <description>Tears down and saves data for MyBambooPlugin if the Chain has the plugin enabled</description>
-    </postChainAction>
 
     <additionalBuildConfigurationPlugin key="allureConfig" name="Allure Report Configuration"
                                         class="io.qameta.allure.bamboo.AllureBuildConfigurator">

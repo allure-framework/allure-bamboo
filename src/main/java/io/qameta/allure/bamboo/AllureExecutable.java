@@ -5,9 +5,11 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.LinkedList;
 
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 
 class AllureExecutable {
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureExecutable.class);
@@ -21,9 +23,10 @@ class AllureExecutable {
     }
 
     @Nonnull
-    AllureGenerateResult generate(Path sourceDir, Path targetDir) {
+    AllureGenerateResult generate(Collection<Path> sourceDirs, Path targetDir) {
         try {
-            final LinkedList<String> args = new LinkedList<>(asList("generate", "-o", targetDir.toString(), sourceDir.toString()));
+            final LinkedList<String> args = new LinkedList<>(asList("generate", "-o", targetDir.toString()));
+            args.addAll(sourceDirs.stream().map(Path::toString).collect(toList()));
             String output;
             if (cmdLine.isUnix() && cmdLine.hasCommand(BASH_CMD)) {
                 args.addFirst(cmdPath.toString());

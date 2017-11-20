@@ -41,18 +41,21 @@ import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 import org.apache.tools.ant.types.FileSet;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nullable;
 import javax.ws.rs.core.UriBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import static com.atlassian.bamboo.build.artifact.AbstractArtifactHandler.configProvider;
 import static com.atlassian.bamboo.plan.PlanKeys.getPlanKey;
@@ -66,6 +69,7 @@ import static java.lang.Integer.parseInt;
 import static java.util.Optional.ofNullable;
 import static javax.ws.rs.core.UriBuilder.fromPath;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
+import static org.apache.commons.io.FileUtils.forceMkdir;
 import static org.apache.commons.io.FileUtils.moveDirectory;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.codehaus.plexus.util.FileUtils.copyDirectory;
@@ -139,21 +143,31 @@ public class AllureArtifactsManager {
      * Downloads all artifacts of a build chain to a temporary directory
      *
      * @param chainResultsSummary chain results
-     * @param tempFolder          temporary directory
+     * @param baseDir             temporary directory
+     * @param artifactName        name of the artifact to use (all artifacts will be used if null)
      */
-    void downloadAllArtifactsTo(@NotNull ChainResultsSummary chainResultsSummary, File tempFolder) {
+    Collection<Path> downloadAllArtifactsTo(@NotNull ChainResultsSummary chainResultsSummary, File baseDir,
+                                            @Nullable String artifactName) throws IOException {
+        final List<Path> resultsPaths = new ArrayList<>();
         for (ChainStageResult stageResult : chainResultsSummary.getStageResults()) {
             for (BuildResultsSummary resultsSummary : stageResult.getBuildResults()) {
                 for (ArtifactLink link : resultsSummary.getArtifactLinks()) {
-                    final ArtifactLinkDataProvider dataProvider = artifactLinkManager.getArtifactLinkDataProvider(link.getArtifact());
-                    if (dataProvider instanceof FileSystemArtifactLinkDataProvider) {
-                        downloadAllArtifactsTo((FileSystemArtifactLinkDataProvider) dataProvider, tempFolder);
-                    } else {
-                        downloadAllArtifactsTo(dataProvider, tempFolder, "");
+                    final MutableArtifact artifact = link.getArtifact();
+                    if(isEmpty(artifactName) || artifactName.equals(artifact.getLabel())){
+                        final File stageDir = new File(baseDir, UUID.randomUUID().toString());
+                        forceMkdir(stageDir);
+                        resultsPaths.add(stageDir.toPath());
+                        final ArtifactLinkDataProvider dataProvider = artifactLinkManager.getArtifactLinkDataProvider(artifact);
+                        if (dataProvider instanceof FileSystemArtifactLinkDataProvider) {
+                            downloadAllArtifactsTo((FileSystemArtifactLinkDataProvider) dataProvider, stageDir);
+                        } else {
+                            downloadAllArtifactsTo(dataProvider, stageDir, "");
+                        }
                     }
                 }
             }
         }
+        return resultsPaths;
     }
 
     /**

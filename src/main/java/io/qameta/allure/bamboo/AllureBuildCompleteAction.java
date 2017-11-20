@@ -25,6 +25,7 @@ import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -86,18 +87,19 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
             LOGGER.info("Allure Report is enabled for {}", chain.getName());
             LOGGER.info("Trying to get executable by name {} for {}", executable, chain.getName());
 
-            AllureExecutable allure = allureExecutable.provide(globalConfig, executable).orElseThrow(() ->
+            final AllureExecutable allure = allureExecutable.provide(globalConfig, executable).orElseThrow(() ->
                     new RuntimeException("Failed to find Allure executable by name " + executable));
 
             LOGGER.info("Starting artifacts downloading into {} for {}", artifactsTempDir.getPath(), chain.getName());
-            artifactsManager.downloadAllArtifactsTo(chainResultsSummary, artifactsTempDir);
+            final Collection<Path> artifactsPaths = artifactsManager.downloadAllArtifactsTo(
+                    chainResultsSummary, artifactsTempDir, buildConfig.getArtifactName());
             if (artifactsTempDir.list().length == 0) {
                 allureBuildResult(false, "Build result does not have any uploaded artifacts!")
                         .dumpToCustomData(customBuildData);
             } else {
                 LOGGER.info("Starting allure generate into {} for {}", allureReportDir.getPath(), chain.getName());
                 prepareResults(artifactsTempDir, chain, chainExecution);
-                allure.generate(artifactsTempDir.toPath(), allureReportDir.toPath());
+                allure.generate(artifactsPaths, allureReportDir.toPath());
                 LOGGER.info("Allure has been generated successfully for {}", chain.getName());
                 artifactsManager.uploadReportArtifacts(chain, chainResultsSummary, allureReportDir)
                         .ifPresent(result -> result.dumpToCustomData(customBuildData));

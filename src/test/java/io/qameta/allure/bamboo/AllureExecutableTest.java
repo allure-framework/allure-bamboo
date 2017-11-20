@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static com.google.common.io.Files.createTempDir;
+import static java.util.Collections.singleton;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,7 +42,7 @@ public class AllureExecutableTest {
         when(cmdLine.hasCommand("/bin/bash")).thenReturn(true);
         when(cmdLine.isUnix()).thenReturn(true);
 
-        executable.generate(fromDir, toDir);
+        executable.generate(singleton(fromDir), toDir);
 
         verify(cmdLine).runCommand("/bin/bash", path.toString(), "generate", "-o", toDir.toString(), fromDir.toString());
     }
@@ -51,7 +52,7 @@ public class AllureExecutableTest {
         when(cmdLine.hasCommand("/bin/bash")).thenReturn(false);
         when(cmdLine.isUnix()).thenReturn(true);
 
-        executable.generate(fromDir, toDir);
+        executable.generate(singleton(fromDir), toDir);
 
         verify(cmdLine).runCommand(path.toString(), "generate", "-o", toDir.toString(), fromDir.toString());
     }
@@ -60,7 +61,7 @@ public class AllureExecutableTest {
     public void itShouldInvokeAllureGenerateOnWindows() throws Exception {
         when(cmdLine.isUnix()).thenReturn(false);
 
-        executable.generate(fromDir, toDir);
+        executable.generate(singleton(fromDir), toDir);
 
         verify(cmdLine).runCommand(path.toString(), "generate", "-o", toDir.toString(), fromDir.toString());
 

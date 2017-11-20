@@ -3,6 +3,7 @@ package io.qameta.allure.bamboo;
 import java.io.Serializable;
 import java.util.Map;
 
+import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_ARTIFACT_NAME;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_ENABLED;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_EXECUTABLE;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_FAILED_ONLY;
@@ -14,11 +15,13 @@ public class AllureBuildConfig implements Serializable {
     private final boolean onlyForFailed;
     private final String executable;
     private final boolean enabled;
+    private final String artifactName;
 
-    private AllureBuildConfig(String executable, String enabled, String onlyForFailed) {
+    private AllureBuildConfig(String executable, String enabled, String onlyForFailed, String artifactName) {
         this.onlyForFailed = isEmpty(onlyForFailed) ? TRUE : Boolean.parseBoolean(onlyForFailed);
         this.enabled = isEmpty(enabled) ? FALSE : Boolean.parseBoolean(enabled);
         this.executable = executable;
+        this.artifactName = artifactName;
     }
 
     static AllureBuildConfig fromContext(Map<String, String> context) {
@@ -27,7 +30,8 @@ public class AllureBuildConfig implements Serializable {
         return new AllureBuildConfig(
                 context.get(ALLURE_CONFIG_EXECUTABLE),
                 enableAllureString,
-                failedOnlyString);
+                failedOnlyString,
+                context.get(ALLURE_CONFIG_ARTIFACT_NAME));
     }
 
     boolean isOnlyForFailed() {
@@ -44,5 +48,9 @@ public class AllureBuildConfig implements Serializable {
 
     boolean isEnabled() {
         return enabled;
+    }
+
+    public String getArtifactName() {
+        return artifactName;
     }
 }
