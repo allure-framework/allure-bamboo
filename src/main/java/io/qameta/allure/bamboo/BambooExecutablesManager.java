@@ -6,6 +6,8 @@ import com.atlassian.bamboo.v2.build.agent.capability.CapabilityImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySetManager;
 import com.atlassian.bamboo.v2.build.agent.capability.LocalCapabilitySet;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
@@ -20,6 +22,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
 public class BambooExecutablesManager {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BambooExecutablesManager.class);
     private final CapabilitySetManager capabilitySetManager;
 
     public BambooExecutablesManager(CapabilitySetManager capabilitySetManager) {
@@ -42,10 +45,14 @@ public class BambooExecutablesManager {
     }
 
     Optional<String> getExecutableByName(String executableName) {
+        LOGGER.debug("Trying to find a capability by executable name '{}'", executableName);
         return getCapabilityKeys().stream()
                 .filter(capKey -> {
                     final String[] strings = capKey.split("\\.", 4);
-                    return strings.length == 4 && executableName.equals(strings[3]);
+                    final boolean matches = strings.length == 4 && executableName.equals(strings[3]);
+                    LOGGER.debug("Checking key '{}' to matches executable name '{}'={}...",
+                            capKey, executableName, matches);
+                    return matches;
                 })
                 .findFirst()
                 .map(this::getCapability)

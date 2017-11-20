@@ -35,7 +35,7 @@ class AllureDownloader {
     Optional<Path> downloadAndExtractAllureTo(String allureHomeDir, String version) {
         return downloadAllure(version).map(zipFilePath -> {
             try {
-                LOGGER.info("Extracting file " + zipFilePath + " to " + allureHomeDir + "...");
+                LOGGER.info("Extracting file {} to {}...", zipFilePath, allureHomeDir);
                 final String extractedDirName = "allure-" + version;
                 final File homeDir = new File(allureHomeDir);
                 final Path extracteDir = zipFilePath.getParent();
