@@ -70,7 +70,7 @@ class AllureDownloader {
 
     private URL buildAllureDownloadUrl(String version) throws MalformedURLException {
         return fromPath(settingsManager.getSettings().getDownloadBaseUrl())
-                .path(Paths.get(version, "allure-" + version + ".zip").toString())
+                .path(version + "/" + "allure-" + version + ".zip")
                 .build().toURL();
     }
 }
