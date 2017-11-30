@@ -1,5 +1,6 @@
 package io.qameta.allure.bamboo;
 
+import com.atlassian.bamboo.build.logger.BuildLogger;
 import com.atlassian.bamboo.task.TaskContext;
 import com.atlassian.bamboo.task.TaskResult;
 import com.atlassian.bamboo.task.TaskResultBuilder;
@@ -18,6 +19,10 @@ public class AllureReportTask implements TaskType {
     @NotNull
     @Override
     public TaskResult execute(@NotNull TaskContext taskContext) {
+        final BuildLogger buildLogger = taskContext.getBuildLogger();
+        buildLogger.addBuildLogHeader("Allure Report", true);
+        buildLogger.addBuildLogEntry("This allure report task is now a sham. It does nothing, so please use" +
+                " the suggested way of configuration as listed in the Allure docs! ");
         return TaskResultBuilder.newBuilder(taskContext).success().build();
     }
 
