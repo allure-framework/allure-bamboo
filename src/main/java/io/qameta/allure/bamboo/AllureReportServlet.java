@@ -15,6 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -23,6 +24,7 @@ import java.util.regex.Pattern;
 import static com.atlassian.bamboo.plan.PlanKeys.getPlanResultKey;
 import static io.qameta.allure.bamboo.AllureBuildResult.fromCustomData;
 import static java.lang.Integer.parseInt;
+import static java.util.Optional.ofNullable;
 import static org.sonatype.aether.util.StringUtils.isEmpty;
 
 public class AllureReportServlet extends HttpServlet {
@@ -66,9 +68,12 @@ public class AllureReportServlet extends HttpServlet {
         });
     }
 
-    private void setResponseHeaders(HttpServletResponse response, String file) {
+    private void setResponseHeaders(HttpServletResponse response, String file) throws IOException {
         response.setStatus(HttpServletResponse.SC_OK);
-        response.setHeader("Content-Type", getServletContext().getMimeType(file));
+        final String mimeType = ofNullable(getServletContext().getMimeType(file)).orElse(
+                Files.probeContentType(Paths.get(file))
+        );
+        response.setHeader("Content-Type", mimeType);
         response.setHeader("Content-Disposition", "inline; filename=\"" + Paths.get(file).getFileName().toString() + "\"");
     }
 
