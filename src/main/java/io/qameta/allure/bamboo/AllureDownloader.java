@@ -35,7 +35,7 @@ class AllureDownloader {
     Optional<Path> downloadAndExtractAllureTo(String allureHomeDir, String version) {
         return downloadAllure(version).map(zipFilePath -> {
             try {
-                LOGGER.info("Extracting file " + zipFilePath + " to " + allureHomeDir + "...");
+                LOGGER.info("Extracting file {} to {}...", zipFilePath, allureHomeDir);
                 final String extractedDirName = "allure-" + version;
                 final File homeDir = new File(allureHomeDir);
                 final Path extracteDir = zipFilePath.getParent();
@@ -59,7 +59,7 @@ class AllureDownloader {
         try {
             final URL url = buildAllureDownloadUrl(version);
             final Path downloadToFile = createTempFile("allure", "zip");
-            LOGGER.info("Downloading allure.zip from " + url + " to " + downloadToFile);
+            LOGGER.info("Downloading allure.zip from {} to {}", url, downloadToFile);
             copyURLToFile(url, downloadToFile.toFile(), CONN_TIMEOUT_MS, DOWNLOAD_TIMEOUT_MS);
             return Optional.of(downloadToFile);
         } catch (IOException e) {
@@ -70,7 +70,7 @@ class AllureDownloader {
 
     private URL buildAllureDownloadUrl(String version) throws MalformedURLException {
         return fromPath(settingsManager.getSettings().getDownloadBaseUrl())
-                .path(Paths.get(version, "allure-" + version + ".zip").toString())
+                .path(version + "/" + "allure-" + version + ".zip")
                 .build().toURL();
     }
 }
