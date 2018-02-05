@@ -58,11 +58,11 @@ class AllureDownloader {
     private Optional<Path> downloadAllure(String version) {
         try {
             final URL url = buildAllureDownloadUrl(version);
-            final Path downloadToFile = createTempFile("allure", "zip");
+            final Path downloadToFile = createTempFile("allure", ".zip");
             LOGGER.info("Downloading allure.zip from {} to {}", url, downloadToFile);
             copyURLToFile(url, downloadToFile.toFile(), CONN_TIMEOUT_MS, DOWNLOAD_TIMEOUT_MS);
             return Optional.of(downloadToFile);
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOGGER.error("Failed to download Allure of version {}", version, e);
         }
         return Optional.empty();

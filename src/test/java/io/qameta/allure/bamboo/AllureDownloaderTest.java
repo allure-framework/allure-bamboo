@@ -36,7 +36,7 @@ public class AllureDownloaderTest {
 
     @Test
     public void itShouldDownloadAndExtractAllureRelease() throws Exception {
-        downloader.downloadAndExtractAllureTo(homeDir, "2.2.1");
+        downloader.downloadAndExtractAllureTo(homeDir, "2.5.0");
         assertTrue(Paths.get(homeDir, "bin", "allure").toFile().exists());
     }
 

@@ -68,13 +68,14 @@ public class AllureReportServlet extends HttpServlet {
         });
     }
 
-    private void setResponseHeaders(HttpServletResponse response, String file) throws IOException {
+    private void setResponseHeaders(HttpServletResponse response, String fileUrl) throws IOException {
         response.setStatus(HttpServletResponse.SC_OK);
-        final String mimeType = ofNullable(getServletContext().getMimeType(file)).orElse(
+        final String file = new URL(fileUrl).getPath();
+        final String mimeType = ofNullable(getServletContext().getMimeType(fileUrl)).orElse(
                 Files.probeContentType(Paths.get(file))
         );
         response.setHeader("Content-Type", mimeType);
-        response.setHeader("Content-Disposition", "inline; filename=\"" + Paths.get(file).getFileName().toString() + "\"");
+        response.setHeader("Content-Disposition", "inline; filename=\"" + Paths.get(fileUrl).getFileName().toString() + "\"");
     }
 
     private Optional<String> getArtifactUrl(HttpServletRequest request, HttpServletResponse response){
