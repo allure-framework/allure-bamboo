@@ -25,6 +25,7 @@ import static com.atlassian.bamboo.plan.PlanKeys.getPlanResultKey;
 import static io.qameta.allure.bamboo.AllureBuildResult.fromCustomData;
 import static java.lang.Integer.parseInt;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Stream.of;
 import static org.sonatype.aether.util.StringUtils.isEmpty;
 
 public class AllureReportServlet extends HttpServlet {
@@ -47,7 +48,7 @@ public class AllureReportServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         getArtifactUrl(request, response).ifPresent(file -> {
-            try(InputStream inputStream = new URL(file).openStream()) {
+            try (InputStream inputStream = new URL(file).openStream()) {
                 setResponseHeaders(response, file);
                 IOUtils.copy(inputStream, response.getOutputStream());
             } catch (IOException e) {
@@ -59,7 +60,7 @@ public class AllureReportServlet extends HttpServlet {
     @Override
     protected void doHead(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         getArtifactUrl(request, response).ifPresent(file -> {
-            try(InputStream inputStream = new URL(file).openStream()) {
+            try (InputStream inputStream = new URL(file).openStream()) {
                 setResponseHeaders(response, file);
             } catch (IOException e) {
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -74,11 +75,12 @@ public class AllureReportServlet extends HttpServlet {
         final String mimeType = ofNullable(getServletContext().getMimeType(fileUrl)).orElse(
                 Files.probeContentType(Paths.get(file))
         );
-        response.setHeader("Content-Type", mimeType);
+        final String charsetPostfix = of("application", "text").anyMatch(mimeType::contains) ? ";charset=utf-8" : "";
+        response.setHeader("Content-Type", mimeType + charsetPostfix);
         response.setHeader("Content-Disposition", "inline; filename=\"" + Paths.get(fileUrl).getFileName().toString() + "\"");
     }
 
-    private Optional<String> getArtifactUrl(HttpServletRequest request, HttpServletResponse response){
+    private Optional<String> getArtifactUrl(HttpServletRequest request, HttpServletResponse response) {
         final Matcher matcher = URL_PATTERN.matcher(request.getRequestURI());
         if (matcher.matches()) {
             response.setHeader("X-Frame-Options", "ALLOWALL");
