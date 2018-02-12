@@ -18,7 +18,6 @@ import com.atlassian.bamboo.build.artifact.BambooRemoteArtifactHandler;
 import com.atlassian.bamboo.build.artifact.FileSystemArtifactLinkDataProvider;
 import com.atlassian.bamboo.build.artifact.TrampolineArtifactFileData;
 import com.atlassian.bamboo.build.artifact.TrampolineUrlArtifactLinkDataProvider;
-import com.atlassian.bamboo.build.artifact.handlers.ArtifactHandlersFunctions;
 import com.atlassian.bamboo.build.artifact.handlers.ArtifactHandlersService;
 import com.atlassian.bamboo.chains.Chain;
 import com.atlassian.bamboo.chains.ChainResultsSummary;
@@ -36,8 +35,6 @@ import com.atlassian.plugin.predicate.ModuleOfClassPredicate;
 import com.atlassian.sal.api.ApplicationProperties;
 import com.atlassian.sal.api.UrlMode;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 import org.apache.tools.ant.types.FileSet;
 import org.jetbrains.annotations.NotNull;
@@ -56,10 +53,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Predicate;
+import java.util.stream.Collector;
 
 import static com.atlassian.bamboo.build.artifact.AbstractArtifactHandler.configProvider;
 import static com.atlassian.bamboo.plan.PlanKeys.getPlanKey;
 import static com.atlassian.bamboo.plan.PlanKeys.getPlanResultKey;
+import static com.atlassian.bamboo.plugin.descriptor.ArtifactHandlerModuleDescriptor.ARTIFACT_HANDLERS_CONFIG_PREFIX;
+import static com.atlassian.bamboo.plugin.descriptor.ArtifactHandlerModuleDescriptorImpl.SHARED_NON_SHARED_ONOFF_OPTION_NAME;
 import static com.google.common.collect.Iterables.size;
 import static com.google.common.io.Files.copy;
 import static io.qameta.allure.bamboo.AllureBuildResult.allureBuildResult;
@@ -67,6 +68,7 @@ import static io.qameta.allure.bamboo.AllureBuildResult.fromCustomData;
 import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
 import static java.lang.Integer.parseInt;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toMap;
 import static javax.ws.rs.core.UriBuilder.fromPath;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.apache.commons.io.FileUtils.forceMkdir;
@@ -153,7 +155,7 @@ public class AllureArtifactsManager {
             for (BuildResultsSummary resultsSummary : stageResult.getBuildResults()) {
                 for (ArtifactLink link : resultsSummary.getArtifactLinks()) {
                     final MutableArtifact artifact = link.getArtifact();
-                    if(isEmpty(artifactName) || artifactName.equals(artifact.getLabel())){
+                    if (isEmpty(artifactName) || artifactName.equals(artifact.getLabel())) {
                         final File stageDir = new File(baseDir, UUID.randomUUID().toString());
                         forceMkdir(stageDir);
                         resultsPaths.add(stageDir.toPath());
@@ -324,9 +326,12 @@ public class AllureArtifactsManager {
         final Map<String, String> config = artifactHandlersService.getRuntimeConfiguration();
         final Map<String, String> planCustomConfiguration = buildDefinition.getCustomConfiguration();
         if (ArtifactHandlingUtils.isCustomArtifactHandlingConfigured(planCustomConfiguration)) {
-            Iterables.removeIf(config.keySet(), ArtifactHandlersFunctions.isArtifactHandlerOnOffSwitch());
-            final Map<String, String> planLevelConfiguration = Maps.filterKeys(planCustomConfiguration, ArtifactHandlersFunctions.isArtifactHandlerConfiguration());
-            config.putAll(planLevelConfiguration);
+            // This hacky way it's compatible with both Bamboo 5.x and Bamboo 6.x
+            final Collector<Map.Entry<String, String>, ?, Map<String, String>> toMap = toMap(Map.Entry::getKey, Map.Entry::getValue);
+            final Predicate<Map.Entry<String, String>> isArtifactHandler = e -> e.getKey().startsWith(ARTIFACT_HANDLERS_CONFIG_PREFIX);
+            final Predicate<Map.Entry<String, String>> isNotHandlerSwitch = e -> SHARED_NON_SHARED_ONOFF_OPTION_NAME.values().stream().noneMatch(o -> e.getKey().endsWith(o));
+            config.putAll(planCustomConfiguration.entrySet().stream().filter(isArtifactHandler).collect(toMap));
+            return config.entrySet().stream().filter(isArtifactHandler).filter(isNotHandlerSwitch).collect(toMap);
         }
         return config;
     }

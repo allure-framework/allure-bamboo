@@ -3,7 +3,7 @@ package io.qameta.allure.bamboo.util;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-public class ExceptionUtil {
+public final class ExceptionUtil {
     private ExceptionUtil() {
     }
 

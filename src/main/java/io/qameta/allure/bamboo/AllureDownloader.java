@@ -7,8 +7,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -17,7 +20,7 @@ import static java.lang.Integer.getInteger;
 import static java.nio.file.Files.createTempFile;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static javax.ws.rs.core.UriBuilder.fromPath;
-import static org.apache.commons.io.FileUtils.copyURLToFile;
+import static org.apache.commons.io.FileUtils.copyInputStreamToFile;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.apache.commons.io.FileUtils.moveDirectory;
 
@@ -58,11 +61,20 @@ class AllureDownloader {
     private Optional<Path> downloadAllure(String version) {
         try {
             final URL url = buildAllureDownloadUrl(version);
-            final Path downloadToFile = createTempFile("allure", "zip");
+            final Path downloadToFile = createTempFile("allure", ".zip");
             LOGGER.info("Downloading allure.zip from {} to {}", url, downloadToFile);
-            copyURLToFile(url, downloadToFile.toFile(), CONN_TIMEOUT_MS, DOWNLOAD_TIMEOUT_MS);
-            return Optional.of(downloadToFile);
-        } catch (IOException e) {
+            final URLConnection connection = url.openConnection();
+            connection.setConnectTimeout(CONN_TIMEOUT_MS);
+            connection.setReadTimeout(DOWNLOAD_TIMEOUT_MS);
+            connection.setRequestProperty("Connection", "close");
+            connection.setRequestProperty("Pragma", "no-cache");
+            ((HttpURLConnection)connection).setInstanceFollowRedirects(true);
+            connection.connect();
+            try (InputStream input = connection.getInputStream()) {
+                copyInputStreamToFile(input, downloadToFile.toFile());
+                return Optional.of(downloadToFile);
+            }
+        } catch (Exception e) {
             LOGGER.error("Failed to download Allure of version {}", version, e);
         }
         return Optional.empty();

@@ -15,6 +15,7 @@ import static io.qameta.allure.bamboo.AllureExecutableProvider.DEFAULT_VERSION;
 import static io.qameta.allure.bamboo.AllureExecutableProvider.getAllureSubDir;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.junit.MockitoJUnit.rule;
@@ -43,6 +44,7 @@ public class AllureExecutableProviderTest {
         config = new AllureGlobalConfig();
         allureCmdPath = Paths.get(binaryDir, "bin", "allure");
         allureBatCmdPath = Paths.get(binaryDir, "bin", "allure.bat");
+        when(downloader.downloadAndExtractAllureTo(anyString(), anyString())).thenReturn(Optional.empty());
     }
 
     @Test
