@@ -36,7 +36,9 @@ import static io.qameta.allure.bamboo.AllureBuildResult.allureBuildResult;
 import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
 import static java.lang.String.format;
 import static java.util.Arrays.*;
+import static java.util.stream.Collectors.toList;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
+import static org.codehaus.plexus.util.FileUtils.copyDirectory;
 
 @SuppressWarnings("ConstantConditions")
 public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements PostChainAction {
@@ -98,7 +100,7 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
                         .dumpToCustomData(customBuildData);
             } else {
                 LOGGER.info("Starting allure generate into {} for {}", allureReportDir.getPath(), chain.getName());
-                prepareResults(artifactsTempDir, chain, chainExecution);
+                prepareResults(artifactsPaths.stream().map(Path::toFile).collect(toList()), chain, chainExecution);
                 allure.generate(artifactsPaths, allureReportDir.toPath());
                 LOGGER.info("Allure has been generated successfully for {}", chain.getName());
                 artifactsManager.uploadReportArtifacts(chain, chainResultsSummary, allureReportDir)
@@ -114,20 +116,26 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
         }
     }
 
-    private void prepareResults(File artifactsTempDir, Chain chain, ChainExecution chainExecution) throws IOException, InterruptedException {
-        copyHistory(artifactsTempDir, chain.getPlanKey().getKey(), chainExecution.getPlanResultKey().getBuildNumber());
-        addExecutorInfo(artifactsTempDir, chain, chainExecution.getPlanResultKey().getBuildNumber());
+    private void prepareResults(List<File> artifactsTempDirs, Chain chain, ChainExecution chainExecution) throws IOException, InterruptedException {
+        copyHistory(artifactsTempDirs, chain.getPlanKey().getKey(), chainExecution.getPlanResultKey().getBuildNumber());
+        addExecutorInfo(artifactsTempDirs, chain, chainExecution.getPlanResultKey().getBuildNumber());
     }
 
     /**
      * Write the history file to results directory.
      */
-    private void copyHistory(File artifactsTempDir, String planKey, int buildNumber) {
-        Path historyDir = artifactsTempDir.toPath().resolve("history");
-        Optional<Integer> lastBuild = getLastBuildNumberWithHistory(
-                planKey, buildNumber
-        );
-        lastBuild.ifPresent(buildId -> copyHistoryFiles(planKey, historyDir, buildId));
+    private void copyHistory(List<File> artifactsTempDirs, String planKey, int buildNumber) {
+        final Path tmpDirToDownloadHistory = createTempDir().toPath();
+        getLastBuildNumberWithHistory(planKey, buildNumber)
+                .ifPresent(buildId -> copyHistoryFiles(planKey, tmpDirToDownloadHistory, buildId));
+        artifactsTempDirs.forEach(artifactsTempDir -> {
+            try {
+                copyDirectory(tmpDirToDownloadHistory.toFile(), artifactsTempDir.toPath().resolve("history").toFile());
+            } catch (IOException e) {
+                LOGGER.error("Failed to copy history files from temp directory into artifacts directory", e);
+            }
+        });
+        deleteQuietly(tmpDirToDownloadHistory.toFile());
     }
 
     private void copyHistoryFiles(String planKey, Path historyDir, Integer buildNumber) {
@@ -182,13 +190,14 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
                 getBambooBaseUrl(), planKey, buildId, fileName);
     }
 
-    private void addExecutorInfo(File artifactsTempDir, Chain chain, int buildNumber) throws IOException, InterruptedException {
-        String rootUrl = getBambooBaseUrl();
-        String buildName = chain.getBuildName();
-        String buildUrl = String.format("%s/browse/%s-%s", rootUrl, chain.getPlanKey().getKey(), buildNumber);
-        String reportUrl = String.format("%s/plugins/servlet/allure/report/%s/%s/", rootUrl,
+    private void addExecutorInfo(List<File> artifactsTempDirs, Chain chain, int buildNumber) throws IOException, InterruptedException {
+        final String rootUrl = getBambooBaseUrl();
+        final String buildName = chain.getBuildName();
+        final String buildUrl = String.format("%s/browse/%s-%s", rootUrl, chain.getPlanKey().getKey(), buildNumber);
+        final String reportUrl = String.format("%s/plugins/servlet/allure/report/%s/%s/", rootUrl,
                 chain.getPlanKey().getKey(), buildNumber);
-        new AddExecutorInfo(rootUrl, Integer.toString(buildNumber), buildName, buildUrl, reportUrl).invoke(artifactsTempDir);
+        final AddExecutorInfo executorInfo = new AddExecutorInfo(rootUrl, Integer.toString(buildNumber), buildName, buildUrl, reportUrl);
+        artifactsTempDirs.forEach(executorInfo::invoke);
     }
 
     /**
