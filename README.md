@@ -14,10 +14,4 @@ Download precompiled JAR from [releases page](https://github.com/allure-framewor
 6. Install **target/allure-bamboo-plugin-VERSION.jar** manually as described [here](https://confluence.atlassian.com/display/UPM/Installing+add-ons#Installingadd-ons-Installingbyfileupload).
 
 ### Configuration and Usage
-When installed this plugin provides a new task called **Allure**. To use it configure your build as follows:
-1. Add Allure task to your job:
-![Add Task](https://raw.githubusercontent.com/allure-framework/allure-bamboo-plugin/master/img/add_task.png)
-2. Configure task - specify glob pattern to the folder where Allure should search for XML files and desired report version to be used:
-![Fill Task Fields](https://raw.githubusercontent.com/allure-framework/allure-bamboo-plugin/master/img/task_fields.png)
-3. Run the build as usually and click on Allure report artifact on the **Artifacts** tab:
-![View Artifact](https://raw.githubusercontent.com/allure-framework/allure-bamboo-plugin/master/img/view_artifact.png)
+Please follow the guide on the official Allure docs: https://docs.qameta.io/allure/#_bamboo
