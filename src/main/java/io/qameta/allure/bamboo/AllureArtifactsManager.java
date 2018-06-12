@@ -35,14 +35,17 @@ import com.atlassian.plugin.predicate.ModuleOfClassPredicate;
 import com.atlassian.sal.api.ApplicationProperties;
 import com.atlassian.sal.api.UrlMode;
 import com.google.common.collect.ImmutableList;
+
 import org.apache.log4j.Logger;
 import org.apache.tools.ant.types.FileSet;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import javax.ws.rs.core.UriBuilder;
+
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -135,10 +138,16 @@ public class AllureArtifactsManager {
     }
 
     @Nullable
-    private String getLocalStorageURL(String planKeyString, String buildNumber, String filePath) {
-        final File file = getLocalStoragePath(planKeyString, buildNumber).resolve(filePath).toFile();
-        final String fullPath = (file.isDirectory()) ? new File(file, "index.html").getAbsolutePath() : file.getAbsolutePath();
-        return String.format("file://%s", fullPath);
+    private String getLocalStorageURL(String planKeyString, String buildNumber, String filePath) {       
+        try {
+            final File file = getLocalStoragePath(planKeyString, buildNumber).resolve(filePath).toFile();
+            final String fullPath = (file.isDirectory()) ? new File(file, "index.html").getAbsolutePath() : file.getAbsolutePath();
+        	return new File(fullPath).toURI().toURL().toString();
+        	
+        } catch (MalformedURLException e) {
+        	// should never happen
+        	throw new RuntimeException(e);
+    	}
     }
 
     /**
