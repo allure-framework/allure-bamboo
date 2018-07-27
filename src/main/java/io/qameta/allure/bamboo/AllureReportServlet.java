@@ -3,6 +3,7 @@ package io.qameta.allure.bamboo;
 import com.atlassian.bamboo.plan.PlanResultKey;
 import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
+
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,8 +13,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -70,14 +73,21 @@ public class AllureReportServlet extends HttpServlet {
     }
 
     private void setResponseHeaders(HttpServletResponse response, String fileUrl) throws IOException {
-        response.setStatus(HttpServletResponse.SC_OK);
-        final String file = new URL(fileUrl).getPath();
-        final String mimeType = ofNullable(getServletContext().getMimeType(fileUrl)).orElse(
-                Files.probeContentType(Paths.get(file))
-        );
-        final String charsetPostfix = of("application", "text").anyMatch(mimeType::contains) ? ";charset=utf-8" : "";
-        response.setHeader("Content-Type", mimeType + charsetPostfix);
-        response.setHeader("Content-Disposition", "inline; filename=\"" + Paths.get(fileUrl).getFileName().toString() + "\"");
+    	
+    	try {
+	        response.setStatus(HttpServletResponse.SC_OK);
+	        final URI file = new URL(fileUrl).toURI();
+	        final String mimeType = ofNullable(getServletContext().getMimeType(fileUrl)).orElse(
+	                Files.probeContentType(Paths.get(file))
+	        );
+	        final String charsetPostfix = of("application", "text").anyMatch(mimeType::contains) ? ";charset=utf-8" : "";
+	        response.setHeader("Content-Type", mimeType + charsetPostfix);
+	        response.setHeader("Content-Disposition", "inline; filename=\"" + Paths.get(file).getFileName().toString() + "\"");
+    	
+    	} catch (URISyntaxException e) {
+    		// should never happen
+    		throw new RuntimeException(e);
+    	}
     }
 
     private Optional<String> getArtifactUrl(HttpServletRequest request, HttpServletResponse response) {
