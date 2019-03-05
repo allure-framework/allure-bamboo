@@ -36,9 +36,10 @@ import com.atlassian.sal.api.ApplicationProperties;
 import com.atlassian.sal.api.UrlMode;
 import com.google.common.collect.ImmutableList;
 
-import org.apache.log4j.Logger;
 import org.apache.tools.ant.types.FileSet;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import javax.ws.rs.core.UriBuilder;
@@ -70,6 +71,8 @@ import static io.qameta.allure.bamboo.AllureBuildResult.allureBuildResult;
 import static io.qameta.allure.bamboo.AllureBuildResult.fromCustomData;
 import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
 import static java.lang.Integer.parseInt;
+import static java.util.Objects.requireNonNull;
+import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toMap;
 import static javax.ws.rs.core.UriBuilder.fromPath;
@@ -81,7 +84,7 @@ import static org.codehaus.plexus.util.FileUtils.copyDirectory;
 import static org.codehaus.plexus.util.FileUtils.copyURLToFile;
 
 public class AllureArtifactsManager {
-    private static final Logger LOGGER = Logger.getLogger(AllureArtifactsManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AllureArtifactsManager.class);
     private static final String REPORTS_SUBDIR = "allure-reports";
 
     private final PluginAccessor pluginAccessor;
@@ -138,12 +141,11 @@ public class AllureArtifactsManager {
     }
 
     @Nullable
-    private String getLocalStorageURL(String planKeyString, String buildNumber, String filePath) {       
+    private String getLocalStorageURL(String planKeyString, String buildNumber, String filePath) {
         try {
             final File file = getLocalStoragePath(planKeyString, buildNumber).resolve(filePath).toFile();
             final String fullPath = (file.isDirectory()) ? new File(file, "index.html").getAbsolutePath() : file.getAbsolutePath();
         	return new File(fullPath).toURI().toURL().toString();
-        	
         } catch (MalformedURLException e) {
         	// should never happen
         	throw new RuntimeException(e);
@@ -162,9 +164,15 @@ public class AllureArtifactsManager {
         final List<Path> resultsPaths = new ArrayList<>();
         for (ChainStageResult stageResult : chainResultsSummary.getStageResults()) {
             for (BuildResultsSummary resultsSummary : stageResult.getBuildResults()) {
-                for (ArtifactLink link : resultsSummary.getArtifactLinks()) {
+                LOGGER.info("Found {} artifacts totally for the build {}-{}",
+                        of(resultsSummary.getProducedArtifactLinks()).map(Collection::size).orElse(0),
+                        chainResultsSummary.getPlanKey(), chainResultsSummary.getBuildNumber());
+                for (ArtifactLink link : resultsSummary.getProducedArtifactLinks()) {
                     final MutableArtifact artifact = link.getArtifact();
                     if (isEmpty(artifactName) || artifactName.equals(artifact.getLabel())) {
+                        LOGGER.info("artifact {} matches the configured artifact name {} for the build {}-{}",
+                                artifact.getLabel(), artifactName,
+                                chainResultsSummary.getPlanKey(), chainResultsSummary.getBuildNumber());
                         final File stageDir = new File(baseDir, UUID.randomUUID().toString());
                         forceMkdir(stageDir);
                         resultsPaths.add(stageDir.toPath());
@@ -194,7 +202,8 @@ public class AllureArtifactsManager {
             final ArtifactDefinitionContextImpl artifact = getAllureArtifactDef();
             artifact.setLocation("");
             final FileSet sourceFileSet;
-            sourceFileSet = ArtifactHandlingUtils.createFileSet(reportDir, artifact, true, LOGGER);
+            sourceFileSet = ArtifactHandlingUtils.createFileSet(reportDir, artifact, true,
+                    org.apache.log4j.Logger.getLogger(getClass()));
             sourceFileSet.setDir(reportDir);
             sourceFileSet.setIncludes(artifact.getCopyPattern());
             final Map<String, String> artifactConfig = getArtifactHandlersConfig(chain.getBuildDefinition());
@@ -248,7 +257,7 @@ public class AllureArtifactsManager {
     }
 
     private void downloadAllArtifactsTo(ArtifactLinkDataProvider dataProvider, File tempDir, String startFrom) {
-        for (ArtifactFileData data : dataProvider.listObjects(startFrom)) {
+        for (ArtifactFileData data : requireNonNull(dataProvider).listObjects(startFrom)) {
             try {
                 if (data instanceof TrampolineArtifactFileData) {
                     final TrampolineArtifactFileData trampolineData = (TrampolineArtifactFileData) data;
@@ -315,7 +324,6 @@ public class AllureArtifactsManager {
     private String getBambooArtifactUrl(ArtifactFileData data) {
         return ofNullable(data.getUrl()).map(url -> (url.startsWith("/")) ?
                 getBaseUrl().path(url).build().toString() : url)
-                .map(url -> url)
                 .orElse(null);
     }
 
