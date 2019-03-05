@@ -201,7 +201,7 @@
     <distributionManagement>
         <repository>
             <id>bintray-generic</id>
-            <url>https://api.bintray.com/maven/qameta/generic/allure-bamboo/;publish=1</url>
+            <url>https://api.bintray.com/maven/qameta/maven/allure-bamboo/;publish=1</url>
         </repository>
     </distributionManagement>
 
