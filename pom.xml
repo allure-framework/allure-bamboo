@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.qameta.allure</groupId>
     <artifactId>allure-bamboo</artifactId>
-    <version>1.8-SNAPSHOT</version>
+    <version>1.8.0</version>
     <name>Allure for Bamboo</name>
     <description>Allure reports right in deployment plans in Bamboo</description>
     <packaging>atlassian-plugin</packaging>
@@ -28,7 +28,7 @@
         <url>https://github.com/allure-framework/allure-bamboo</url>
         <connection>scm:git:git@github.com:allure-framework/allure-bamboo.git</connection>
         <developerConnection>scm:git:git@github.com:allure-framework/allure-bamboo.git</developerConnection>
-      <tag>HEAD</tag>
+      <tag>1.8.0</tag>
   </scm>
 
     <dependencies>
