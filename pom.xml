@@ -13,8 +13,8 @@
         <url>https://github.com/allure-framework</url>
     </organization>
     <properties>
-        <amps.version>6.3.7</amps.version>
-        <bamboo.version>5.10.3</bamboo.version>
+        <amps.version>8.0.0</amps.version>
+        <bamboo.version>6.9.1</bamboo.version>
         <bamboo.data.version>${bamboo.version}</bamboo.data.version>
         <plugin.testrunner.version>1.2.3</plugin.testrunner.version>
         <atlassian.spring.scanner.version>1.2.13</atlassian.spring.scanner.version>
@@ -52,7 +52,7 @@
         <dependency>
             <groupId>net.lingala.zip4j</groupId>
             <artifactId>zip4j</artifactId>
-            <version>1.3.2</version>
+            <version>1.3.3</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -137,14 +137,13 @@
         <plugins>
             <plugin>
                 <groupId>com.atlassian.maven.plugins</groupId>
-                <artifactId>maven-bamboo-plugin</artifactId>
+                <artifactId>bamboo-maven-plugin</artifactId>
                 <version>${amps.version}</version>
                 <extensions>true</extensions>
                 <configuration>
                     <productVersion>${bamboo.version}</productVersion>
                     <productDataVersion>${bamboo.data.version}</productDataVersion>
                     <enableQuickReload>true</enableQuickReload>
-                    <enableFastdev>false</enableFastdev>
                     <allowGoogleTracking>false</allowGoogleTracking>
                 </configuration>
             </plugin>
