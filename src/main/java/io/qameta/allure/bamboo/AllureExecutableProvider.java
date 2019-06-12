@@ -1,6 +1,8 @@
 package io.qameta.allure.bamboo;
 
 import com.google.common.annotations.VisibleForTesting;
+import static java.util.Objects.requireNonNull;
+import static java.util.regex.Pattern.compile;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,13 +13,10 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static java.util.Objects.requireNonNull;
-import static java.util.regex.Pattern.compile;
-
 public class AllureExecutableProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureExecutableProvider.class);
-    static final String DEFAULT_VERSION = "2.5.0";
-    static final String DEFAULT_PATH = "/tmp/allure/2.5.0";
+    static final String DEFAULT_VERSION = "2.7.0";
+    static final String DEFAULT_PATH = "/tmp/allure/2.7.0";
     private static final Pattern EXEC_NAME_PATTERN = compile("[^\\d]*(\\d[0-9\\.]{2,}[a-zA-Z0-9\\-]*)$");
     private static final String BINARY_SUBDIR = "binary";
 

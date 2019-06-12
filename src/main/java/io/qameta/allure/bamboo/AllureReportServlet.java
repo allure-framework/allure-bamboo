@@ -1,11 +1,17 @@
 package io.qameta.allure.bamboo;
 
+import static com.atlassian.bamboo.plan.PlanKeys.getPlanResultKey;
 import com.atlassian.bamboo.plan.PlanResultKey;
 import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
+import static io.qameta.allure.bamboo.AllureBuildResult.fromCustomData;
+import static java.lang.Integer.parseInt;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Stream.of;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static org.sonatype.aether.util.StringUtils.isEmpty;
 
 import javax.inject.Inject;
 import javax.servlet.ServletException;
@@ -22,13 +28,6 @@ import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static com.atlassian.bamboo.plan.PlanKeys.getPlanResultKey;
-import static io.qameta.allure.bamboo.AllureBuildResult.fromCustomData;
-import static java.lang.Integer.parseInt;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Stream.of;
-import static org.sonatype.aether.util.StringUtils.isEmpty;
 
 public class AllureReportServlet extends HttpServlet {
     private static final Pattern URL_PATTERN = Pattern.compile(".*/plugins/servlet/allure/report/([^/]{2,})/([^/]+)/?(.*)");
@@ -72,21 +71,21 @@ public class AllureReportServlet extends HttpServlet {
     }
 
     private void setResponseHeaders(HttpServletResponse response, String fileUrl) throws IOException {
-    	
-    	try {
-	        response.setStatus(HttpServletResponse.SC_OK);
-	        final URI file = new URL(fileUrl).toURI();
-	        final String mimeType = ofNullable(getServletContext().getMimeType(fileUrl)).orElse(
-	                Files.probeContentType(Paths.get(file))
-	        );
-	        final String charsetPostfix = of("application", "text").anyMatch(mimeType::contains) ? ";charset=utf-8" : "";
-	        response.setHeader("Content-Type", mimeType + charsetPostfix);
-	        response.setHeader("Content-Disposition", "inline; filename=\"" + Paths.get(file).getFileName().toString() + "\"");
-    	
-    	} catch (URISyntaxException e) {
-    		// should never happen
-    		throw new RuntimeException(e);
-    	}
+
+        try {
+            response.setStatus(HttpServletResponse.SC_OK);
+            final URI file = new URL(fileUrl).toURI();
+            final String mimeType = ofNullable(getServletContext().getMimeType(fileUrl)).orElse(
+                    Files.probeContentType(Paths.get(file.getPath()))
+            );
+            final String charsetPostfix = of("application", "text").anyMatch(mimeType::contains) ? ";charset=utf-8" : "";
+            response.setHeader("Content-Type", mimeType + charsetPostfix);
+            response.setHeader("Content-Disposition", "inline; filename=\"" + Paths.get(file.getPath()).getFileName().toString() + "\"");
+
+        } catch (URISyntaxException e) {
+            // should never happen
+            throw new RuntimeException(e);
+        }
     }
 
     private Optional<String> getArtifactUrl(HttpServletRequest request, HttpServletResponse response) {
