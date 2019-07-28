@@ -60,19 +60,27 @@ class AllureDownloader {
 
     private Optional<Path> downloadAllure(String version) {
         try {
-            final URL url = buildAllureDownloadUrl(version);
-            final Path downloadToFile = createTempFile("allure", ".zip");
-            LOGGER.info("Downloading allure.zip from {} to {}", url, downloadToFile);
-            final URLConnection connection = url.openConnection();
-            connection.setConnectTimeout(CONN_TIMEOUT_MS);
-            connection.setReadTimeout(DOWNLOAD_TIMEOUT_MS);
-            connection.setRequestProperty("Connection", "close");
-            connection.setRequestProperty("Pragma", "no-cache");
-            ((HttpURLConnection)connection).setInstanceFollowRedirects(true);
-            connection.connect();
-            try (InputStream input = connection.getInputStream()) {
-                copyInputStreamToFile(input, downloadToFile.toFile());
-                return Optional.of(downloadToFile);
+            URL[] urls = buildAllureDownloadUrls(version);
+            for (URL url : urls) {
+                try {
+                    final Path downloadToFile = createTempFile("allure", ".zip");
+                    LOGGER.info("Downloading allure.zip from {} to {}", url, downloadToFile);
+                    final URLConnection connection = url.openConnection();
+                    connection.setConnectTimeout(CONN_TIMEOUT_MS);
+                    connection.setReadTimeout(DOWNLOAD_TIMEOUT_MS);
+                    connection.setRequestProperty("Connection", "close");
+                    connection.setRequestProperty("Pragma", "no-cache");
+                    ((HttpURLConnection) connection).setInstanceFollowRedirects(true);
+                    connection.connect();
+                    try (InputStream input = connection.getInputStream()) {
+                        copyInputStreamToFile(input, downloadToFile.toFile());
+                        return Optional.of(downloadToFile);
+                    }
+                } catch (Exception e) {
+                    LOGGER
+                        .warn("Failed to download from {}. Root cause : {}. Trying with next url.",
+                            url, e.getMessage());
+                }
             }
         } catch (Exception e) {
             LOGGER.error("Failed to download Allure of version {}", version, e);
@@ -80,9 +88,14 @@ class AllureDownloader {
         return Optional.empty();
     }
 
-    private URL buildAllureDownloadUrl(String version) throws MalformedURLException {
-        return fromPath(settingsManager.getSettings().getDownloadBaseUrl())
-                .path(version + "/" + "allure-" + version + ".zip")
-                .build().toURL();
+    private URL[] buildAllureDownloadUrls(String version) throws MalformedURLException {
+        URL oldUrl = fromPath(settingsManager.getSettings().getDownloadBaseUrl())
+            .path(version + "/" + "allure-" + version + ".zip")
+            .build().toURL();
+        String binaryName = "allure-commandline";
+        URL newUrl = fromPath(settingsManager.getSettings().getDownloadBaseUrl())
+            .path(binaryName + "/" + version + "/" + binaryName + "-" + version + ".zip")
+            .build().toURL();
+        return new URL[]{oldUrl, newUrl};
     }
 }
