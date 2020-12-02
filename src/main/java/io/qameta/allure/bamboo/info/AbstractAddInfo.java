@@ -1,6 +1,6 @@
 package io.qameta.allure.bamboo.info;
 
-import net.sf.json.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,9 +27,8 @@ public abstract class AbstractAddInfo {
         }
         Path testRun = outputDirectory.resolve(getFileName());
         try (Writer writer = Files.newBufferedWriter(testRun, StandardCharsets.UTF_8)) {
-            JSONObject.fromObject(getData())
-                    .write(writer)
-                    .flush();
+            final ObjectMapper mapper = new ObjectMapper();
+            mapper.writeValue(writer, getData());
         } catch (IOException e) {
             LOGGER.error("Failed to add executor info into the file " + file.getAbsolutePath(), e);
         }
