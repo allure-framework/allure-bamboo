@@ -5,6 +5,9 @@ pipeline {
         string(name: 'RELEASE_VERSION', defaultValue: '', description: 'Release version')
         string(name: 'DEVELOPMENT_VERSION', defaultValue: '', description: 'Development version (without SNAPSHOT)')
     }
+    environment {
+        JAVA_PATH = '/usr/lib/jvm/java-8-openjdk-amd64'
+    }
     stages {
         stage('Build') {
             steps {
