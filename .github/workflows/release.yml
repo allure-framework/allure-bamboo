@@ -1,14 +1,17 @@
 name: Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      releaseVersion:
-        description: 'Release version'
-        required: true
-      developmentVersion:
-        description: 'Development version'
-        required: true
+#  workflow_dispatch:
+#    inputs:
+#      releaseVersion:
+#        description: 'Release version'
+#        required: true
+#      developmentVersion:
+#        description: 'Development version'
+#        required: true
+  pull_request:
+    branches:
+      - '*'
 
 jobs:
   build:
@@ -25,9 +28,12 @@ jobs:
           BINTRAY_SETTINGS: ${{ secrets.BINTRAY_SETTINGS }}
       - name: Release
         run: |
-          ./mvnw release:prepare release:perform -B \
-                 -DreleaseVersion=${{ github.event.inputs.releaseVersion }} \
-                 -DdevelopmentVersion=${{ github.event.inputs.developmentVersion }}-SNAPSHOT
+          ./mvnw build
+#      - name: Release
+#        run: |
+#          ./mvnw release:prepare release:perform -B \
+#                 -DreleaseVersion=${{ github.event.inputs.releaseVersion }} \
+#                 -DdevelopmentVersion=${{ github.event.inputs.developmentVersion }}-SNAPSHOT
         env:
           BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
           BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
