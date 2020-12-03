@@ -13,12 +13,12 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 1.8
+      - name: Update Version
+        run: ./mvnw versions:set -DnewVersion=${GITHUB_REF:10}
       - name: Save Settings
         run: echo ${BINTRAY_SETTINGS} > ~/.m2/settings.xml
         env:
           BINTRAY_SETTINGS: ${{ secrets.BINTRAY_SETTINGS }}
-      - name: Update Version
-        run: ./mvnw versions:set -DnewVersion=${GITHUB_REF:10}
       - name: Release
         run: ./mvnw deploy
         env:
