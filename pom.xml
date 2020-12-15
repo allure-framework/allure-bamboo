@@ -17,7 +17,7 @@
         <bamboo.version>6.9.1</bamboo.version>
         <bamboo.data.version>${bamboo.version}</bamboo.data.version>
         <plugin.testrunner.version>1.2.3</plugin.testrunner.version>
-        <atlassian.spring.scanner.version>1.2.13</atlassian.spring.scanner.version>
+        <atlassian.spring.scanner.version>2.2.1-8199150</atlassian.spring.scanner.version>
         <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
         <slf4j.version>1.7.29</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
