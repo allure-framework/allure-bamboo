@@ -13,7 +13,7 @@
         <url>https://github.com/allure-framework</url>
     </organization>
     <properties>
-        <amps.version>8.0.3-89c970d65</amps.version>
+        <amps.version>8.3.0-128eead6d</amps.version>
         <bamboo.version>6.9.1</bamboo.version>
         <bamboo.data.version>${bamboo.version}</bamboo.data.version>
         <plugin.testrunner.version>1.2.3</plugin.testrunner.version>
