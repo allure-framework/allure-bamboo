@@ -1,0 +1,42 @@
+version: 2
+updates:
+- package-ecosystem: maven
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "02:00"
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: log4j:log4j
+    versions:
+    - "> 1.2.17, < 1.3"
+  - dependency-name: org.owasp:dependency-check-maven
+    versions:
+    - 6.1.0
+    - 6.1.1
+    - 6.1.2
+    - 6.1.3
+    - 6.1.4
+  - dependency-name: com.atlassian.templaterenderer:atlassian-template-renderer-api
+    versions:
+    - 4.1.0
+    - 4.1.1
+    - 4.1.2
+  - dependency-name: com.atlassian.maven.plugins:bamboo-maven-plugin
+    versions:
+    - 8.2.1
+    - 8.2.2-ae513aee2
+    - 8.2.2-c382ca74f
+    - 8.3.0-c760282e9
+  - dependency-name: org.mockito:mockito-core
+    versions:
+    - 3.7.7
+    - 3.8.0
+  - dependency-name: org.buildobjects:jproc
+    versions:
+    - 2.4.0
+    - 2.5.1
+  - dependency-name: com.atlassian.bamboo:atlassian-bamboo-web
+    versions:
+    - 7.3.0-SHPL-56-1
+    - 7.3.0-ysun
