@@ -14,7 +14,7 @@
     </organization>
     <properties>
         <amps.version>8.0.3-89c970d65</amps.version>
-        <bamboo.version>6.9.1</bamboo.version>
+        <bamboo.version>8.0.0-BDEV-16610-1</bamboo.version>
         <bamboo.data.version>${bamboo.version}</bamboo.data.version>
         <plugin.testrunner.version>1.2.3</plugin.testrunner.version>
         <atlassian.spring.scanner.version>1.2.13</atlassian.spring.scanner.version>
