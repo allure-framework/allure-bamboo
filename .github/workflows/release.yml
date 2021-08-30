@@ -13,14 +13,18 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 1.8
+      - run: echo "::set-output name=name::${GITHUB_REF:10}"
+        id: version
       - name: Update Version
-        run: ./mvnw versions:set -DnewVersion=${GITHUB_REF:10}
-      - name: Save Settings
-        run: echo ${BINTRAY_SETTINGS} > ~/.m2/settings.xml
+        run: ./mvnw versions:set -DnewVersion=${{ steps.version.outputs.name }}
+      - name: Build Package
+        run: ./mvnw package
+      - name: Upload Package
+        uses: actions/upload-release-asset@v1
         env:
-          BINTRAY_SETTINGS: ${{ secrets.BINTRAY_SETTINGS }}
-      - name: Release
-        run: ./mvnw deploy
-        env:
-          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
-          BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./target/allure-bamboo-${{ steps.version.outputs.name }}.jar
+          asset_name: allure-bamboo-${{ steps.version.outputs.name }}.jar
+          asset_content_type: application/octet-stream
