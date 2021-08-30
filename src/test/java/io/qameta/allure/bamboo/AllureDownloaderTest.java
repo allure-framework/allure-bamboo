@@ -28,20 +28,20 @@ public class AllureDownloaderTest {
     private String homeDir;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         homeDir = Paths.get(getTempDirectoryPath(), "allure-home").toString();
         settings = new AllureGlobalConfig();
         when(settingsManager.getSettings()).thenReturn(settings);
     }
 
     @Test
-    public void itShouldDownloadAndExtractAllureRelease() throws Exception {
-        downloader.downloadAndExtractAllureTo(homeDir, "2.5.0");
+    public void itShouldDownloadAndExtractAllureRelease() {
+        downloader.downloadAndExtractAllureTo(homeDir, "2.14.0");
         assertTrue(Paths.get(homeDir, "bin", "allure").toFile().exists());
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         deleteQuietly(Paths.get(homeDir).toFile());
     }
 }

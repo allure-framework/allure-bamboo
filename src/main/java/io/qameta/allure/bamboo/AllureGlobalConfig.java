@@ -17,7 +17,7 @@ import static org.apache.commons.lang3.SystemUtils.getJavaIoTmpDir;
 import static org.sonatype.aether.util.StringUtils.isEmpty;
 
 class AllureGlobalConfig implements Serializable {
-    private static final String DEFAULT_DOWNLOAD_BASE_URL = "https://dl.bintray.com/qameta/generic/io/qameta/allure/allure/";
+    private static final String DEFAULT_DOWNLOAD_BASE_URL = "https://github.com/allure-framework/allure2/releases/download/";
     public static final String DEFAULT_LOCAL_STORAGE_PATH = new File(getJavaIoTmpDir(), "allure-reports").getPath();
     private final boolean downloadEnabled;
     private final boolean enabledByDefault;
