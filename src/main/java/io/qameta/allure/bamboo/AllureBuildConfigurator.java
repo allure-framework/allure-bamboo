@@ -19,13 +19,18 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
 
 @SuppressWarnings("unchecked")
 public class AllureBuildConfigurator extends BaseConfigurablePlugin
-        implements MiscellaneousBuildConfigurationPlugin {
+        implements MiscellaneousPlanConfigurationPlugin {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureBuildConfigurator.class);
 
     private BambooExecutablesManager executablesManager;
 
     private AllureSettingsManager settingsManager;
+
+    @Override
+    public boolean isApplicableTo(@NotNull ImmutablePlan immutablePlan) {
+        return isChain(immutablePlan);
+    }
 
     @Override
     public boolean isApplicableTo(@NotNull final Plan plan) {
