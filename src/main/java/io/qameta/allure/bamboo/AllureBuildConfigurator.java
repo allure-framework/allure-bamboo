@@ -1,6 +1,8 @@
 package io.qameta.allure.bamboo;
 
 import com.atlassian.bamboo.plan.Plan;
+import com.atlassian.bamboo.plan.cache.ImmutablePlan;
+import com.atlassian.bamboo.plan.configuration.MiscellaneousPlanConfigurationPlugin;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
 import com.atlassian.bamboo.v2.build.configuration.MiscellaneousBuildConfigurationPlugin;
@@ -19,7 +21,7 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
 
 @SuppressWarnings("unchecked")
 public class AllureBuildConfigurator extends BaseConfigurablePlugin
-        implements MiscellaneousBuildConfigurationPlugin {
+        implements MiscellaneousPlanConfigurationPlugin {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureBuildConfigurator.class);
 
@@ -28,13 +30,18 @@ public class AllureBuildConfigurator extends BaseConfigurablePlugin
     private AllureSettingsManager settingsManager;
 
     @Override
+    public boolean isApplicableTo(@NotNull final ImmutablePlan plan) {
+        return isChain(plan);
+    }
+
+    @Override
     public boolean isApplicableTo(@NotNull final Plan plan) {
         return isChain(plan);
     }
 
     @NotNull
     @Override
-    public ErrorCollection validate(@NotNull BuildConfiguration buildConfiguration) {
+    public ErrorCollection validate(@NotNull final BuildConfiguration buildConfiguration) {
         final ErrorCollection collection = super.validate(buildConfiguration);
         if (buildConfiguration.getBoolean(ALLURE_CONFIG_ENABLED)) {
             if (isEmpty(buildConfiguration.getString(ALLURE_CONFIG_EXECUTABLE))) {
