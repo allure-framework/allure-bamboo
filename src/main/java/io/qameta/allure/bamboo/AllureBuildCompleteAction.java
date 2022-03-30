@@ -1,11 +1,11 @@
 package io.qameta.allure.bamboo;
 
 import com.atlassian.bamboo.build.BuildDefinition;
-import com.atlassian.bamboo.chains.Chain;
 import com.atlassian.bamboo.chains.ChainExecution;
 import com.atlassian.bamboo.chains.ChainResultsSummary;
 import com.atlassian.bamboo.chains.plugins.PostChainAction;
 import com.atlassian.bamboo.configuration.AdministrationConfiguration;
+import com.atlassian.bamboo.plan.cache.ImmutableChain;
 import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
@@ -54,24 +54,27 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
     private final AdministrationConfiguration adminConfiguration;
 
     public AllureBuildCompleteAction(AllureExecutableProvider allureExecutable,
-                                     AllureSettingsManager settingsManager,
-                                     AllureArtifactsManager artifactsManager,
-                                     BambooExecutablesManager executablesManager,
-                                     ResultsSummaryManager resultsSummaryManager) {
+            AllureSettingsManager settingsManager,
+            AllureArtifactsManager artifactsManager,
+            BambooExecutablesManager executablesManager,
+            ResultsSummaryManager resultsSummaryManager) {
         this.allureExecutable = allureExecutable;
         this.settingsManager = settingsManager;
         this.artifactsManager = artifactsManager;
         this.executablesManager = executablesManager;
         this.resultsSummaryManager = resultsSummaryManager;
-        this.adminConfiguration = (AdministrationConfiguration) ContainerManager.getComponent("administrationConfiguration");
+        this.adminConfiguration = (AdministrationConfiguration) ContainerManager
+                .getComponent("administrationConfiguration");
     }
 
     @Override
-    public void execute(@NotNull Chain chain, @NotNull ChainResultsSummary chainResultsSummary, @NotNull ChainExecution chainExecution) throws Exception {
+    public void execute(ImmutableChain chain, ChainResultsSummary chainResultsSummary, ChainExecution chainExecution)
+            throws InterruptedException, Exception {
         final BuildDefinition buildDef = chain.getBuildDefinition();
         final AllureGlobalConfig globalConfig = settingsManager.getSettings();
         final AllureBuildConfig buildConfig = AllureBuildConfig.fromContext(buildDef.getCustomConfiguration());
-        final boolean allureEnabled = buildConfig.isEnabled() || (!buildConfig.isEnabledSet() && globalConfig.isEnabledByDefault());
+        final boolean allureEnabled = buildConfig.isEnabled()
+                || (!buildConfig.isEnabledSet() && globalConfig.isEnabledByDefault());
         final boolean isEnabledForFailedOnly = buildConfig.isOnlyForFailed();
         if (!allureEnabled || (isEnabledForFailedOnly && !chainResultsSummary.isFailed())) {
             return;
@@ -89,8 +92,8 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
             LOGGER.info("Allure Report is enabled for {}", chain.getName());
             LOGGER.info("Trying to get executable by name {} for {}", executable, chain.getName());
 
-            final AllureExecutable allure = allureExecutable.provide(globalConfig, executable).orElseThrow(() ->
-                    new RuntimeException("Failed to find Allure executable by name " + executable));
+            final AllureExecutable allure = allureExecutable.provide(globalConfig, executable)
+                    .orElseThrow(() -> new RuntimeException("Failed to find Allure executable by name " + executable));
 
             LOGGER.info("Starting artifacts downloading into {} for {}", artifactsTempDir.getPath(), chain.getName());
             final Collection<Path> artifactsPaths = artifactsManager.downloadAllArtifactsTo(
@@ -116,7 +119,8 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
         }
     }
 
-    private void prepareResults(List<File> artifactsTempDirs, Chain chain, ChainExecution chainExecution) throws IOException, InterruptedException {
+    private void prepareResults(List<File> artifactsTempDirs, ImmutableChain chain, ChainExecution chainExecution)
+            throws IOException, InterruptedException {
         copyHistory(artifactsTempDirs, chain.getPlanKey().getKey(), chainExecution.getPlanResultKey().getBuildNumber());
         addExecutorInfo(artifactsTempDirs, chain, chainExecution.getPlanResultKey().getBuildNumber());
     }
@@ -139,9 +143,8 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
     }
 
     private void copyHistoryFiles(String planKey, Path historyDir, Integer buildNumber) {
-        HISTORY_FILES.forEach(historyFile ->
-                copyArtifactToHistoryFolder(historyDir, historyFile, planKey, buildNumber)
-        );
+        HISTORY_FILES
+                .forEach(historyFile -> copyArtifactToHistoryFolder(historyDir, historyFile, planKey, buildNumber));
     }
 
     private Optional<Integer> getLastBuildNumberWithHistory(String planKey, int buildNumber) {
@@ -190,13 +193,15 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
                 getBambooBaseUrl(), planKey, buildId, fileName);
     }
 
-    private void addExecutorInfo(List<File> artifactsTempDirs, Chain chain, int buildNumber) throws IOException, InterruptedException {
+    private void addExecutorInfo(List<File> artifactsTempDirs, ImmutableChain chain, int buildNumber)
+            throws IOException, InterruptedException {
         final String rootUrl = getBambooBaseUrl();
         final String buildName = chain.getBuildName();
         final String buildUrl = String.format("%s/browse/%s-%s", rootUrl, chain.getPlanKey().getKey(), buildNumber);
         final String reportUrl = String.format("%s/plugins/servlet/allure/report/%s/%s/", rootUrl,
                 chain.getPlanKey().getKey(), buildNumber);
-        final AddExecutorInfo executorInfo = new AddExecutorInfo(rootUrl, Integer.toString(buildNumber), buildName, buildUrl, reportUrl);
+        final AddExecutorInfo executorInfo = new AddExecutorInfo(rootUrl, Integer.toString(buildNumber), buildName,
+                buildUrl, reportUrl);
         artifactsTempDirs.forEach(executorInfo::invoke);
     }
 
@@ -206,7 +211,8 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
     @NotNull
     private String getBambooBaseUrl() {
         if (this.adminConfiguration != null) {
-            return StringUtils.isNoneBlank(this.adminConfiguration.getBaseUrl()) ? this.adminConfiguration.getBaseUrl() : "";
+            return StringUtils.isNoneBlank(this.adminConfiguration.getBaseUrl()) ? this.adminConfiguration.getBaseUrl()
+                    : "";
         }
         return "";
     }

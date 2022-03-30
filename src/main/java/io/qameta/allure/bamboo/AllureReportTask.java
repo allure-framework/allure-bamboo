@@ -20,9 +20,9 @@ public class AllureReportTask implements TaskType {
     @Override
     public TaskResult execute(@NotNull TaskContext taskContext) {
         final BuildLogger buildLogger = taskContext.getBuildLogger();
-        buildLogger.addBuildLogHeader("Allure Report", true);
-        buildLogger.addBuildLogEntry("This allure report task is now a sham. It does nothing, so please use" +
-                " the suggested way of configuration as listed in the Allure docs! ");
+        buildLogger.addBuildLogEntry(
+                "[Allure Report] This allure report task is now a sham. It does nothing, so please use" +
+                        " the suggested way of configuration as listed in the Allure docs! ");
         return TaskResultBuilder.newBuilder(taskContext).success().build();
     }
 

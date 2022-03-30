@@ -1,5 +1,6 @@
 .backup
 .idea
+.vscode
 *.iml
 target/*
 .test
