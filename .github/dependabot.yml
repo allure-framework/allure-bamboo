@@ -7,7 +7,7 @@ updates:
     labels:
       - "type:dependencies"
 
-  - package-ecosystem: "gradle"
+  - package-ecosystem: "maven"
     directory: "/"
     schedule:
       interval: "daily"
