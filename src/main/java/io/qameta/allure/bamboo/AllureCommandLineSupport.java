@@ -8,13 +8,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.lang.Integer.parseInt;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_UNIX;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
 public class AllureCommandLineSupport {
     private static final Pattern RESULT_TC_COUNT_REGEX = Pattern.compile(".+Found (\\d+) test cases.+", Pattern.DOTALL);
-    private static final int GENERATE_TIMEOUT_MS = (int) SECONDS.toMillis(60);
+    private static final int GENERATE_TIMEOUT_MS = (int) MINUTES.toMillis(5);
 
     String runCommand(String cmd, String... args) {
         return new ProcBuilder(cmd)
