@@ -300,12 +300,13 @@ public class AllureArtifactsManager {
 
     @Nullable
     private String getArtifactFile(String filePath, ArtifactLinkDataProvider linkProvider) {
+        String fixedFilePath = filePath.replaceFirst("^/", "");
         if (linkProvider instanceof FileSystemArtifactLinkDataProvider) {
             return requireNonNull(linkProvider.getRootUrl())
                     .replaceFirst("BASE_URL", getBaseUrl().build().toString())
-                    .replace("index.html", isEmpty(filePath) ? "index.html" : filePath);
+                    .replace("index.html", isEmpty(fixedFilePath) ? "index.html" : fixedFilePath);
         } else {
-            final Iterable<ArtifactFileData> datas = linkProvider.listObjects(filePath);
+            final Iterable<ArtifactFileData> datas = linkProvider.listObjects(fixedFilePath);
             if (size(datas) == 1) {
                 ArtifactFileData data = datas.iterator().next();
                 if (data instanceof TrampolineArtifactFileData) {

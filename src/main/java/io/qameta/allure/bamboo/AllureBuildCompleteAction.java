@@ -193,7 +193,7 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
         final String rootUrl = getBambooBaseUrl();
         final String buildName = chain.getBuildName();
         final String buildUrl = String.format("%s/browse/%s-%s", rootUrl, chain.getPlanKey().getKey(), buildNumber);
-        final String reportUrl = String.format("%s/plugins/servlet/allure/report/%s/%s/", rootUrl,
+        final String reportUrl = String.format("%s/plugins/servlet/allure/report/%s/%s", rootUrl,
                 chain.getPlanKey().getKey(), buildNumber);
         final AddExecutorInfo executorInfo = new AddExecutorInfo(rootUrl, Integer.toString(buildNumber), buildName, buildUrl, reportUrl);
         artifactsTempDirs.forEach(executorInfo::invoke);
