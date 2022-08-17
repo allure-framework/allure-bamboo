@@ -1,14 +1,13 @@
 package io.qameta.allure.bamboo;
 
+import org.jetbrains.annotations.NotNull;
+
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Map;
 
-import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_DOWNLOAD_ENABLED;
-import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_DOWNLOAD_URL;
-import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_ENABLED_BY_DEFAULT;
-import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_LOCAL_STORAGE;
+import static io.qameta.allure.bamboo.AllureConstants.*;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.lang.Boolean.parseBoolean;
@@ -18,29 +17,35 @@ import static org.sonatype.aether.util.StringUtils.isEmpty;
 
 class AllureGlobalConfig implements Serializable {
     private static final String DEFAULT_DOWNLOAD_BASE_URL = "https://github.com/allure-framework/allure2/releases/download/";
+
+    private static final String DEFAULT_CLI_BASE_URL = "https://repo.maven.apache.org/maven2/io/qameta/allure/";
     public static final String DEFAULT_LOCAL_STORAGE_PATH = new File(getJavaIoTmpDir(), "allure-reports").getPath();
     private final boolean downloadEnabled;
     private final boolean enabledByDefault;
     private final String localStoragePath;
     private final String downloadBaseUrl;
+    private final String downloadCliBaseUrl;
 
     AllureGlobalConfig() {
-        this(TRUE.toString(), FALSE.toString(), DEFAULT_DOWNLOAD_BASE_URL, DEFAULT_LOCAL_STORAGE_PATH);
+        this(TRUE.toString(), FALSE.toString(), DEFAULT_DOWNLOAD_BASE_URL, DEFAULT_LOCAL_STORAGE_PATH, DEFAULT_CLI_BASE_URL);
     }
 
-    AllureGlobalConfig(String downloadEnabled, String enabledByDefault, String downloadBaseUrl, String localStoragePath) {
+    AllureGlobalConfig(String downloadEnabled, String enabledByDefault, String downloadBaseUrl, String localStoragePath, String cmdLineUrl) {
         this.downloadEnabled = isEmpty(downloadEnabled) ? TRUE : parseBoolean(downloadEnabled);
         this.enabledByDefault = isEmpty(enabledByDefault) ? FALSE : parseBoolean(enabledByDefault);
         this.downloadBaseUrl = isEmpty(downloadBaseUrl) ? DEFAULT_DOWNLOAD_BASE_URL : downloadBaseUrl;
+        this.downloadCliBaseUrl = isEmpty(cmdLineUrl) ? DEFAULT_CLI_BASE_URL: cmdLineUrl;
         this.localStoragePath = isEmpty(localStoragePath) ? DEFAULT_LOCAL_STORAGE_PATH : localStoragePath;
     }
 
 
+    @NotNull
     static AllureGlobalConfig fromContext(Map context) {
         return new AllureGlobalConfig(
                 getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_ENABLED, TRUE.toString()),
                 getSingleValue(context, ALLURE_CONFIG_ENABLED_BY_DEFAULT, FALSE.toString()),
                 getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_URL, null),
+                getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_CLI_URL, null),
                 getSingleValue(context, ALLURE_CONFIG_LOCAL_STORAGE, null)
         );
     }
@@ -69,6 +74,10 @@ class AllureGlobalConfig implements Serializable {
 
     String getDownloadBaseUrl() {
         return downloadBaseUrl;
+    }
+
+    String getDownloadCliBaseUrl(){
+        return downloadCliBaseUrl;
     }
 
     public String getLocalStoragePath() {

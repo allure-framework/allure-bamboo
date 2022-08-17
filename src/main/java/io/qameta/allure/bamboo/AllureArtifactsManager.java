@@ -1,5 +1,6 @@
 package io.qameta.allure.bamboo;
 
+import com.atlassian.bamboo.ResultKey;
 import com.atlassian.bamboo.artifact.MutableArtifact;
 import com.atlassian.bamboo.artifact.MutableArtifactImpl;
 import com.atlassian.bamboo.build.BuildDefinition;
@@ -19,16 +20,17 @@ import com.atlassian.bamboo.build.artifact.FileSystemArtifactLinkDataProvider;
 import com.atlassian.bamboo.build.artifact.TrampolineArtifactFileData;
 import com.atlassian.bamboo.build.artifact.TrampolineUrlArtifactLinkDataProvider;
 import com.atlassian.bamboo.build.artifact.handlers.ArtifactHandlersService;
-import com.atlassian.bamboo.chains.Chain;
 import com.atlassian.bamboo.chains.ChainResultsSummary;
 import com.atlassian.bamboo.chains.ChainStageResult;
+import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.plan.PlanResultKey;
 import com.atlassian.bamboo.plan.artifact.ArtifactDefinitionContextImpl;
+import com.atlassian.bamboo.plan.cache.ImmutableChain;
 import com.atlassian.bamboo.plugin.BambooPluginUtils;
-import com.atlassian.bamboo.plugin.descriptor.predicate.ConjunctionModuleDescriptorPredicate;
 import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
 import com.atlassian.bamboo.security.SecureToken;
+import com.atlassian.plugin.ModuleDescriptor;
 import com.atlassian.plugin.PluginAccessor;
 import com.atlassian.plugin.predicate.EnabledModulePredicate;
 import com.atlassian.plugin.predicate.ModuleOfClassPredicate;
@@ -57,6 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
 
@@ -114,30 +117,29 @@ public class AllureArtifactsManager {
      * @param planKeyString key for plan
      * @param buildNumber   build number
      * @param filePath      path of the artifact
-     * @return empty if cannot get artifact, url if possible
+     * @return empty if you cannot get artifact, url if possible
      */
     Optional<String> getArtifactUrl(final String planKeyString, final String buildNumber, final String filePath) {
         final BuildDefinition buildDefinition = buildDefinitionManager.getBuildDefinition(getPlanKey(planKeyString));
         final Map<String, String> artifactConfig = getArtifactHandlersConfig(buildDefinition);
         final PlanResultKey planResultKey = getPlanResultKey(planKeyString, parseInt(buildNumber));
-        return ofNullable(resultsSummaryManager.getResultsSummary(planResultKey)).map(resultsSummary ->
-                getArtifactHandlerByClassName(fromCustomData(resultsSummary.getCustomBuildData()).getArtifactHandlerClass())
-                        .map(artifactHandler -> {
-                            if (isAgentArtifactHandler(artifactHandler)) {
-                                return getLocalStorageURL(planKeyString, buildNumber, filePath);
-                            }
-                            final ArtifactDefinitionContextImpl artifactDef = getAllureArtifactDef();
-                            return ofNullable(artifactHandler.getArtifactLinkDataProvider(
-                                    mutableArtifact(planResultKey, artifactDef.getName()), configProvider(artifactConfig)
-                            )).map(linkProvider -> {
-                                if (linkProvider instanceof TrampolineUrlArtifactLinkDataProvider) {
-                                    final TrampolineUrlArtifactLinkDataProvider urlLinkProvider = (TrampolineUrlArtifactLinkDataProvider) linkProvider;
-                                    urlLinkProvider.setPlanResultKey(planResultKey);
-                                    urlLinkProvider.setArtifactName(artifactDef.getName());
-                                }
-                                return getArtifactFile(filePath, linkProvider);
-                            }).orElse(null);
-                        }).orElse(null));
+        return ofNullable(resultsSummaryManager.getResultsSummary(planResultKey)).flatMap(resultsSummary -> getArtifactHandlerByClassName(fromCustomData(resultsSummary.getCustomBuildData()).getArtifactHandlerClass())
+                .map(artifactHandler -> {
+                    if (isAgentArtifactHandler(artifactHandler)) {
+                        return getLocalStorageURL(planKeyString, buildNumber, filePath);
+                    }
+                    final ArtifactDefinitionContextImpl artifactDef = getAllureArtifactDef();
+                    return ofNullable(artifactHandler.getArtifactLinkDataProvider(
+                            mutableArtifact(planResultKey, artifactDef.getName()), configProvider(artifactConfig)
+                    )).map(linkProvider -> {
+                        if (linkProvider instanceof TrampolineUrlArtifactLinkDataProvider) {
+                            final TrampolineUrlArtifactLinkDataProvider urlLinkProvider = (TrampolineUrlArtifactLinkDataProvider) linkProvider;
+                            urlLinkProvider.setPlanResultKey(planResultKey);
+                            urlLinkProvider.setArtifactName(artifactDef.getName());
+                        }
+                        return getArtifactFile(filePath, linkProvider);
+                    }).orElse(null);
+                }));
     }
 
     @Nullable
@@ -190,14 +192,14 @@ public class AllureArtifactsManager {
     }
 
     /**
-     * Copy all of the build's artifacts for this build across to the builds artifact directory
+     * Copy all the build's artifacts for this build across to the builds artifact directory
      *
      * @param chain     chain
      * @param summary   results summary
      * @param reportDir directory of a report
      * @return empty if not applicable, result otherwise
      */
-    Optional<AllureBuildResult> uploadReportArtifacts(@NotNull Chain chain, @NotNull ChainResultsSummary summary, File reportDir) {
+    Optional<AllureBuildResult> uploadReportArtifacts(@NotNull ImmutableChain chain, @NotNull ChainResultsSummary summary, File reportDir) {
         try {
             final ArtifactDefinitionContextImpl artifact = getAllureArtifactDef();
             artifact.setLocation("");
@@ -230,7 +232,7 @@ public class AllureArtifactsManager {
                     @Override
                     public ArtifactHandlerPublishingResult call() {
                         try {
-                            return artifactHandler.publish(summary.getPlanResultKey(), artifact, artifactPublishingConfig);
+                            return artifactHandler.publish((ResultKey) summary.getPlanResultKey(), artifact, artifactPublishingConfig);
                         } catch (final Exception e) {
                             LOGGER.error("Failed to publish Allure Report using handler " + artifactHandler.getClass().getName(), e);
                             return ArtifactHandlerPublishingResultImpl.failure();
@@ -264,7 +266,7 @@ public class AllureArtifactsManager {
                     data = trampolineData.getDelegate();
                     if (data.getFileType().equals(ArtifactFileData.FileType.REGULAR_FILE)) {
                         final String fileName = Paths.get(data.getName()).toFile().getName();
-                        copyURLToFile(new URL(data.getUrl()), Paths.get(tempDir.getPath(), fileName).toFile());
+                        copyURLToFile(new URL(requireNonNull(data.getUrl())), Paths.get(tempDir.getPath(), fileName).toFile());
                     } else {
                         downloadAllArtifactsTo(dataProvider, tempDir, trampolineData.getTag());
                     }
@@ -280,7 +282,8 @@ public class AllureArtifactsManager {
         throw new RuntimeException(message, e);
     }
 
-    private void downloadAllArtifactsTo(FileSystemArtifactLinkDataProvider dataProvider, File tempDir) {
+    @SuppressWarnings("UnstableApiUsage")
+    private void downloadAllArtifactsTo(@NotNull FileSystemArtifactLinkDataProvider dataProvider, File tempDir) {
         ofNullable(dataProvider.getFile().listFiles()).map(Arrays::asList).ifPresent(list -> list.forEach(file -> {
                     try {
                         if (file.isFile()) {
@@ -298,7 +301,7 @@ public class AllureArtifactsManager {
     @Nullable
     private String getArtifactFile(String filePath, ArtifactLinkDataProvider linkProvider) {
         if (linkProvider instanceof FileSystemArtifactLinkDataProvider) {
-            return linkProvider.getRootUrl()
+            return requireNonNull(linkProvider.getRootUrl())
                     .replaceFirst("BASE_URL", getBaseUrl().build().toString())
                     .replace("index.html", isEmpty(filePath) ? "index.html" : filePath);
         } else {
@@ -344,6 +347,7 @@ public class AllureArtifactsManager {
         final Map<String, String> planCustomConfiguration = buildDefinition.getCustomConfiguration();
         if (ArtifactHandlingUtils.isCustomArtifactHandlingConfigured(planCustomConfiguration)) {
             // This hacky way it's compatible with both Bamboo 5.x and Bamboo 6.x
+            //TODO is it compatible with 7.x??
             final Collector<Map.Entry<String, String>, ?, Map<String, String>> toMap = toMap(Map.Entry::getKey, Map.Entry::getValue);
             final Predicate<Map.Entry<String, String>> isArtifactHandler = e -> e.getKey().startsWith(ARTIFACT_HANDLERS_CONFIG_PREFIX);
             final Predicate<Map.Entry<String, String>> isNotHandlerSwitch = e -> SHARED_NON_SHARED_ONOFF_OPTION_NAME.values().stream().noneMatch(o -> e.getKey().endsWith(o));
@@ -358,12 +362,9 @@ public class AllureArtifactsManager {
         return new MutableArtifactImpl(name, planResultKey, null, false, 0L);
     }
 
+
     private List<ArtifactHandler> getArtifactHandlers() {
-        final ConjunctionModuleDescriptorPredicate<ArtifactHandler> predicate = new ConjunctionModuleDescriptorPredicate<>();
-
-        predicate.append(new ModuleOfClassPredicate<>(ArtifactHandler.class));
-        predicate.append(new EnabledModulePredicate<>());
-
+        Predicate<ModuleDescriptor<ArtifactHandler>> predicate = new ModuleOfClassPredicate<>(ArtifactHandler.class).and(new EnabledModulePredicate());
         return ImmutableList.copyOf(pluginAccessor.getModules(predicate));
     }
 
@@ -374,15 +375,14 @@ public class AllureArtifactsManager {
 
     @SuppressWarnings("unchecked")
     private <T extends ArtifactHandler> Optional<T> getArtifactHandlerByClassName(String className) {
-        final ConjunctionModuleDescriptorPredicate<T> predicate = new ConjunctionModuleDescriptorPredicate<>();
+        AtomicReference<Predicate<ModuleDescriptor<T>>> predicate = new AtomicReference<>();
         return ofNullable(className).map(clazz -> {
             final Class<T> aClass;
             try {
                 aClass = (Class<T>) Class.forName(clazz);
-                predicate.append(new ModuleOfClassPredicate<>(aClass));
-                predicate.append(new EnabledModulePredicate<>());
+                predicate.set(new ModuleOfClassPredicate<>(aClass).and(new EnabledModulePredicate()));
 
-                return pluginAccessor.getModules(predicate).stream().findAny().orElse(null);
+                return pluginAccessor.getModules(predicate.get()).stream().findAny().orElse(null);
             } catch (ClassNotFoundException e) {
                 LOGGER.error("Failed to find artifact handler for class name " + className, e);
             }

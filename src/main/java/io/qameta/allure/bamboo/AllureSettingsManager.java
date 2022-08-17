@@ -3,10 +3,7 @@ package io.qameta.allure.bamboo;
 import com.atlassian.sal.api.pluginsettings.PluginSettings;
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
 
-import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_DOWNLOAD_URL;
-import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_DOWNLOAD_ENABLED;
-import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_ENABLED_BY_DEFAULT;
-import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_LOCAL_STORAGE;
+import static io.qameta.allure.bamboo.AllureConstants.*;
 
 public class AllureSettingsManager {
     private final PluginSettings settings;
@@ -19,8 +16,9 @@ public class AllureSettingsManager {
         final String downloadEnabled = (String) settings.get(ALLURE_CONFIG_DOWNLOAD_ENABLED);
         final String enableByDefault = (String) settings.get(ALLURE_CONFIG_ENABLED_BY_DEFAULT);
         final String downloadBaseUrl = (String) settings.get(ALLURE_CONFIG_DOWNLOAD_URL);
+        final String downloadCliBaseUrl = (String) settings.get(ALLURE_CONFIG_DOWNLOAD_CLI_URL);
         final String localStorage = (String) settings.get(ALLURE_CONFIG_LOCAL_STORAGE);
-        return new AllureGlobalConfig( downloadEnabled, enableByDefault, downloadBaseUrl, localStorage);
+        return new AllureGlobalConfig( downloadEnabled, enableByDefault, downloadBaseUrl, localStorage, downloadCliBaseUrl);
     }
 
     void saveSettings(AllureGlobalConfig config) {

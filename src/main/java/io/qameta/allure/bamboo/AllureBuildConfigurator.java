@@ -5,7 +5,6 @@ import com.atlassian.bamboo.plan.cache.ImmutablePlan;
 import com.atlassian.bamboo.plan.configuration.MiscellaneousPlanConfigurationPlugin;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
-import com.atlassian.bamboo.v2.build.configuration.MiscellaneousBuildConfigurationPlugin;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -62,7 +61,7 @@ public class AllureBuildConfigurator extends BaseConfigurablePlugin
             buildConfiguration.setProperty(ALLURE_CONFIG_FAILED_ONLY, TRUE);
         }
         if (buildConfiguration.getProperty(ALLURE_CONFIG_EXECUTABLE) == null) {
-            ofNullable(executablesManager).map(manager -> manager.getDefaultAllureExecutable().orElse(null))
+            ofNullable(executablesManager).flatMap(BambooExecutablesManager::getDefaultAllureExecutable)
                     .ifPresent(executable -> buildConfiguration.setProperty(ALLURE_CONFIG_EXECUTABLE, executable));
         }
     }

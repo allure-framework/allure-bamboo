@@ -15,8 +15,8 @@ import java.util.regex.Pattern;
 
 public class AllureExecutableProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureExecutableProvider.class);
-    static final String DEFAULT_VERSION = "2.17.2";
-    static final String DEFAULT_PATH = "/tmp/allure/2.17.2";
+    static final String DEFAULT_VERSION = "2.19.0";
+    static final String DEFAULT_PATH = "/tmp/allure/2.19.0";
     private static final Pattern EXEC_NAME_PATTERN = compile("[^\\d]*(\\d[0-9\\.]{2,}[a-zA-Z0-9\\-]*)$");
     private static final String BINARY_SUBDIR = "binary";
 

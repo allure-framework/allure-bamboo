@@ -1,14 +1,15 @@
 package io.qameta.allure.bamboo;
 
 import com.atlassian.bamboo.build.BuildDefinition;
-import com.atlassian.bamboo.chains.Chain;
 import com.atlassian.bamboo.chains.ChainExecution;
 import com.atlassian.bamboo.chains.ChainResultsSummary;
 import com.atlassian.bamboo.chains.plugins.PostChainAction;
 import com.atlassian.bamboo.configuration.AdministrationConfiguration;
+import com.atlassian.bamboo.plan.cache.ImmutableChain;
 import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
+import com.atlassian.bonnie.search.summary.Summary;
 import com.atlassian.spring.container.ContainerManager;
 import io.qameta.allure.bamboo.info.AddExecutorInfo;
 import org.apache.commons.lang3.StringUtils;
@@ -25,17 +26,13 @@ import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import static com.google.common.io.Files.createTempDir;
 import static io.qameta.allure.bamboo.AllureBuildResult.allureBuildResult;
 import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
 import static java.lang.String.format;
-import static java.util.Arrays.*;
+import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.codehaus.plexus.util.FileUtils.copyDirectory;
@@ -67,7 +64,8 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
     }
 
     @Override
-    public void execute(@NotNull Chain chain, @NotNull ChainResultsSummary chainResultsSummary, @NotNull ChainExecution chainExecution) throws Exception {
+    @SuppressWarnings("UnstableApiUsage")
+    public void execute(@NotNull ImmutableChain chain, @NotNull ChainResultsSummary chainResultsSummary, @NotNull ChainExecution chainExecution) {
         final BuildDefinition buildDef = chain.getBuildDefinition();
         final AllureGlobalConfig globalConfig = settingsManager.getSettings();
         final AllureBuildConfig buildConfig = AllureBuildConfig.fromContext(buildDef.getCustomConfiguration());
@@ -116,7 +114,7 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
         }
     }
 
-    private void prepareResults(List<File> artifactsTempDirs, Chain chain, ChainExecution chainExecution) throws IOException, InterruptedException {
+    private void prepareResults(List<File> artifactsTempDirs, @NotNull ImmutableChain chain, @NotNull ChainExecution chainExecution) {
         copyHistory(artifactsTempDirs, chain.getPlanKey().getKey(), chainExecution.getPlanResultKey().getBuildNumber());
         addExecutorInfo(artifactsTempDirs, chain, chainExecution.getPlanResultKey().getBuildNumber());
     }
@@ -124,7 +122,8 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
     /**
      * Write the history file to results directory.
      */
-    private void copyHistory(List<File> artifactsTempDirs, String planKey, int buildNumber) {
+    @SuppressWarnings("UnstableApiUsage")
+    private void copyHistory(@NotNull List<File> artifactsTempDirs, String planKey, int buildNumber) {
         final Path tmpDirToDownloadHistory = createTempDir().toPath();
         getLastBuildNumberWithHistory(planKey, buildNumber)
                 .ifPresent(buildId -> copyHistoryFiles(planKey, tmpDirToDownloadHistory, buildId));
@@ -190,7 +189,7 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
                 getBambooBaseUrl(), planKey, buildId, fileName);
     }
 
-    private void addExecutorInfo(List<File> artifactsTempDirs, Chain chain, int buildNumber) throws IOException, InterruptedException {
+    private void addExecutorInfo(@NotNull List<File> artifactsTempDirs, @NotNull ImmutableChain chain, int buildNumber) {
         final String rootUrl = getBambooBaseUrl();
         final String buildName = chain.getBuildName();
         final String buildUrl = String.format("%s/browse/%s-%s", rootUrl, chain.getPlanKey().getKey(), buildNumber);

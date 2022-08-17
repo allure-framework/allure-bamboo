@@ -11,7 +11,7 @@ import java.nio.file.Paths;
 
 import static com.google.common.io.Files.createTempDir;
 import static java.util.Collections.singleton;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.junit.MockitoJUnit.rule;
@@ -20,7 +20,7 @@ public class AllureExecutableTest {
     @Rule
     public MockitoRule mockitoRule = rule();
 
-    private Path path = Paths.get("/tmp/where-allure/installed");
+    private final Path path = Paths.get("/tmp/where-allure/installed");
 
     @Mock
     private AllureCommandLineSupport cmdLine;
@@ -30,6 +30,7 @@ public class AllureExecutableTest {
     private Path toDir;
 
     @Before
+    @SuppressWarnings("UnstableApiUsage")
     public void setUp() throws Exception {
         executable = new AllureExecutable(path, cmdLine);
         fromDir = createTempDir().toPath();

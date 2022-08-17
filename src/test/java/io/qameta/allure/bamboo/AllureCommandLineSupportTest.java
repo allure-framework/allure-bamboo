@@ -2,12 +2,13 @@ package io.qameta.allure.bamboo;
 
 import org.junit.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
+
 
 public class AllureCommandLineSupportTest {
 
-    private AllureCommandLineSupport support = new AllureCommandLineSupport();
+    private final AllureCommandLineSupport support = new AllureCommandLineSupport();
 
     @Test
     public void itShouldReturnNotContainingTestcasesResult() throws Exception {

@@ -8,11 +8,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoRule;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import static org.apache.commons.io.FileUtils.deleteQuietly;
-import static org.apache.commons.io.FileUtils.getTempDirectoryPath;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
 import static org.mockito.junit.MockitoJUnit.rule;
 
@@ -29,7 +32,7 @@ public class AllureDownloaderTest {
 
     @Before
     public void setUp() {
-        homeDir = Paths.get(getTempDirectoryPath(), "allure-home").toString();
+        homeDir = Paths.get(System.getProperty("java.io.tmpdir"), "allure-home").toString();
         settings = new AllureGlobalConfig();
         when(settingsManager.getSettings()).thenReturn(settings);
     }
@@ -37,7 +40,8 @@ public class AllureDownloaderTest {
     @Test
     public void itShouldDownloadAndExtractAllureRelease() {
         downloader.downloadAndExtractAllureTo(homeDir, "2.17.2");
-        assertTrue(Paths.get(homeDir, "bin", "allure").toFile().exists());
+        File f = Paths.get(homeDir, "bin", "allure").toFile();
+        assertTrue(f.exists());
     }
 
     @After
