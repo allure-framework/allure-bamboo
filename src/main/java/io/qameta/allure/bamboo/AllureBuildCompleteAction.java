@@ -10,16 +10,18 @@ import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
 import com.atlassian.spring.container.ContainerManager;
+import com.google.gson.JsonParser;
 import io.qameta.allure.bamboo.info.AddExecutorInfo;
+import io.qameta.allure.bamboo.util.Downloader;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
@@ -31,6 +33,7 @@ import static com.google.common.io.Files.createTempDir;
 import static io.qameta.allure.bamboo.AllureBuildResult.allureBuildResult;
 import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
 import static java.lang.String.format;
+import static java.nio.file.Files.createTempFile;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
@@ -161,13 +164,14 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
 
     private boolean historyArtifactExists(String planKey, int buildId) {
         String artifactUrl = getHistoryArtifactUrl("history.json", planKey, buildId);
+        JsonParser parser = new JsonParser();
         try {
-            HttpURLConnection.setFollowRedirects(false);
-            HttpURLConnection con = (HttpURLConnection) new URL(artifactUrl).openConnection();
-            con.setRequestMethod("HEAD");
-            return con.getResponseCode() == HttpURLConnection.HTTP_OK;
+            final Path historyTmpFile = createTempFile("history", ".json");
+            Downloader.download(new URL(artifactUrl), historyTmpFile);
+            parser.parse(new FileReader(historyTmpFile.toFile()));
+            return true;
         } catch (Exception e) {
-            LOGGER.info("Cannot connect to artifact {}.", artifactUrl, e);
+            LOGGER.info("Cannot connect to artifact or the artifact is not valid {}.", artifactUrl, e);
             return false;
         }
     }

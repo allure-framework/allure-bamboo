@@ -22,7 +22,6 @@ import com.atlassian.bamboo.build.artifact.TrampolineUrlArtifactLinkDataProvider
 import com.atlassian.bamboo.build.artifact.handlers.ArtifactHandlersService;
 import com.atlassian.bamboo.chains.ChainResultsSummary;
 import com.atlassian.bamboo.chains.ChainStageResult;
-import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.plan.PlanResultKey;
 import com.atlassian.bamboo.plan.artifact.ArtifactDefinitionContextImpl;
 import com.atlassian.bamboo.plan.cache.ImmutableChain;
@@ -89,7 +88,6 @@ import static org.codehaus.plexus.util.FileUtils.copyURLToFile;
 public class AllureArtifactsManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureArtifactsManager.class);
     private static final String REPORTS_SUBDIR = "allure-reports";
-
     private final PluginAccessor pluginAccessor;
     private final ArtifactHandlersService artifactHandlersService;
     private final BuildDefinitionManager buildDefinitionManager;
