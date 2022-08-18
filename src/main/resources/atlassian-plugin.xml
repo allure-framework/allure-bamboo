@@ -3,7 +3,7 @@
         <description>${project.description}</description>
         <version>${project.version}</version>
         <vendor name="${project.organization.name}" url="${project.organization.url}"/>
-        <param name="plugin-icon">images/icon.png</param>
+        <param name="plugin-icon">images/logo.png</param>
         <param name="plugin-logo">images/logo.png</param>
         <param name="build">1</param>
         <param name="atlassian-data-center-compatible">true</param>
@@ -17,8 +17,8 @@
     </postChainAction>
 
     <taskType key="allureReportTask" name="Allure Report" class="io.qameta.allure.bamboo.AllureReportTask">
-        <description>WARNING: this is deprecated way of building Allure Report, please refer the official guide to get more info</description>
-        <resource type="download" name="icon" location="images/logo_deprecated.png"/>
+        <description>This task is automatically executed without adding this task to your pipeline if you enable the allure report generation in the "Other" tab. But you can add it if you want to see it in your pipeline</description>
+        <resource type="download" name="icon" location="images/logo.png"/>
         <category name="test"/>
         <executable key="allure"/>
         <help link="allure.task.help.link" title="allure.task.help.title"/>

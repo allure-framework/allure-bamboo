@@ -9,7 +9,6 @@ import com.atlassian.bamboo.plan.cache.ImmutableChain;
 import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
-import com.atlassian.bonnie.search.summary.Summary;
 import com.atlassian.spring.container.ContainerManager;
 import io.qameta.allure.bamboo.info.AddExecutorInfo;
 import org.apache.commons.lang3.StringUtils;
@@ -98,6 +97,12 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
             } else {
                 LOGGER.info("Starting allure generate into {} for {}", allureReportDir.getPath(), chain.getName());
                 prepareResults(artifactsPaths.stream().map(Path::toFile).collect(toList()), chain, chainExecution);
+
+                // Setting the new logo in the allure libraries before generate the report.
+                if (globalConfig.isCustomLogoEnabled()) {
+                    allure.setCustomLogo(buildConfig.getCustomLogoUrl());
+                }
+
                 allure.generate(artifactsPaths, allureReportDir.toPath());
                 LOGGER.info("Allure has been generated successfully for {}", chain.getName());
                 artifactsManager.uploadReportArtifacts(chain, chainResultsSummary, allureReportDir)

@@ -14,17 +14,20 @@ public class AllureSettingsManager {
 
     AllureGlobalConfig getSettings() {
         final String downloadEnabled = (String) settings.get(ALLURE_CONFIG_DOWNLOAD_ENABLED);
+        final String customLogoEnabled = (String) settings.get(ALLURE_CUSTOM_LOGO_ENABLED);
         final String enableByDefault = (String) settings.get(ALLURE_CONFIG_ENABLED_BY_DEFAULT);
         final String downloadBaseUrl = (String) settings.get(ALLURE_CONFIG_DOWNLOAD_URL);
         final String downloadCliBaseUrl = (String) settings.get(ALLURE_CONFIG_DOWNLOAD_CLI_URL);
         final String localStorage = (String) settings.get(ALLURE_CONFIG_LOCAL_STORAGE);
-        return new AllureGlobalConfig( downloadEnabled, enableByDefault, downloadBaseUrl, localStorage, downloadCliBaseUrl);
+        return new AllureGlobalConfig( downloadEnabled, enableByDefault, downloadBaseUrl, localStorage, downloadCliBaseUrl, customLogoEnabled);
     }
 
     void saveSettings(AllureGlobalConfig config) {
         settings.put(ALLURE_CONFIG_DOWNLOAD_ENABLED, String.valueOf(config.isDownloadEnabled()));
-        settings.put(ALLURE_CONFIG_ENABLED_BY_DEFAULT, String.valueOf(config.isEnabledByDefault()));
+        settings.put(ALLURE_CUSTOM_LOGO_ENABLED, String.valueOf(config.isCustomLogoEnabled()));
         settings.put(ALLURE_CONFIG_DOWNLOAD_URL, String.valueOf(config.getDownloadBaseUrl()));
         settings.put(ALLURE_CONFIG_LOCAL_STORAGE, String.valueOf(config.getLocalStoragePath()));
+        settings.put(ALLURE_CONFIG_ENABLED_BY_DEFAULT, String.valueOf(config.isEnabledByDefault()));
+
     }
 }
