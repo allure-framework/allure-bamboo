@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.qameta.allure</groupId>
     <artifactId>allure-bamboo</artifactId>
-    <version>1.13-SNAPSHOT</version>
+    <version>2.00</version>
     <name>Allure for Bamboo</name>
     <description>Allure reports right in deployment plans in Bamboo</description>
     <packaging>atlassian-plugin</packaging>
