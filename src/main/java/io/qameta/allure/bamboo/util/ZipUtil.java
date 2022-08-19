@@ -1,5 +1,6 @@
 package io.qameta.allure.bamboo.util;
 
+import net.lingala.zip4j.ZipFile;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
@@ -11,9 +12,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
+
+import static java.nio.file.Files.*;
 
 public class ZipUtil {
 
@@ -43,5 +44,12 @@ public class ZipUtil {
         }
     }
 
-
+    public static void zipFolder(@NotNull Path srcFolder, @NotNull Path targetDir) throws IOException {
+        Path zipReportTmpDir = createTempDirectory("tmp_allure_report");
+        Path zipReport = zipReportTmpDir.resolve("report.zip");
+        try (ZipFile zp = new ZipFile(zipReport.toFile())) {
+            zp.addFolder(srcFolder.toFile());
+        }
+        move(zipReport, targetDir, StandardCopyOption.REPLACE_EXISTING);
+    }
 }

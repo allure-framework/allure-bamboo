@@ -3,17 +3,19 @@ package io.qameta.allure.bamboo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.qameta.allure.bamboo.info.AllurePlugins;
-import io.qameta.allure.bamboo.util.Downloader;
+import io.qameta.allure.bamboo.util.FileStringReplacer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.regex.Pattern;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -49,13 +51,10 @@ class AllureExecutable {
         }
     }
 
-
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     public void setCustomLogo(String logoUrl) {
         final String pluginName = "custom-logo-plugin";
         final String allureConfigFileName = "allure.yml";
-        final String logoOriginalName = "custom-logo.svg";
-        final String logoBackupName = logoOriginalName + "bkp";
+        final String cssFileName = "styles.css";
 
         Path rootPath = this.cmdPath.getParent().getParent();
         Path configFolder = rootPath.resolve("config");
@@ -70,12 +69,23 @@ class AllureExecutable {
             if (ap.registerPlugin(pluginName)) {
                 objectMapper.writeValue(configFile, ap);
             }
-            /// Backup the original one
+            //Setting new Logo
             URL srcLogoUrl = fromPath(logoUrl).build().toURL();
-            File bkp = logoPluginFolder.resolve(logoBackupName).toFile();
-            logoPluginFolder.resolve(logoOriginalName).toFile().renameTo(bkp);
-            /// Replace with the new one
-            Downloader.download(srcLogoUrl, logoPluginFolder.resolve(logoOriginalName));
+            FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
+                    Pattern.compile("url\\('.+'\\)", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                    "url(" + srcLogoUrl.toString() + ")"
+            );
+
+            // aligning logo to center
+            FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
+                    Pattern.compile("(?<=\\s )left",Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                    "center"
+            );
+            // removing margin
+            FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
+                    Pattern.compile("10px",Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                    "0px"
+            );
 
         } catch (IOException e) {
             LOGGER.error(e.toString());
