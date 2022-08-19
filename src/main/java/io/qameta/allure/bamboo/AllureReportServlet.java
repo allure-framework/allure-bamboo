@@ -29,7 +29,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class AllureReportServlet extends HttpServlet {
-    private static final Pattern URL_PATTERN = Pattern.compile(".*/plugins/servlet/allure/report/([^/]{2,})/([^/]+)/?(.*)/");
+    private static final Pattern URL_PATTERN = Pattern.compile(".*/plugins/servlet/allure/report/([^/]{2,})/([^/]+)/?(.*)");
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureReportServlet.class);
     private final AllureArtifactsManager artifactsManager;
     private final ResultsSummaryManager resultsSummaryManager;
