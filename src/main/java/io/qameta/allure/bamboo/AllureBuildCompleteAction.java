@@ -41,8 +41,7 @@ import static org.codehaus.plexus.util.FileUtils.copyDirectory;
 public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements PostChainAction {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureBuildCompleteAction.class);
-    private static final List<String> HISTORY_FILES = asList("history.json", "history-trend.json");
-
+    private static final List<String> HISTORY_FILES = asList("history.json", "history-trend.json", "categories-trend.json", "duration-trend.json");
     private final AllureExecutableProvider allureExecutable;
     private final AllureSettingsManager settingsManager;
     private final AllureArtifactsManager artifactsManager;
