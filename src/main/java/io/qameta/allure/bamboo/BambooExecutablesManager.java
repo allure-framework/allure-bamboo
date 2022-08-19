@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static com.atlassian.bamboo.v2.build.agent.capability.CapabilitySetManagerUtils.getSharedCapabilitySet;
@@ -76,6 +77,6 @@ public class BambooExecutablesManager {
     }
 
     private Optional<Capability> getCapability(String capabilityKey) {
-        return ofNullable(capabilitySetManager.getSharedLocalCapabilitySet().getCapability(capabilityKey));
+        return ofNullable(Objects.requireNonNull(capabilitySetManager.getSharedLocalCapabilitySet()).getCapability(capabilityKey));
     }
 }

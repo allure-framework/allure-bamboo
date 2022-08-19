@@ -3,13 +3,13 @@ package io.qameta.allure.bamboo.util;
 import org.junit.Test;
 
 import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertThat;
 
 public class ExceptionUtilTest {
 
     @Test
-    public void itShouldPrintStackTraceIntoString() throws Exception {
+    public void itShouldPrintStackTraceIntoString() {
         try {
             throw new RuntimeException("Print me please");
         } catch (RuntimeException e) {

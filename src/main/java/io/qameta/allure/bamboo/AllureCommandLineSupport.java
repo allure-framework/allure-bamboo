@@ -3,6 +3,7 @@ package io.qameta.allure.bamboo;
 import org.buildobjects.process.ProcBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.nio.file.Paths;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -41,6 +42,8 @@ public class AllureCommandLineSupport {
     }
 
     boolean hasCommand(String command) {
-        return Paths.get(command).toFile().exists();
+        File cmdFile = Paths.get(command).toFile();
+        // It needs to be sure that the command is a file
+        return cmdFile.exists() && cmdFile.isFile();
     }
 }
