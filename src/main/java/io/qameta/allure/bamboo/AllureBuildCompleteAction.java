@@ -10,24 +10,28 @@ import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
 import com.atlassian.spring.container.ContainerManager;
+import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 import io.qameta.allure.bamboo.info.AddExecutorInfo;
+import io.qameta.allure.bamboo.info.allurewidgets.summary.Summary;
 import io.qameta.allure.bamboo.util.Downloader;
+import io.qameta.allure.bamboo.util.FileStringReplacer;
+import io.qameta.allure.bamboo.util.ZipUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.regex.Pattern;
+
 
 import static com.google.common.io.Files.createTempDir;
 import static io.qameta.allure.bamboo.AllureBuildResult.allureBuildResult;
@@ -105,11 +109,17 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
                 if (globalConfig.isCustomLogoEnabled()) {
                     allure.setCustomLogo(buildConfig.getCustomLogoUrl());
                 }
-
                 allure.generate(artifactsPaths, allureReportDir.toPath());
+                // Setting report name
+                this.finalize(allureReportDir, chainExecution.getPlanResultKey().getBuildNumber(), chain.getBuildName());
+
+                // Create an exportable zip with the report
+                ZipUtil.zipFolder(allureReportDir.toPath(), allureReportDir.toPath().resolve("report.zip"));
+
                 LOGGER.info("Allure has been generated successfully for {}", chain.getName());
                 artifactsManager.uploadReportArtifacts(chain, chainResultsSummary, allureReportDir)
                         .ifPresent(result -> result.dumpToCustomData(customBuildData));
+
 
             }
         } catch (Exception e) {
@@ -119,6 +129,40 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
             deleteQuietly(artifactsTempDir);
             deleteQuietly(allureReportDir);
         }
+    }
+
+    /**
+     * I'm a friend, and it's a gift for all you that wants to customize allure report for your projects. :)
+     * @param allureReportDir
+     * @param buildNumber
+     * @param buildName
+     * @throws IOException
+     */
+    private void finalize(@NotNull File allureReportDir, int buildNumber, String buildName) throws IOException {
+        ////////////////////
+        // Update Report Name (It is the way now)
+        Path widgetsJsonPath = Paths.get(allureReportDir.getAbsolutePath()).resolve("widgets").resolve("summary.json");
+        Gson gson = new Gson();
+        Summary summary = gson.fromJson(new FileReader(widgetsJsonPath.toFile()), Summary.class);
+        summary.setReportName("Build #" + buildNumber + " - " + buildName);
+        Writer json = new FileWriter(widgetsJsonPath.toFile());
+        gson.toJson(summary, Summary.class, json);
+        json.flush();
+        json.close();
+        ////////////////////
+        // Deleting title from Logo
+        Path appJsPath = Paths.get(allureReportDir.getAbsolutePath()).resolve("app.js");
+        FileStringReplacer.replaceInFile(appJsPath,
+                Pattern.compile(">Allure</span>", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                ">&nbsp;</span>"
+        );
+        ////////////////////
+        // Changing page title
+        Path indexHtmlPath = Paths.get(allureReportDir.getAbsolutePath()).resolve("index.html");
+        FileStringReplacer.replaceInFile(indexHtmlPath,
+                Pattern.compile("<title>.*</title>", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                "<title>" + "Build #" + buildNumber + " - " + buildName + "</title>"
+        );
     }
 
     private void prepareResults(List<File> artifactsTempDirs, @NotNull ImmutableChain chain, @NotNull ChainExecution chainExecution) {
@@ -206,6 +250,7 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
         final AddExecutorInfo executorInfo = new AddExecutorInfo(rootUrl, Integer.toString(buildNumber), buildName, buildUrl, reportUrl);
         artifactsTempDirs.forEach(executorInfo::invoke);
     }
+
 
     /**
      * Returns the base url of bamboo server.
