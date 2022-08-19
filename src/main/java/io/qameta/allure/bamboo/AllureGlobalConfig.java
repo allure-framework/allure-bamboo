@@ -17,36 +17,38 @@ import static org.sonatype.aether.util.StringUtils.isEmpty;
 
 class AllureGlobalConfig implements Serializable {
     private static final String DEFAULT_DOWNLOAD_BASE_URL = "https://github.com/allure-framework/allure2/releases/download/";
-
     private static final String DEFAULT_CLI_BASE_URL = "https://repo.maven.apache.org/maven2/io/qameta/allure/";
     public static final String DEFAULT_LOCAL_STORAGE_PATH = new File(getJavaIoTmpDir(), "allure-reports").getPath();
     private final boolean downloadEnabled;
+    private final boolean customLogoEnabled;
     private final boolean enabledByDefault;
     private final String localStoragePath;
     private final String downloadBaseUrl;
     private final String downloadCliBaseUrl;
 
     AllureGlobalConfig() {
-        this(TRUE.toString(), FALSE.toString(), DEFAULT_DOWNLOAD_BASE_URL, DEFAULT_LOCAL_STORAGE_PATH, DEFAULT_CLI_BASE_URL);
+        this(TRUE.toString(), FALSE.toString(), DEFAULT_DOWNLOAD_BASE_URL, DEFAULT_LOCAL_STORAGE_PATH, DEFAULT_CLI_BASE_URL, TRUE.toString());
     }
 
-    AllureGlobalConfig(String downloadEnabled, String enabledByDefault, String downloadBaseUrl, String localStoragePath, String cmdLineUrl) {
+    AllureGlobalConfig(String downloadEnabled, String enabledByDefault, String downloadBaseUrl, String localStoragePath, String cmdLineUrl, String customLogoEnable) {
         this.downloadEnabled = isEmpty(downloadEnabled) ? TRUE : parseBoolean(downloadEnabled);
         this.enabledByDefault = isEmpty(enabledByDefault) ? FALSE : parseBoolean(enabledByDefault);
         this.downloadBaseUrl = isEmpty(downloadBaseUrl) ? DEFAULT_DOWNLOAD_BASE_URL : downloadBaseUrl;
-        this.downloadCliBaseUrl = isEmpty(cmdLineUrl) ? DEFAULT_CLI_BASE_URL: cmdLineUrl;
+        this.downloadCliBaseUrl = isEmpty(cmdLineUrl) ? DEFAULT_CLI_BASE_URL : cmdLineUrl;
         this.localStoragePath = isEmpty(localStoragePath) ? DEFAULT_LOCAL_STORAGE_PATH : localStoragePath;
+        this.customLogoEnabled = isEmpty(customLogoEnable) ? TRUE : parseBoolean(customLogoEnable);
     }
 
 
     @NotNull
     static AllureGlobalConfig fromContext(Map context) {
         return new AllureGlobalConfig(
-                getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_ENABLED, TRUE.toString()),
+                getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_ENABLED, FALSE.toString()),
                 getSingleValue(context, ALLURE_CONFIG_ENABLED_BY_DEFAULT, FALSE.toString()),
-                getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_URL, null),
-                getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_CLI_URL, null),
-                getSingleValue(context, ALLURE_CONFIG_LOCAL_STORAGE, null)
+                getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_URL, DEFAULT_DOWNLOAD_BASE_URL),
+                getSingleValue(context, ALLURE_CONFIG_LOCAL_STORAGE, DEFAULT_LOCAL_STORAGE_PATH),
+                getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_CLI_URL, DEFAULT_CLI_BASE_URL),
+                getSingleValue(context, ALLURE_CUSTOM_LOGO_ENABLED, FALSE.toString())
         );
     }
 
@@ -57,6 +59,15 @@ class AllureGlobalConfig implements Serializable {
                 .orElse(defaultVal);
     }
 
+    void toContext(@NotNull Map<String, Object> context) {
+        context.put(ALLURE_CONFIG_DOWNLOAD_ENABLED, isDownloadEnabled());
+        context.put(ALLURE_CONFIG_ENABLED_BY_DEFAULT, isEnabledByDefault());
+        context.put(ALLURE_CONFIG_DOWNLOAD_URL, getDownloadBaseUrl());
+        context.put(ALLURE_CONFIG_DOWNLOAD_CLI_URL, getDownloadCliBaseUrl());
+        context.put(ALLURE_CONFIG_LOCAL_STORAGE, getLocalStoragePath());
+        context.put(ALLURE_CUSTOM_LOGO_ENABLED, isCustomLogoEnabled());
+    }
+
     boolean isDownloadEnabled() {
         return downloadEnabled;
     }
@@ -65,18 +76,15 @@ class AllureGlobalConfig implements Serializable {
         return enabledByDefault;
     }
 
-    void toContext(Map<String, Object> context) {
-        context.put(ALLURE_CONFIG_DOWNLOAD_ENABLED, isDownloadEnabled());
-        context.put(ALLURE_CONFIG_ENABLED_BY_DEFAULT, isEnabledByDefault());
-        context.put(ALLURE_CONFIG_DOWNLOAD_URL, getDownloadBaseUrl());
-        context.put(ALLURE_CONFIG_LOCAL_STORAGE, getLocalStoragePath());
+    boolean isCustomLogoEnabled() {
+        return customLogoEnabled;
     }
 
     String getDownloadBaseUrl() {
         return downloadBaseUrl;
     }
 
-    String getDownloadCliBaseUrl(){
+    String getDownloadCliBaseUrl() {
         return downloadCliBaseUrl;
     }
 

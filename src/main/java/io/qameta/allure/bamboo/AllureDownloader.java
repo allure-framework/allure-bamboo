@@ -1,29 +1,24 @@
 package io.qameta.allure.bamboo;
 
+import io.qameta.allure.bamboo.util.Downloader;
 import io.qameta.allure.bamboo.util.ZipUtil;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.nio.file.*;
 import java.util.Optional;
 
-import static java.lang.Integer.getInteger;
 import static java.nio.file.Files.createTempFile;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static javax.ws.rs.core.UriBuilder.fromPath;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.apache.commons.io.FileUtils.moveDirectory;
 
 class AllureDownloader {
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureDownloader.class);
-    private static final int CONN_TIMEOUT_MS = (int) SECONDS.toMillis(getInteger("allure.download.conn.timeout.sec", 10));
-    private static final int DOWNLOAD_TIMEOUT_MS = (int) SECONDS.toMillis(getInteger("allure.download.timeout.sec", 60));
 
     private final AllureSettingsManager settingsManager;
 
@@ -62,17 +57,7 @@ class AllureDownloader {
                 try {
                     final Path downloadToFile = createTempFile("allure", ".zip");
                     LOGGER.info("Downloading allure.zip from {} to {}", url, downloadToFile);
-                    final URLConnection connection = url.openConnection();
-                    connection.setConnectTimeout(CONN_TIMEOUT_MS);
-                    connection.setReadTimeout(DOWNLOAD_TIMEOUT_MS);
-                    connection.setRequestProperty("Connection", "close");
-                    connection.setRequestProperty("Pragma", "no-cache");
-                    ((HttpURLConnection) connection).setInstanceFollowRedirects(true);
-                    connection.connect();
-                    try (InputStream input = connection.getInputStream()) {
-                        Files.copy(input, downloadToFile, StandardCopyOption.REPLACE_EXISTING);
-                        return Optional.of(downloadToFile);
-                    }
+                    return Downloader.download(url, downloadToFile);
                 } catch (Exception e) {
                     LOGGER
                         .warn("Failed to download from {}. Root cause : {}.",

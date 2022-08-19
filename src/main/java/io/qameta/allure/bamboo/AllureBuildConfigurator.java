@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
- import static com.atlassian.bamboo.plan.PlanClassHelper.isChain;
+import static com.atlassian.bamboo.plan.PlanClassHelper.isChain;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_ENABLED;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_EXECUTABLE;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_FAILED_ONLY;
@@ -18,7 +18,6 @@ import static java.lang.Boolean.TRUE;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang.StringUtils.isEmpty;
 
-@SuppressWarnings("unchecked")
 public class AllureBuildConfigurator extends BaseConfigurablePlugin
         implements MiscellaneousPlanConfigurationPlugin {
 
