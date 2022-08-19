@@ -17,7 +17,10 @@
     </postChainAction>
 
     <taskType key="allureReportTask" name="Allure Report" class="io.qameta.allure.bamboo.AllureReportTask">
-        <description>This task is automatically executed without adding this task to your pipeline if you enable the allure report generation in the "Other" tab. But you can add it if you want to see it in your pipeline</description>
+        <description>
+            If you enable the allure report generation in the "Other" tab, this task is automatically executed without
+            adding it to your pipeline. However, you can still add it to your pipeline if you want to see it.
+        </description>
         <resource type="download" name="icon" location="images/logo.png"/>
         <category name="test"/>
         <executable key="allure"/>
