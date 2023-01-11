@@ -2,6 +2,7 @@
 package io.qameta.allure.bamboo.info.allurewidgets.summary;
 
 import java.util.List;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
@@ -22,13 +23,11 @@ public class Summary {
 
     /**
      * No args constructor for use in serialization
-     *
      */
     public Summary() {
     }
 
     /**
-     *
      * @param statistic
      * @param reportName
      * @param time
@@ -100,22 +99,22 @@ public class Summary {
         sb.append(Summary.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');
         sb.append("reportName");
         sb.append('=');
-        sb.append(((this.reportName == null)?"<null>":this.reportName));
+        sb.append(((this.reportName == null) ? "<null>" : this.reportName));
         sb.append(',');
         sb.append("testRuns");
         sb.append('=');
-        sb.append(((this.testRuns == null)?"<null>":this.testRuns));
+        sb.append(((this.testRuns == null) ? "<null>" : this.testRuns));
         sb.append(',');
         sb.append("statistic");
         sb.append('=');
-        sb.append(((this.statistic == null)?"<null>":this.statistic));
+        sb.append(((this.statistic == null) ? "<null>" : this.statistic));
         sb.append(',');
         sb.append("time");
         sb.append('=');
-        sb.append(((this.time == null)?"<null>":this.time));
+        sb.append(((this.time == null) ? "<null>" : this.time));
         sb.append(',');
-        if (sb.charAt((sb.length()- 1)) == ',') {
-            sb.setCharAt((sb.length()- 1), ']');
+        if (sb.charAt((sb.length() - 1)) == ',') {
+            sb.setCharAt((sb.length() - 1), ']');
         } else {
             sb.append(']');
         }

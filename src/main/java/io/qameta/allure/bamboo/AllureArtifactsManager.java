@@ -345,8 +345,6 @@ public class AllureArtifactsManager {
         final Map<String, String> config = artifactHandlersService.getRuntimeConfiguration();
         final Map<String, String> planCustomConfiguration = buildDefinition.getCustomConfiguration();
         if (ArtifactHandlingUtils.isCustomArtifactHandlingConfigured(planCustomConfiguration)) {
-            // This hacky way it's compatible with both Bamboo 5.x and Bamboo 6.x
-            //TODO is it compatible with 7.x??
             final Collector<Map.Entry<String, String>, ?, Map<String, String>> toMap = toMap(Map.Entry::getKey, Map.Entry::getValue);
             final Predicate<Map.Entry<String, String>> isArtifactHandler = e -> e.getKey().startsWith(ARTIFACT_HANDLERS_CONFIG_PREFIX);
             final Predicate<Map.Entry<String, String>> isNotHandlerSwitch = e -> SHARED_NON_SHARED_ONOFF_OPTION_NAME.values().stream().noneMatch(o -> e.getKey().endsWith(o));

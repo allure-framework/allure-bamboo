@@ -27,13 +27,11 @@ public class Time {
 
     /**
      * No args constructor for use in serialization
-     *
      */
     public Time() {
     }
 
     /**
-     *
      * @param duration
      * @param sumDuration
      * @param minDuration
@@ -135,30 +133,30 @@ public class Time {
         sb.append(Time.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');
         sb.append("start");
         sb.append('=');
-        sb.append(((this.start == null)?"<null>":this.start));
+        sb.append(((this.start == null) ? "<null>" : this.start));
         sb.append(',');
         sb.append("stop");
         sb.append('=');
-        sb.append(((this.stop == null)?"<null>":this.stop));
+        sb.append(((this.stop == null) ? "<null>" : this.stop));
         sb.append(',');
         sb.append("duration");
         sb.append('=');
-        sb.append(((this.duration == null)?"<null>":this.duration));
+        sb.append(((this.duration == null) ? "<null>" : this.duration));
         sb.append(',');
         sb.append("minDuration");
         sb.append('=');
-        sb.append(((this.minDuration == null)?"<null>":this.minDuration));
+        sb.append(((this.minDuration == null) ? "<null>" : this.minDuration));
         sb.append(',');
         sb.append("maxDuration");
         sb.append('=');
-        sb.append(((this.maxDuration == null)?"<null>":this.maxDuration));
+        sb.append(((this.maxDuration == null) ? "<null>" : this.maxDuration));
         sb.append(',');
         sb.append("sumDuration");
         sb.append('=');
-        sb.append(((this.sumDuration == null)?"<null>":this.sumDuration));
+        sb.append(((this.sumDuration == null) ? "<null>" : this.sumDuration));
         sb.append(',');
-        if (sb.charAt((sb.length()- 1)) == ',') {
-            sb.setCharAt((sb.length()- 1), ']');
+        if (sb.charAt((sb.length() - 1)) == ',') {
+            sb.setCharAt((sb.length() - 1), ']');
         } else {
             sb.append(']');
         }
