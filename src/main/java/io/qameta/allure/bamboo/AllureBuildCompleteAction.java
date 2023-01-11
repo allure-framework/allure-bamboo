@@ -10,6 +10,7 @@ import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
 import com.atlassian.spring.container.ContainerManager;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 import io.qameta.allure.bamboo.info.AddExecutorInfo;
@@ -22,14 +23,23 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Writer;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 
@@ -119,8 +129,6 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
                 LOGGER.info("Allure has been generated successfully for {}", chain.getName());
                 artifactsManager.uploadReportArtifacts(chain, chainResultsSummary, allureReportDir)
                         .ifPresent(result -> result.dumpToCustomData(customBuildData));
-
-
             }
         } catch (Exception e) {
             LOGGER.error("Failed to build allure report for {}", chain.getName(), e);
@@ -131,24 +139,14 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
         }
     }
 
-    /**
-     * I'm a friend, and it's a gift for all you that wants to customize allure report for your projects. :)
-     * @param allureReportDir
-     * @param buildNumber
-     * @param buildName
-     * @throws IOException
-     */
     private void finalize(@NotNull File allureReportDir, int buildNumber, String buildName) throws IOException {
         ////////////////////
         // Update Report Name (It is the way now)
         Path widgetsJsonPath = Paths.get(allureReportDir.getAbsolutePath()).resolve("widgets").resolve("summary.json");
-        Gson gson = new Gson();
-        Summary summary = gson.fromJson(new FileReader(widgetsJsonPath.toFile()), Summary.class);
-        summary.setReportName("Build #" + buildNumber + " - " + buildName);
-        Writer json = new FileWriter(widgetsJsonPath.toFile());
-        gson.toJson(summary, Summary.class, json);
-        json.flush();
-        json.close();
+        ObjectMapper mapper = new ObjectMapper();
+        Summary summary = mapper.readValue(widgetsJsonPath.toFile(), Summary.class);
+        summary.setReportName(String.format("Build %s - %s", buildNumber, buildName));
+        mapper.writeValue(widgetsJsonPath.toFile(), summary);
         ////////////////////
         // Deleting title from Logo
         Path appJsPath = Paths.get(allureReportDir.getAbsolutePath()).resolve("app.js");
@@ -161,7 +159,7 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
         Path indexHtmlPath = Paths.get(allureReportDir.getAbsolutePath()).resolve("index.html");
         FileStringReplacer.replaceInFile(indexHtmlPath,
                 Pattern.compile("<title>.*</title>", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
-                "<title>" + "Build #" + buildNumber + " - " + buildName + "</title>"
+                String.format("<title> Build %s - %s </title>", buildNumber, buildName)
         );
     }
 
@@ -208,11 +206,12 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
 
     private boolean historyArtifactExists(String planKey, int buildId) {
         String artifactUrl = getHistoryArtifactUrl("history.json", planKey, buildId);
+        ObjectMapper mapper = new ObjectMapper();
         JsonParser parser = new JsonParser();
         try {
             final Path historyTmpFile = createTempFile("history", ".json");
             Downloader.download(new URL(artifactUrl), historyTmpFile);
-            parser.parse(new FileReader(historyTmpFile.toFile()));
+            mapper.readValue(historyTmpFile.toFile(), Object.class);
             return true;
         } catch (Exception e) {
             LOGGER.info("Cannot connect to artifact or the artifact is not valid {}.", artifactUrl, e);
