@@ -3,7 +3,12 @@ package io.qameta.allure.bamboo;
 import com.atlassian.sal.api.pluginsettings.PluginSettings;
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
 
-import static io.qameta.allure.bamboo.AllureConstants.*;
+import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_DOWNLOAD_CLI_URL;
+import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_DOWNLOAD_ENABLED;
+import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_DOWNLOAD_URL;
+import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_ENABLED_BY_DEFAULT;
+import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_LOCAL_STORAGE;
+import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CUSTOM_LOGO_ENABLED;
 
 public class AllureSettingsManager {
     private final PluginSettings settings;

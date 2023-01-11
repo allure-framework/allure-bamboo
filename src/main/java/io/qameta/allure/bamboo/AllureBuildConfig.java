@@ -6,7 +6,11 @@ import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Map;
 
-import static io.qameta.allure.bamboo.AllureConstants.*;
+import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_ARTIFACT_NAME;
+import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_ENABLED;
+import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_EXECUTABLE;
+import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_FAILED_ONLY;
+import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CUSTOM_LOGO_PATH;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Optional.ofNullable;
