@@ -1,41 +1,54 @@
 package io.qameta.allure.bamboo;
 
 import com.atlassian.bamboo.build.BuildDefinition;
-import com.atlassian.bamboo.chains.Chain;
 import com.atlassian.bamboo.chains.ChainExecution;
 import com.atlassian.bamboo.chains.ChainResultsSummary;
 import com.atlassian.bamboo.chains.plugins.PostChainAction;
 import com.atlassian.bamboo.configuration.AdministrationConfiguration;
+import com.atlassian.bamboo.plan.cache.ImmutableChain;
 import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
 import com.atlassian.spring.container.ContainerManager;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.JsonParser;
 import io.qameta.allure.bamboo.info.AddExecutorInfo;
+import io.qameta.allure.bamboo.info.allurewidgets.summary.Summary;
+import io.qameta.allure.bamboo.util.Downloader;
+import io.qameta.allure.bamboo.util.FileStringReplacer;
+import io.qameta.allure.bamboo.util.ZipUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
+import java.io.Writer;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
+
 
 import static com.google.common.io.Files.createTempDir;
 import static io.qameta.allure.bamboo.AllureBuildResult.allureBuildResult;
 import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
 import static java.lang.String.format;
-import static java.util.Arrays.*;
+import static java.nio.file.Files.createTempFile;
+import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.codehaus.plexus.util.FileUtils.copyDirectory;
@@ -44,8 +57,7 @@ import static org.codehaus.plexus.util.FileUtils.copyDirectory;
 public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements PostChainAction {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureBuildCompleteAction.class);
-    private static final List<String> HISTORY_FILES = asList("history.json", "history-trend.json");
-
+    private static final List<String> HISTORY_FILES = asList("history.json", "history-trend.json", "categories-trend.json", "duration-trend.json");
     private final AllureExecutableProvider allureExecutable;
     private final AllureSettingsManager settingsManager;
     private final AllureArtifactsManager artifactsManager;
@@ -67,7 +79,8 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
     }
 
     @Override
-    public void execute(@NotNull Chain chain, @NotNull ChainResultsSummary chainResultsSummary, @NotNull ChainExecution chainExecution) throws Exception {
+    @SuppressWarnings("UnstableApiUsage")
+    public void execute(@NotNull ImmutableChain chain, @NotNull ChainResultsSummary chainResultsSummary, @NotNull ChainExecution chainExecution) {
         final BuildDefinition buildDef = chain.getBuildDefinition();
         final AllureGlobalConfig globalConfig = settingsManager.getSettings();
         final AllureBuildConfig buildConfig = AllureBuildConfig.fromContext(buildDef.getCustomConfiguration());
@@ -101,11 +114,21 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
             } else {
                 LOGGER.info("Starting allure generate into {} for {}", allureReportDir.getPath(), chain.getName());
                 prepareResults(artifactsPaths.stream().map(Path::toFile).collect(toList()), chain, chainExecution);
+
+                // Setting the new logo in the allure libraries before generate the report.
+                if (globalConfig.isCustomLogoEnabled()) {
+                    allure.setCustomLogo(buildConfig.getCustomLogoUrl());
+                }
                 allure.generate(artifactsPaths, allureReportDir.toPath());
+                // Setting report name
+                this.finalize(allureReportDir, chainExecution.getPlanResultKey().getBuildNumber(), chain.getBuildName());
+
+                // Create an exportable zip with the report
+                ZipUtil.zipFolder(allureReportDir.toPath(), allureReportDir.toPath().resolve("report.zip"));
+
                 LOGGER.info("Allure has been generated successfully for {}", chain.getName());
                 artifactsManager.uploadReportArtifacts(chain, chainResultsSummary, allureReportDir)
                         .ifPresent(result -> result.dumpToCustomData(customBuildData));
-
             }
         } catch (Exception e) {
             LOGGER.error("Failed to build allure report for {}", chain.getName(), e);
@@ -116,7 +139,31 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
         }
     }
 
-    private void prepareResults(List<File> artifactsTempDirs, Chain chain, ChainExecution chainExecution) throws IOException, InterruptedException {
+    private void finalize(@NotNull File allureReportDir, int buildNumber, String buildName) throws IOException {
+        ////////////////////
+        // Update Report Name (It is the way now)
+        Path widgetsJsonPath = Paths.get(allureReportDir.getAbsolutePath()).resolve("widgets").resolve("summary.json");
+        ObjectMapper mapper = new ObjectMapper();
+        Summary summary = mapper.readValue(widgetsJsonPath.toFile(), Summary.class);
+        summary.setReportName(String.format("Build %s - %s", buildNumber, buildName));
+        mapper.writeValue(widgetsJsonPath.toFile(), summary);
+        ////////////////////
+        // Deleting title from Logo
+        Path appJsPath = Paths.get(allureReportDir.getAbsolutePath()).resolve("app.js");
+        FileStringReplacer.replaceInFile(appJsPath,
+                Pattern.compile(">Allure</span>", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                ">&nbsp;</span>"
+        );
+        ////////////////////
+        // Changing page title
+        Path indexHtmlPath = Paths.get(allureReportDir.getAbsolutePath()).resolve("index.html");
+        FileStringReplacer.replaceInFile(indexHtmlPath,
+                Pattern.compile("<title>.*</title>", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                String.format("<title> Build %s - %s </title>", buildNumber, buildName)
+        );
+    }
+
+    private void prepareResults(List<File> artifactsTempDirs, @NotNull ImmutableChain chain, @NotNull ChainExecution chainExecution) {
         copyHistory(artifactsTempDirs, chain.getPlanKey().getKey(), chainExecution.getPlanResultKey().getBuildNumber());
         addExecutorInfo(artifactsTempDirs, chain, chainExecution.getPlanResultKey().getBuildNumber());
     }
@@ -124,7 +171,8 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
     /**
      * Write the history file to results directory.
      */
-    private void copyHistory(List<File> artifactsTempDirs, String planKey, int buildNumber) {
+    @SuppressWarnings("UnstableApiUsage")
+    private void copyHistory(@NotNull List<File> artifactsTempDirs, String planKey, int buildNumber) {
         final Path tmpDirToDownloadHistory = createTempDir().toPath();
         getLastBuildNumberWithHistory(planKey, buildNumber)
                 .ifPresent(buildId -> copyHistoryFiles(planKey, tmpDirToDownloadHistory, buildId));
@@ -158,13 +206,15 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
 
     private boolean historyArtifactExists(String planKey, int buildId) {
         String artifactUrl = getHistoryArtifactUrl("history.json", planKey, buildId);
+        ObjectMapper mapper = new ObjectMapper();
+        JsonParser parser = new JsonParser();
         try {
-            HttpURLConnection.setFollowRedirects(false);
-            HttpURLConnection con = (HttpURLConnection) new URL(artifactUrl).openConnection();
-            con.setRequestMethod("HEAD");
-            return con.getResponseCode() == HttpURLConnection.HTTP_OK;
+            final Path historyTmpFile = createTempFile("history", ".json");
+            Downloader.download(new URL(artifactUrl), historyTmpFile);
+            mapper.readValue(historyTmpFile.toFile(), Object.class);
+            return true;
         } catch (Exception e) {
-            LOGGER.info("Cannot connect to artifact {}.", artifactUrl, e);
+            LOGGER.info("Cannot connect to artifact or the artifact is not valid {}.", artifactUrl, e);
             return false;
         }
     }
@@ -190,15 +240,16 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
                 getBambooBaseUrl(), planKey, buildId, fileName);
     }
 
-    private void addExecutorInfo(List<File> artifactsTempDirs, Chain chain, int buildNumber) throws IOException, InterruptedException {
+    private void addExecutorInfo(@NotNull List<File> artifactsTempDirs, @NotNull ImmutableChain chain, int buildNumber) {
         final String rootUrl = getBambooBaseUrl();
         final String buildName = chain.getBuildName();
         final String buildUrl = String.format("%s/browse/%s-%s", rootUrl, chain.getPlanKey().getKey(), buildNumber);
-        final String reportUrl = String.format("%s/plugins/servlet/allure/report/%s/%s/", rootUrl,
+        final String reportUrl = String.format("%s/plugins/servlet/allure/report/%s/%s", rootUrl,
                 chain.getPlanKey().getKey(), buildNumber);
         final AddExecutorInfo executorInfo = new AddExecutorInfo(rootUrl, Integer.toString(buildNumber), buildName, buildUrl, reportUrl);
         artifactsTempDirs.forEach(executorInfo::invoke);
     }
+
 
     /**
      * Returns the base url of bamboo server.

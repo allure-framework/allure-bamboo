@@ -1,15 +1,24 @@
 package io.qameta.allure.bamboo;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.qameta.allure.bamboo.info.AllurePlugins;
+import io.qameta.allure.bamboo.util.FileStringReplacer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.regex.Pattern;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static javax.ws.rs.core.UriBuilder.fromPath;
 
 class AllureExecutable {
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureExecutable.class);
@@ -38,6 +47,48 @@ class AllureExecutable {
             return cmdLine.parseGenerateOutput(output);
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate allure report", e);
+        }
+    }
+
+    public void setCustomLogo(String logoUrl) {
+        final String pluginName = "custom-logo-plugin";
+        final String allureConfigFileName = "allure.yml";
+        final String cssFileName = "styles.css";
+
+        Path rootPath = this.cmdPath.getParent().getParent();
+        Path configFolder = rootPath.resolve("config");
+        Path logoPluginFolder = rootPath.resolve("plugins").resolve(pluginName).resolve("static");
+
+        /// Editing Yaml to add plugin
+        ObjectMapper objectMapper = new YAMLMapper();
+        try {
+            File configFile = configFolder.resolve(allureConfigFileName).toFile();
+            AllurePlugins ap = objectMapper.readValue(configFile, AllurePlugins.class);
+            //Saving the file only if it necessary
+            if (ap.registerPlugin(pluginName)) {
+                objectMapper.writeValue(configFile, ap);
+            }
+            //Setting new Logo
+            URL srcLogoUrl = fromPath(logoUrl).build().toURL();
+            FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
+                    Pattern.compile("url\\('.+'\\)", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                    "url(" + srcLogoUrl.toString() + ")"
+            );
+
+            // aligning logo to center
+            FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
+                    Pattern.compile("(?<=\\s )left",Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                    "center"
+            );
+            // removing margin
+            FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
+                    Pattern.compile("10px",Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                    "0px"
+            );
+
+        } catch (IOException e) {
+            LOGGER.error(e.toString());
+            throw new RuntimeException(e);
         }
     }
 

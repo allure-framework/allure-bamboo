@@ -14,13 +14,12 @@ import java.util.Optional;
 import static io.qameta.allure.bamboo.AllureExecutableProvider.DEFAULT_VERSION;
 import static io.qameta.allure.bamboo.AllureExecutableProvider.getAllureSubDir;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.anyString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.junit.MockitoJUnit.rule;
 
-@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class AllureExecutableProviderTest {
 
     private final String homeDir = "/home/allure";

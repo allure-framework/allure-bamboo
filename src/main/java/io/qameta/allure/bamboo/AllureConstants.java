@@ -36,7 +36,12 @@ final class AllureConstants {
     static String ALLURE_CONFIG_DOWNLOAD_ENABLED = "custom.allure.config.download.enabled";
     static String ALLURE_CONFIG_ENABLED_BY_DEFAULT = "custom.allure.config.enabled.default";
     static String ALLURE_CONFIG_DOWNLOAD_URL = "custom.allure.config.download.url";
+    static String ALLURE_CONFIG_DOWNLOAD_CLI_URL = "custom.allure.config.download.cli.url";
     static String ALLURE_CONFIG_LOCAL_STORAGE = "custom.allure.config.local.storage";
+
+    // ALLURE CUSTOM LOGO
+    static String ALLURE_CUSTOM_LOGO_ENABLED = "custom.allure.config.logo.enabled";
+    static String ALLURE_CUSTOM_LOGO_PATH = "custom.allure.logo.url";
 
     private AllureConstants() {
     }

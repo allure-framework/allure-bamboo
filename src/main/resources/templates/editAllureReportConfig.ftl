@@ -20,6 +20,8 @@
     ]
         [@ww.checkbox labelKey='allure.config.download.enabled.label' name='custom.allure.config.download.enabled' toggle='true' /]
 
+        [@ww.checkbox labelKey='allure.config.logo.enabled.label' name='custom.allure.config.logo.enabled' toggle='true' /]
+
         [@ww.checkbox labelKey='allure.config.enabled.default.label' name='custom.allure.config.enabled.default' toggle='true' /]
 
         [@ww.textfield labelKey="allure.config.download.url.label" name="custom.allure.config.download.url" required="true"/]
