@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2016-2023 Qameta Software OÜ
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package io.qameta.allure.bamboo;
 
 import javax.annotation.Nullable;
@@ -17,8 +32,11 @@ import static org.apache.commons.lang3.SystemUtils.getJavaIoTmpDir;
 import static org.sonatype.aether.util.StringUtils.isEmpty;
 
 class AllureGlobalConfig implements Serializable {
-    private static final String DEFAULT_DOWNLOAD_BASE_URL = "https://github.com/allure-framework/allure2/releases/download/";
-    public static final String DEFAULT_LOCAL_STORAGE_PATH = new File(getJavaIoTmpDir(), "allure-reports").getPath();
+
+    private static final String DEFAULT_DOWNLOAD_BASE_URL =
+            "https://repo.maven.apache.org/maven2/io/qameta/allure/";
+    public static final String DEFAULT_LOCAL_STORAGE_PATH
+            = new File(getJavaIoTmpDir(), "allure-reports").getPath();
     private final boolean downloadEnabled;
     private final boolean enabledByDefault;
     private final String localStoragePath;
@@ -28,7 +46,10 @@ class AllureGlobalConfig implements Serializable {
         this(TRUE.toString(), FALSE.toString(), DEFAULT_DOWNLOAD_BASE_URL, DEFAULT_LOCAL_STORAGE_PATH);
     }
 
-    AllureGlobalConfig(String downloadEnabled, String enabledByDefault, String downloadBaseUrl, String localStoragePath) {
+    AllureGlobalConfig(final String downloadEnabled,
+                       final String enabledByDefault,
+                       final String downloadBaseUrl,
+                       final String localStoragePath) {
         this.downloadEnabled = isEmpty(downloadEnabled) ? TRUE : parseBoolean(downloadEnabled);
         this.enabledByDefault = isEmpty(enabledByDefault) ? FALSE : parseBoolean(enabledByDefault);
         this.downloadBaseUrl = isEmpty(downloadBaseUrl) ? DEFAULT_DOWNLOAD_BASE_URL : downloadBaseUrl;
@@ -36,7 +57,7 @@ class AllureGlobalConfig implements Serializable {
     }
 
 
-    static AllureGlobalConfig fromContext(Map context) {
+    static AllureGlobalConfig fromContext(final Map context) {
         return new AllureGlobalConfig(
                 getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_ENABLED, TRUE.toString()),
                 getSingleValue(context, ALLURE_CONFIG_ENABLED_BY_DEFAULT, FALSE.toString()),
@@ -46,7 +67,9 @@ class AllureGlobalConfig implements Serializable {
     }
 
     @Nullable
-    private static String getSingleValue(Map context, String key, String defaultVal) {
+    private static String getSingleValue(final Map context,
+                                         final String key,
+                                         final String defaultVal) {
         return ofNullable(context.get(key))
                 .map(value -> value instanceof String[] ? ((String[]) value)[0] : (String) value)
                 .orElse(defaultVal);
@@ -60,7 +83,7 @@ class AllureGlobalConfig implements Serializable {
         return enabledByDefault;
     }
 
-    void toContext(Map<String, Object> context) {
+    void toContext(final Map<String, Object> context) {
         context.put(ALLURE_CONFIG_DOWNLOAD_ENABLED, isDownloadEnabled());
         context.put(ALLURE_CONFIG_ENABLED_BY_DEFAULT, isEnabledByDefault());
         context.put(ALLURE_CONFIG_DOWNLOAD_URL, getDownloadBaseUrl());

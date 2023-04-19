@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- http://spotbugs.readthedocs.io/en/latest/filter.html -->
+<FindBugsFilter>
+    <Match>
+        <Package name="~io\.qameta\.allure\bamboo.*"/>
+    </Match>
+</FindBugsFilter>

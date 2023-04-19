@@ -13,9 +13,26 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package io.qameta.allure.bamboo;
+package io.qameta.allure.bamboo.util;
 
-import com.atlassian.bamboo.build.ChainResultsAction;
+import org.apache.commons.io.FileUtils;
 
-public class ViewAllureReport extends ChainResultsAction {
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+public final class FilesUtil {
+
+    private FilesUtil() {
+    }
+
+    public static File getTempDir() {
+        return FileUtils.getTempDirectory();
+    }
+
+    public static Path createTempFile(final String prefix,
+                                      final String suffix) throws IOException {
+        return Files.createTempFile(prefix, suffix);
+    }
 }

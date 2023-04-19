@@ -1,48 +1,51 @@
+/*
+ *  Copyright 2016-2023 Qameta Software OÜ
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package io.qameta.allure.bamboo;
 
 import org.junit.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
 
 public class AllureCommandLineSupportTest {
 
-    private AllureCommandLineSupport support = new AllureCommandLineSupport();
+    private static final String OUTPUT = "<junit-plugin>, enabled: true\n"
+            + "<behaviors-plugin>, enabled: true\n"
+            + "<packages-plugin>, enabled: true\n"
+            + "<cucumber-json-plugin>, enabled: true\n"
+            + "Found 4 results readers\n"
+            + "Found %d results for source 1491867175333-0\n"
+            + "## Summary\n"
+            + "Found %d test cases (%d failed, %d broken)\n"
+            + "Success percentage: Unknown\n"
+            + "Creating index.html...\n"
+            + "Couldn't find template in cache for \"index.html.ftl\"(\"en_US\", UTF-8, parsed); "
+            + "will try to load it.\n TemplateLoader.findTemplateSource(\"index.html.ftl\"): Found";
+
+    private final AllureCommandLineSupport support = new AllureCommandLineSupport();
 
     @Test
-    public void itShouldReturnNotContainingTestcasesResult() throws Exception {
-        final AllureGenerateResult result = support.parseGenerateOutput("" +
-                "<junit-plugin>, enabled: true\n" +
-                "<behaviors-plugin>, enabled: true\n" +
-                "<packages-plugin>, enabled: true\n" +
-                "<cucumber-json-plugin>, enabled: true\n" +
-                "Found 4 results readers\n" +
-                "Found 0 results for source 1491867175333-0\n" +
-                "## Summary\n" +
-                "Found 0 test cases (0 failed, 0 broken)\n" +
-                "Success percentage: Unknown\n" +
-                "Creating index.html...\n" +
-                "Couldn't find template in cache for \"index.html.ftl\"(\"en_US\", UTF-8, parsed); will try to load it.\n" +
-                "TemplateLoader.findTemplateSource(\"index.html.ftl\"): Found");
+    public void itShouldReturnNotContainingTestcasesResult() {
+        final AllureGenerateResult result = support.parseGenerateOutput(String.format(OUTPUT, 0, 0, 0, 0));
         assertThat(result.isContainsTestCases(), equalTo(false));
     }
 
     @Test
-    public void itShouldReturnContainingTestcasesResult() throws Exception {
-        final AllureGenerateResult result = support.parseGenerateOutput("" +
-                "<junit-plugin>, enabled: true\n" +
-                "<behaviors-plugin>, enabled: true\n" +
-                "<packages-plugin>, enabled: true\n" +
-                "<cucumber-json-plugin>, enabled: true\n" +
-                "Found 4 results readers\n" +
-                "Found 1 results for source 1491867175333-0\n" +
-                "## Summary\n" +
-                "Found 5 test cases (2 failed, 1 broken)\n" +
-                "Success percentage: 80\n" +
-                "Creating index.html...\n" +
-                "Couldn't find template in cache for \"index.html.ftl\"(\"en_US\", UTF-8, parsed); will try to load it.\n" +
-                "TemplateLoader.findTemplateSource(\"index.html.ftl\"): Found");
+    public void itShouldReturnContainingTestcasesResult() {
+        final AllureGenerateResult result = support.parseGenerateOutput(String.format(OUTPUT, 1, 5, 2, 1));
         assertThat(result.isContainsTestCases(), equalTo(true));
-
     }
 }

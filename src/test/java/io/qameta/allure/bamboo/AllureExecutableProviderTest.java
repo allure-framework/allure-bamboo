@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2016-2023 Qameta Software OÜ
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package io.qameta.allure.bamboo;
 
 import org.junit.Before;
@@ -14,15 +29,16 @@ import java.util.Optional;
 import static io.qameta.allure.bamboo.AllureExecutableProvider.DEFAULT_VERSION;
 import static io.qameta.allure.bamboo.AllureExecutableProvider.getAllureSubDir;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.anyString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.junit.MockitoJUnit.rule;
 
-@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class AllureExecutableProviderTest {
 
+    public static final String ALLURE_2_0_0 = "Allure 2.0.0";
+    public static final String EXECUTABLE_2_0_0 = "2.0.0";
+    public static final String BIN = "bin";
     private final String homeDir = "/home/allure";
     private final String binaryDir = Paths.get(this.homeDir, getAllureSubDir()).toString();
     @Rule
@@ -42,9 +58,8 @@ public class AllureExecutableProviderTest {
     @Before
     public void setUp() throws Exception {
         config = new AllureGlobalConfig();
-        allureCmdPath = Paths.get(binaryDir, "bin", "allure");
-        allureBatCmdPath = Paths.get(binaryDir, "bin", "allure.bat");
-        when(downloader.downloadAndExtractAllureTo(anyString(), anyString())).thenReturn(Optional.empty());
+        allureCmdPath = Paths.get(binaryDir, BIN, "allure");
+        allureBatCmdPath = Paths.get(binaryDir, BIN, "allure.bat");
     }
 
     @Test
@@ -55,14 +70,14 @@ public class AllureExecutableProviderTest {
 
     @Test
     public void itShouldProvideTheGivenVersionWithFullSemverWithoutName() throws Exception {
-        provide("2.0.0");
-        verify(downloader).downloadAndExtractAllureTo(binaryDir, "2.0.0");
+        provide(EXECUTABLE_2_0_0);
+        verify(downloader).downloadAndExtractAllureTo(binaryDir, EXECUTABLE_2_0_0);
     }
 
     @Test
     public void itShouldProvideTheGivenVersionWithFullSemverWithoutMilestone() throws Exception {
-        provide("Allure 2.0.0");
-        verify(downloader).downloadAndExtractAllureTo(binaryDir, "2.0.0");
+        provide(ALLURE_2_0_0);
+        verify(downloader).downloadAndExtractAllureTo(binaryDir, EXECUTABLE_2_0_0);
     }
 
     @Test
@@ -93,14 +108,16 @@ public class AllureExecutableProviderTest {
         when(cmdLine.hasCommand(allureBatCmdPath.toString())).thenReturn(true);
         when(cmdLine.isWindows()).thenReturn(true);
 
-        final Optional<AllureExecutable> res = provide("Allure 2.0.0");
+        final Optional<AllureExecutable> res = provide(ALLURE_2_0_0);
 
         assertThat(res.isPresent(), equalTo(true));
         assertThat(res.get().getCmdPath(), equalTo(allureBatCmdPath));
     }
 
     private Optional<AllureExecutable> provide(String executableName) {
-        when(executablesManager.getExecutableByName(executableName)).thenReturn(Optional.of(homeDir));
-        return provider.provide(config, executableName);
+        when(executablesManager.getExecutableByName(executableName))
+                .thenReturn(Optional.of(homeDir));
+        return provider
+                .provide(config, executableName);
     }
 }

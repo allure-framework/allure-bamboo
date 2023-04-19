@@ -4,3 +4,9 @@
 target/*
 .test
 classes
+
+# MacOs
+.DS_Store
+
+
+amps-*
