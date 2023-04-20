@@ -13,9 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package io.qameta.allure.bamboo;
+package io.qameta.allure.bamboo.info.allurewidgets.summary;
 
-import com.atlassian.bamboo.build.ChainResultsAction;
+import java.io.Serializable;
+import java.util.Optional;
 
-public class ViewAllureReport extends ChainResultsAction {
+public abstract class AbstractSummary implements Serializable {
+
+    public static final String NULL_PLACEHOLDER = "<null>";
+    protected static final char COMMA_CHAR = ',';
+
+    public String toStringOrNullPlaceholder(final Object value) {
+        return Optional.ofNullable(value)
+                .map(Object::toString)
+                .orElse(NULL_PLACEHOLDER);
+    }
 }

@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2016-2023 Qameta Software OÜ
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package io.qameta.allure.bamboo;
 
 import org.junit.After;
@@ -9,24 +24,23 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoRule;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
 import static org.mockito.junit.MockitoJUnit.rule;
 
 public class AllureDownloaderTest {
+
     @Rule
     public MockitoRule mockitoRule = rule();
     @Mock
-    AllureSettingsManager settingsManager;
-    AllureGlobalConfig settings;
+    private AllureSettingsManager settingsManager;
+    private AllureGlobalConfig settings;
+
     @InjectMocks
-    AllureDownloader downloader;
+    private AllureDownloader downloader;
 
     private String homeDir;
 
@@ -40,7 +54,7 @@ public class AllureDownloaderTest {
     @Test
     public void itShouldDownloadAndExtractAllureRelease() {
         downloader.downloadAndExtractAllureTo(homeDir, "2.17.2");
-        File f = Paths.get(homeDir, "bin", "allure").toFile();
+        final File f = Paths.get(homeDir, "bin", "allure").toFile();
         assertTrue(f.exists());
     }
 

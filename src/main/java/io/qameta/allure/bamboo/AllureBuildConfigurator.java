@@ -1,14 +1,26 @@
+/*
+ *  Copyright 2016-2023 Qameta Software OÜ
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package io.qameta.allure.bamboo;
 
-import com.atlassian.bamboo.plan.Plan;
 import com.atlassian.bamboo.plan.cache.ImmutablePlan;
 import com.atlassian.bamboo.plan.configuration.MiscellaneousPlanConfigurationPlugin;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static com.atlassian.bamboo.plan.PlanClassHelper.isChain;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_ENABLED;
@@ -16,41 +28,33 @@ import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_EXECUTABLE;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_FAILED_ONLY;
 import static java.lang.Boolean.TRUE;
 import static java.util.Optional.ofNullable;
-import static org.apache.commons.lang.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 public class AllureBuildConfigurator extends BaseConfigurablePlugin
         implements MiscellaneousPlanConfigurationPlugin {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(AllureBuildConfigurator.class);
 
     private BambooExecutablesManager executablesManager;
 
     private AllureSettingsManager settingsManager;
 
     @Override
-    public boolean isApplicableTo(@NotNull final ImmutablePlan plan) {
-        return isChain(plan);
-    }
-
-    @Override
-    public boolean isApplicableTo(@NotNull final Plan plan) {
+    public boolean isApplicableTo(final @NotNull ImmutablePlan plan) {
         return isChain(plan);
     }
 
     @NotNull
     @Override
-    public ErrorCollection validate(@NotNull final BuildConfiguration buildConfiguration) {
+    public ErrorCollection validate(final @NotNull BuildConfiguration buildConfiguration) {
         final ErrorCollection collection = super.validate(buildConfiguration);
-        if (buildConfiguration.getBoolean(ALLURE_CONFIG_ENABLED)) {
-            if (isEmpty(buildConfiguration.getString(ALLURE_CONFIG_EXECUTABLE))) {
-                collection.addError(ALLURE_CONFIG_EXECUTABLE, "Cannot be empty!");
-            }
+        if (buildConfiguration.getBoolean(ALLURE_CONFIG_ENABLED)
+                && isEmpty(buildConfiguration.getString(ALLURE_CONFIG_EXECUTABLE))) {
+            collection.addError(ALLURE_CONFIG_EXECUTABLE, "Cannot be empty!");
         }
         return collection;
     }
 
     @Override
-    public void prepareConfigObject(@NotNull BuildConfiguration buildConfiguration) {
+    public void prepareConfigObject(final @NotNull BuildConfiguration buildConfiguration) {
         super.prepareConfigObject(buildConfiguration);
         if (buildConfiguration.getProperty(ALLURE_CONFIG_ENABLED) == null) {
             ofNullable(settingsManager).map(AllureSettingsManager::getSettings).ifPresent(settings ->
@@ -65,11 +69,11 @@ public class AllureBuildConfigurator extends BaseConfigurablePlugin
         }
     }
 
-    public void setSettingsManager(AllureSettingsManager settingsManager) {
+    public void setSettingsManager(final AllureSettingsManager settingsManager) {
         this.settingsManager = settingsManager;
     }
 
-    public void setExecutablesManager(BambooExecutablesManager executablesManager) {
+    public void setExecutablesManager(final BambooExecutablesManager executablesManager) {
         this.executablesManager = executablesManager;
     }
 }

@@ -1,19 +1,35 @@
-
+/*
+ *  Copyright 2016-2023 Qameta Software OÜ
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package io.qameta.allure.bamboo.info.allurewidgets.summary;
-
-import java.util.List;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-public class Summary {
+import java.util.List;
+
+public class Summary extends AbstractSummary {
+
+    private static final long serialVersionUID = 1L;
 
     @SerializedName("reportName")
     @Expose
     private String reportName;
     @SerializedName("testRuns")
     @Expose
-    private List<Object> testRuns = null;
+    private List<Object> testRuns;
     @SerializedName("statistic")
     @Expose
     private Statistic statistic;
@@ -22,18 +38,22 @@ public class Summary {
     private Time time;
 
     /**
-     * No args constructor for use in serialization
+     * No args constructor for use in serialization.
      */
     public Summary() {
+        //empty
     }
 
     /**
-     * @param statistic
-     * @param reportName
-     * @param time
-     * @param testRuns
+     * @param statistic statistic
+     * @param reportName report name
+     * @param time time
+     * @param testRuns test runs
      */
-    public Summary(String reportName, List<Object> testRuns, Statistic statistic, Time time) {
+    public Summary(final String reportName,
+                   final List<Object> testRuns,
+                   final Statistic statistic,
+                   final Time time) {
         super();
         this.reportName = reportName;
         this.testRuns = testRuns;
@@ -45,11 +65,11 @@ public class Summary {
         return reportName;
     }
 
-    public void setReportName(String reportName) {
+    public void setReportName(final String reportName) {
         this.reportName = reportName;
     }
 
-    public Summary withReportName(String reportName) {
+    public Summary withReportName(final String reportName) {
         this.reportName = reportName;
         return this;
     }
@@ -58,11 +78,11 @@ public class Summary {
         return testRuns;
     }
 
-    public void setTestRuns(List<Object> testRuns) {
+    public void setTestRuns(final List<Object> testRuns) {
         this.testRuns = testRuns;
     }
 
-    public Summary withTestRuns(List<Object> testRuns) {
+    public Summary withTestRuns(final List<Object> testRuns) {
         this.testRuns = testRuns;
         return this;
     }
@@ -71,11 +91,11 @@ public class Summary {
         return statistic;
     }
 
-    public void setStatistic(Statistic statistic) {
+    public void setStatistic(final Statistic statistic) {
         this.statistic = statistic;
     }
 
-    public Summary withStatistic(Statistic statistic) {
+    public Summary withStatistic(final Statistic statistic) {
         this.statistic = statistic;
         return this;
     }
@@ -84,37 +104,32 @@ public class Summary {
         return time;
     }
 
-    public void setTime(Time time) {
+    public void setTime(final Time time) {
         this.time = time;
     }
 
-    public Summary withTime(Time time) {
+    public Summary withTime(final Time time) {
         this.time = time;
         return this;
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(Summary.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');
-        sb.append("reportName");
-        sb.append('=');
-        sb.append(((this.reportName == null) ? "<null>" : this.reportName));
-        sb.append(',');
-        sb.append("testRuns");
-        sb.append('=');
-        sb.append(((this.testRuns == null) ? "<null>" : this.testRuns));
-        sb.append(',');
-        sb.append("statistic");
-        sb.append('=');
-        sb.append(((this.statistic == null) ? "<null>" : this.statistic));
-        sb.append(',');
-        sb.append("time");
-        sb.append('=');
-        sb.append(((this.time == null) ? "<null>" : this.time));
-        sb.append(',');
-        if (sb.charAt((sb.length() - 1)) == ',') {
-            sb.setCharAt((sb.length() - 1), ']');
+        final StringBuilder sb = new StringBuilder(100);
+        sb.append(Summary.class.getName()).append('@')
+                .append(Integer.toHexString(System.identityHashCode(this)))
+                .append("[reportName=")
+                .append(toStringOrNullPlaceholder(this.reportName))
+                .append(",testRuns=")
+                .append(toStringOrNullPlaceholder(this.testRuns))
+                .append(",statistic=")
+                .append(toStringOrNullPlaceholder(this.statistic))
+                .append(",time=")
+                .append(toStringOrNullPlaceholder(this.time))
+                .append(COMMA_CHAR);
+        final int lastIndex = sb.length() - 1;
+        if (sb.charAt(lastIndex) == COMMA_CHAR) {
+            sb.setCharAt(lastIndex, ']');
         } else {
             sb.append(']');
         }

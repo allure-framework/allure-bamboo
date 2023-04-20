@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2016-2023 Qameta Software OÜ
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package io.qameta.allure.bamboo;
 
 import io.qameta.allure.bamboo.util.Downloader;
@@ -24,11 +39,12 @@ class AllureDownloader {
 
     private final AllureSettingsManager settingsManager;
 
-    AllureDownloader(AllureSettingsManager settingsManager) {
+    AllureDownloader(final AllureSettingsManager settingsManager) {
         this.settingsManager = settingsManager;
     }
 
-    Optional<Path> downloadAndExtractAllureTo(String allureHomeDir, String version) {
+    Optional<Path> downloadAndExtractAllureTo(final String allureHomeDir,
+                                              final String version) {
         return downloadAllure(version).map(zipFilePath -> {
             try {
                 LOGGER.info("Extracting file {} to {}...", zipFilePath, allureHomeDir);
@@ -44,7 +60,8 @@ class AllureDownloader {
                 moveDirectory(extractDir.resolve(extractedDirName).toFile(), homeDir);
                 return Paths.get(allureHomeDir);
             } catch (ArchiveException | IOException e) {
-                LOGGER.error("Failed to download and extract Allure of version {} to dir {}", version, allureHomeDir, e);
+                LOGGER.error("Failed to download and extract Allure of version {} to dir {}",
+                        version, allureHomeDir, e);
                 return null;
             } finally {
                 deleteQuietly(zipFilePath.toFile());
@@ -52,9 +69,9 @@ class AllureDownloader {
         });
     }
 
-    private Optional<Path> downloadAllure(String version) {
+    private Optional<Path> downloadAllure(final String version) {
         try {
-            URL[] urls = buildAllureDownloadUrls(version);
+            final URL[] urls = buildAllureDownloadUrls(version);
             for (URL url : urls) {
                 try {
                     final Path downloadToFile = createTempFile("allure", ".zip");
@@ -72,13 +89,12 @@ class AllureDownloader {
         return Optional.empty();
     }
 
-    private URL[] buildAllureDownloadUrls(String version) throws MalformedURLException {
-        URL gitUrl = fromPath(settingsManager.getSettings().getDownloadBaseUrl())
-            .path(version + "/" + "allure-" + version + ".zip")
+    private URL[] buildAllureDownloadUrls(final String version) throws MalformedURLException {
+        final URL gitUrl = fromPath(settingsManager.getSettings().getDownloadBaseUrl())
+            .path(String.format("%s/allure-%s.zip", version, version))
             .build().toURL();
-        String binaryName = "allure-commandline";
-        URL mavenUrl = fromPath(settingsManager.getSettings().getDownloadCliBaseUrl())
-            .path(binaryName + "/" + version + "/" + binaryName + "-" + version + ".zip")
+        final URL mavenUrl = fromPath(settingsManager.getSettings().getDownloadCliBaseUrl())
+            .path(String.format("allure-commandline/%s/allure-commandline-%s.zip", version, version))
             .build().toURL();
         return new URL[]{gitUrl, mavenUrl};
     }

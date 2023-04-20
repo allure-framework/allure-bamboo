@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2016-2023 Qameta Software OÜ
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package io.qameta.allure.bamboo.util;
 
 import net.lingala.zip4j.ZipFile;
@@ -7,6 +22,7 @@ import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.utils.IOUtils;
 import org.jetbrains.annotations.NotNull;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,40 +31,52 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+
 import static java.nio.file.Files.createTempDirectory;
 import static java.nio.file.Files.move;
 
-public class ZipUtil {
+public final class ZipUtil {
 
-    public static void unzip(@NotNull Path zipFilePath, String outputDir) throws IOException, ArchiveException {
+    private static final String DIRECTORY_CREATE_ERROR = "The directory: %s couldn't be created successfully";
+
+    private ZipUtil() {
+        // do not instantiate
+    }
+
+    public static void unzip(final @NotNull Path zipFilePath,
+                             final String outputDir) throws IOException, ArchiveException {
 
         final ArchiveStreamFactory asf = new ArchiveStreamFactory();
 
-        InputStream zipStream = Files.newInputStream(zipFilePath);
-        ArchiveInputStream ais = asf.createArchiveInputStream(ArchiveStreamFactory.ZIP, zipStream);
+        try (InputStream zipStream = Files.newInputStream(zipFilePath)) {
+            try (ArchiveInputStream ais = asf.createArchiveInputStream(ArchiveStreamFactory.ZIP, zipStream)) {
+                ArchiveEntry entry = ais.getNextEntry();
+                while (entry != null) {
+                    final Path entryPath = Paths.get(outputDir, entry.getName());
+                    final File entryFile = entryPath.toFile();
 
-        for (ArchiveEntry entry; (entry = ais.getNextEntry()) != null; ) {
-            Path entryPath = Paths.get(outputDir, entry.getName());
-            File entryFile = entryPath.toFile();
+                    if (!entry.isDirectory()) {
+                        final File parentEntryFile = entryFile.getParentFile();
+                        if (parentEntryFile.isDirectory() && !(parentEntryFile.mkdirs() || parentEntryFile.exists())) {
+                            throw new IOException(String.format(DIRECTORY_CREATE_ERROR, parentEntryFile.getPath()));
+                        }
 
-            if (!entry.isDirectory()) {
-                File parentEntryFile = entryFile.getParentFile();
-                if (parentEntryFile.isDirectory() && !(parentEntryFile.mkdirs() || parentEntryFile.exists())) {
-                    throw new IOException("The directory: " + parentEntryFile.getPath() + " couldn't be created successfully");
+                        try (OutputStream outputStream = Files.newOutputStream(entryPath)) {
+                            IOUtils.copy(ais, outputStream);
+                        }
+                    } else if (!(entryFile.mkdirs() || entryFile.exists())) {
+                        throw new IOException(String.format(DIRECTORY_CREATE_ERROR, entryFile.getPath()));
+                    }
+                    entry = ais.getNextEntry();
                 }
-
-                try (OutputStream outputStream = Files.newOutputStream(entryPath)) {
-                    IOUtils.copy(ais, outputStream);
-                }
-            } else if (!(entryFile.mkdirs() || entryFile.exists())) {
-                throw new IOException("The directory: " + entryFile.getPath() + " couldn't be created successfully");
             }
         }
     }
 
-    public static void zipFolder(@NotNull Path srcFolder, @NotNull Path targetDir) throws IOException {
-        Path zipReportTmpDir = createTempDirectory("tmp_allure_report");
-        Path zipReport = zipReportTmpDir.resolve("report.zip");
+    public static void zipFolder(final @NotNull Path srcFolder,
+                                 final @NotNull Path targetDir) throws IOException {
+        final Path zipReportTmpDir = createTempDirectory("tmp_allure_report");
+        final Path zipReport = zipReportTmpDir.resolve("report.zip");
         try (ZipFile zp = new ZipFile(zipReport.toFile())) {
             zp.addFolder(srcFolder.toFile());
         }
