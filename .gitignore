@@ -5,8 +5,6 @@ target/*
 .test
 classes
 
-amps-standalone-bamboo-7.2.7
-amps-standalone-bamboo-8.0.6
-amps-standalone-bamboo-8.1.1
+amps-*
 
 .DS_Store

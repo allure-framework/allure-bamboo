@@ -1,17 +1,26 @@
+/*
+ *  Copyright 2016-2023 Qameta Software OÜ
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package io.qameta.allure.bamboo;
 
-import static com.atlassian.bamboo.plan.PlanKeys.getPlanResultKey;
 import com.atlassian.bamboo.plan.PlanResultKey;
 import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
-import static io.qameta.allure.bamboo.AllureBuildResult.fromCustomData;
-import static java.lang.Integer.parseInt;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Stream.of;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static org.sonatype.aether.util.StringUtils.isEmpty;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServlet;
@@ -27,16 +36,28 @@ import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
+import static com.atlassian.bamboo.plan.PlanKeys.getPlanResultKey;
+import static io.qameta.allure.bamboo.AllureBuildResult.fromCustomData;
+import static java.lang.Integer.parseInt;
+import static org.sonatype.aether.util.StringUtils.isEmpty;
 
 public class AllureReportServlet extends HttpServlet {
-    private static final Pattern URL_PATTERN = Pattern.compile(".*/plugins/servlet/allure/report/([^/]{2,})/([^/]+)/?(.*)");
+
+    private static final Pattern URL_PATTERN = Pattern
+            .compile(".*/plugins/servlet/allure/report/([^/]{2,})/([^/]+)/?(.*)");
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureReportServlet.class);
-    private final AllureArtifactsManager artifactsManager;
+    private static final String CONTENT_DISPOSITION = "Content-Disposition";
+    private static final String CONTENT_TYPE = "Content-Type";
+    private static final String FAILED_TO_SEND_FILE_OF_ALLURE_REPORT = "Failed to send file {} of Allure Report ";
+
+    private final transient AllureArtifactsManager artifactsManager;
     private final ResultsSummaryManager resultsSummaryManager;
 
     @Inject
-    public AllureReportServlet(AllureArtifactsManager artifactsManager,
-                               ResultsSummaryManager resultsSummaryManager) {
+    public AllureReportServlet(final AllureArtifactsManager artifactsManager,
+                               final ResultsSummaryManager resultsSummaryManager) {
         this.artifactsManager = artifactsManager;
         this.resultsSummaryManager = resultsSummaryManager;
     }
@@ -46,48 +67,54 @@ public class AllureReportServlet extends HttpServlet {
     }
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) {
+    protected void doGet(final HttpServletRequest request,
+                         final HttpServletResponse response) {
         getArtifactUrl(request, response).ifPresent(file -> {
             try (InputStream inputStream = new URL(file).openStream()) {
                 setResponseHeaders(response, file);
                 IOUtils.copy(inputStream, response.getOutputStream());
             } catch (IOException e) {
-                LOGGER.error("Failed to send file {} of Allure Report ", file);
+                LOGGER.error(FAILED_TO_SEND_FILE_OF_ALLURE_REPORT, file);
             }
         });
     }
 
     @Override
-    protected void doHead(HttpServletRequest request, HttpServletResponse response) {
+    protected void doHead(final HttpServletRequest request,
+                          final HttpServletResponse response) {
         getArtifactUrl(request, response).ifPresent(file -> {
             try (InputStream inputStream = new URL(file).openStream()) {
                 setResponseHeaders(response, file);
             } catch (IOException e) {
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                LOGGER.error("Failed to send file {} of Allure Report ", file);
+                LOGGER.error(FAILED_TO_SEND_FILE_OF_ALLURE_REPORT, file);
             }
         });
     }
 
-    private void setResponseHeaders(HttpServletResponse response, String fileUrl) throws IOException {
+    private void setResponseHeaders(final HttpServletResponse response,
+                                    final String fileUrl) throws IOException {
 
         try {
             response.setStatus(HttpServletResponse.SC_OK);
             final URI file = new URL(fileUrl).toURI();
-            final String mimeType = ofNullable(getServletContext().getMimeType(fileUrl)).orElse(
-                    Files.probeContentType(Paths.get(file.getPath()))
+            final String mimeType = Optional.ofNullable(getServletContext().getMimeType(fileUrl))
+                    .orElse(Files.probeContentType(Paths.get(file.getPath()))
             );
-            final String charsetPostfix = of("application", "text").anyMatch(mimeType::contains) ? ";charset=utf-8" : "";
-            response.setHeader("Content-Type", mimeType + charsetPostfix);
-            response.setHeader("Content-Disposition", "inline; filename=\"" + Paths.get(file.getPath()).getFileName().toString() + "\"");
+            final String charsetPostfix = Stream.of("application", "text")
+                    .anyMatch(mimeType::contains) ? ";charset=utf-8" : "";
+            response.setHeader(CONTENT_TYPE, mimeType + charsetPostfix);
+            response.setHeader(CONTENT_DISPOSITION,
+                    "inline; filename=\"" + Paths.get(file.getPath()).getFileName().toString() + "\"");
 
         } catch (URISyntaxException e) {
             // should never happen
-            throw new RuntimeException(e);
+            throw new AllurePluginException("Unexpected error", e);
         }
     }
 
-    private Optional<String> getArtifactUrl(HttpServletRequest request, HttpServletResponse response) {
+    private Optional<String> getArtifactUrl(final HttpServletRequest request,
+                                            final HttpServletResponse response) {
         final Matcher matcher = URL_PATTERN.matcher(request.getRequestURI());
         if (matcher.matches()) {
             response.setHeader("X-Frame-Options", "ALLOWALL");
@@ -103,11 +130,13 @@ public class AllureReportServlet extends HttpServlet {
         return Optional.empty();
     }
 
-    private boolean wasUploadSuccess(HttpServletResponse response, String planKey, int buildNumber) {
+    private boolean wasUploadSuccess(final HttpServletResponse response,
+                                     final String planKey,
+                                     final int buildNumber) {
         final PlanResultKey planResultKey = getPlanResultKey(planKey, buildNumber);
-        ResultsSummary results = resultsSummaryManager.getResultsSummary(planResultKey);
+        final ResultsSummary results = resultsSummaryManager.getResultsSummary(planResultKey);
         if (results != null) {
-            AllureBuildResult uploadResult = fromCustomData(results.getCustomBuildData());
+            final AllureBuildResult uploadResult = fromCustomData(results.getCustomBuildData());
             if (!uploadResult.isSuccess()) {
                 uploadResultWasNotSuccess(response, uploadResult);
                 return false;
@@ -118,14 +147,16 @@ public class AllureReportServlet extends HttpServlet {
     }
 
 
-    private void uploadResultWasNotSuccess(HttpServletResponse response, AllureBuildResult uploadResult) {
-        final String errorMessage = isEmpty(uploadResult.getFailureDetails()) ?
-                "Unknown error has occurred during Allure Build. Please refer the server logs for details." :
-                "Something went wrong with Allure Report generation. Here are some details: \n" + uploadResult.getFailureDetails();
+    private void uploadResultWasNotSuccess(final HttpServletResponse response,
+                                           final AllureBuildResult uploadResult) {
+        final String errorMessage = isEmpty(uploadResult.getFailureDetails())
+                ? "Unknown error has occurred during Allure Build. Please refer the server logs for details."
+                : "Something went wrong with Allure Report generation. Here are some details: \n"
+                        + uploadResult.getFailureDetails();
         try {
-            response.setHeader("Content-Type", "text/plain");
+            response.setHeader(CONTENT_TYPE, "text/plain");
             response.setHeader("Content-Length", String.valueOf(errorMessage.length()));
-            response.setHeader("Content-Disposition", "inline");
+            response.setHeader(CONTENT_DISPOSITION, "inline");
             response.getWriter().write(errorMessage);
         } catch (IOException e) {
             LOGGER.error("Failed to render error of Allure Report build ", e);

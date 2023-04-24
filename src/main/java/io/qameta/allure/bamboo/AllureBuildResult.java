@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2016-2023 Qameta Software OÜ
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package io.qameta.allure.bamboo;
 
 import java.io.Serializable;
@@ -14,33 +29,35 @@ class AllureBuildResult implements Serializable {
     private String artifactHandlerClass;
     private String failureDetails;
 
-    AllureBuildResult(boolean success) {
+    AllureBuildResult(final boolean success) {
         this.success = success;
     }
 
-    public AllureBuildResult(boolean success, String failureDetails) {
+    AllureBuildResult(final boolean success,
+                      final String failureDetails) {
         this.success = success;
         this.failureDetails = failureDetails;
     }
 
-    static AllureBuildResult allureBuildResult(boolean success, String failureDetails){
+    static AllureBuildResult allureBuildResult(final boolean success,
+                                               final String failureDetails) {
         return new AllureBuildResult(success, failureDetails);
     }
 
-    static AllureBuildResult fromCustomData(Map<String, String> data) {
+    static AllureBuildResult fromCustomData(final Map<String, String> data) {
         final AllureBuildResult result = new AllureBuildResult(parseBoolean(data.get(ALLURE_BUILD_REPORT_SUCCESS)));
         result.setArtifactHandlerClass(data.get(ALLURE_BUILD_REPORT_ARTIFACT_HANDLER));
         result.setFailureDetails(data.get(ALLURE_BUILD_REPORT_FAILURE_DETAILS));
         return result;
     }
 
-    void dumpToCustomData(Map<String, String> data) {
+    void dumpToCustomData(final Map<String, String> data) {
         data.put(ALLURE_BUILD_REPORT_ARTIFACT_HANDLER, artifactHandlerClass);
         data.put(ALLURE_BUILD_REPORT_SUCCESS, String.valueOf(success));
         data.put(ALLURE_BUILD_REPORT_FAILURE_DETAILS, failureDetails);
     }
 
-    AllureBuildResult withHandlerClass(String artifactHandlerClass){
+    AllureBuildResult withHandlerClass(final String artifactHandlerClass) {
         setArtifactHandlerClass(artifactHandlerClass);
         return this;
     }
@@ -49,7 +66,7 @@ class AllureBuildResult implements Serializable {
         return artifactHandlerClass;
     }
 
-    void setArtifactHandlerClass(String artifactHandlerClass) {
+    void setArtifactHandlerClass(final String artifactHandlerClass) {
         this.artifactHandlerClass = artifactHandlerClass;
     }
 
@@ -61,11 +78,11 @@ class AllureBuildResult implements Serializable {
         return failureDetails;
     }
 
-    void setFailureDetails(String failureDetails) {
+    void setFailureDetails(final String failureDetails) {
         this.failureDetails = failureDetails;
     }
 
-    boolean hasInfo(){
+    boolean hasInfo() {
         return !isEmpty(this.failureDetails) || !isEmpty(artifactHandlerClass);
     }
 }
