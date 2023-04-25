@@ -15,7 +15,7 @@
         <url>https://github.com/allure-framework</url>
     </organization>
     <properties>
-        <spotless.version>2.2.0</spotless.version>
+        <spotless.version>2.36.0</spotless.version>
         <amps.version>8.1.1</amps.version>
         <bamboo.version>8.1.1</bamboo.version>
         <bamboo.data.version>${bamboo.version}</bamboo.data.version>
