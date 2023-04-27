@@ -7,6 +7,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoRule;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -16,6 +18,7 @@ import static io.qameta.allure.bamboo.AllureExecutableProvider.getAllureSubDir;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.junit.MockitoJUnit.rule;
@@ -32,6 +35,8 @@ public class AllureExecutableProviderTest {
     private AllureDownloader downloader;
     @Mock
     private AllureCommandLineSupport cmdLine;
+    @InjectMocks
+    private AllureExecutable allureExecutable;
     @InjectMocks
     private AllureExecutableProvider provider;
     private AllureGlobalConfig config;
@@ -88,7 +93,7 @@ public class AllureExecutableProviderTest {
     }
 
     @Test
-    public void itShouldProvideExecutableForWindows() throws Exception {
+    public void itShouldProvideExecutableForWindows() {
         when(cmdLine.hasCommand(allureBatCmdPath.toString())).thenReturn(true);
         when(cmdLine.isWindows()).thenReturn(true);
 

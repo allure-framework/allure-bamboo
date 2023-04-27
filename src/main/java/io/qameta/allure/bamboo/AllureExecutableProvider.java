@@ -1,12 +1,15 @@
 package io.qameta.allure.bamboo;
 
 import com.google.common.annotations.VisibleForTesting;
+
 import static java.util.Objects.requireNonNull;
 import static java.util.regex.Pattern.compile;
+
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -43,7 +46,8 @@ public class AllureExecutableProvider {
                     LOGGER.debug("Found allure executable by name '{}': '{}'", executableName, allureHomeDir);
                     final String allureHomeSubDir = Paths.get(allureHomeDir, BINARY_SUBDIR).toString();
                     final Path cmdPath = Paths.get(allureHomeSubDir, "bin", getAllureExecutableName());
-                    final AllureExecutable executable = new AllureExecutable(cmdPath, cmdLine);
+                    final AllureExecutable executable;
+                    executable = new AllureExecutable(cmdPath, cmdLine);
                     LOGGER.debug("Checking the existence of the command path for executable '{}': '{}'",
                             executableName, cmdPath);
                     final boolean commandExists = cmdLine.hasCommand(cmdPath.toString());
@@ -54,7 +58,7 @@ public class AllureExecutableProvider {
                     } else if (isDownloadEnabled) {
                         final Matcher nameMatcher = EXEC_NAME_PATTERN.matcher(executableName);
                         return allureDownloader.downloadAndExtractAllureTo(allureHomeSubDir,
-                                nameMatcher.matches() ? nameMatcher.group(1) : DEFAULT_VERSION)
+                                        nameMatcher.matches() ? nameMatcher.group(1) : DEFAULT_VERSION)
                                 .map(path -> executable).orElse(null);
                     }
                     return null;

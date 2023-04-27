@@ -103,7 +103,7 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
             LOGGER.info("Trying to get executable by name {} for {}", executable, chain.getName());
 
             final AllureExecutable allure = allureExecutable.provide(globalConfig, executable).orElseThrow(() ->
-                    new RuntimeException("Failed to find Allure executable by name " + executable));
+                    new RuntimeException("Failed to find Allure executable by name " + executable)).getCopy();
 
             LOGGER.info("Starting artifacts downloading into {} for {}", artifactsTempDir.getPath(), chain.getName());
             final Collection<Path> artifactsPaths = artifactsManager.downloadAllArtifactsTo(

@@ -30,9 +30,7 @@ public class AllureBuildConfig implements Serializable {
         this.enabled = isEmpty(enabled) ? FALSE : Boolean.parseBoolean(enabled);
         this.executable = executable;
         this.artifactName = artifactName;
-        // If the URL is not a valid URL it will be omitted
-        UrlValidator urlValidator = new UrlValidator();
-        this.logoUrl = urlValidator.isValid(logoUrl) ? logoUrl : AllureBuildConfig.DEFAULT_CUSTOM_LOGO_URL;
+        this.logoUrl = !logoUrl.isEmpty() ? logoUrl : AllureBuildConfig.DEFAULT_CUSTOM_LOGO_URL;
     }
 
     static AllureBuildConfig fromContext(Map<String, String> context) {
