@@ -15,7 +15,13 @@
  */
 package io.qameta.allure.bamboo;
 
-import com.atlassian.bamboo.build.ChainResultsAction;
+public class AllurePluginException extends RuntimeException {
 
-public class ViewAllureReport extends ChainResultsAction {
+    public AllurePluginException(final String message) {
+        super(message);
+    }
+
+    public AllurePluginException(final String message, final Throwable throwable) {
+        super(message, throwable);
+    }
 }

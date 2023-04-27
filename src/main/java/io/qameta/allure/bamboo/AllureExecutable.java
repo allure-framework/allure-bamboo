@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2016-2023 Qameta Software OÜ
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package io.qameta.allure.bamboo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,106 +25,92 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 
-import static java.nio.file.Files.createTempDirectory;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
-import static org.apache.commons.io.FileUtils.copyDirectoryToDirectory;
+import static javax.ws.rs.core.UriBuilder.fromPath;
 
 class AllureExecutable {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureExecutable.class);
     private static final String BASH_CMD = "/bin/bash";
     private final Path cmdPath;
     private final AllureCommandLineSupport cmdLine;
 
-    AllureExecutable(Path cmdPath, AllureCommandLineSupport commandLine) {
+    AllureExecutable(final Path cmdPath,
+                     final AllureCommandLineSupport commandLine) {
         this.cmdPath = cmdPath;
         this.cmdLine = commandLine;
     }
 
     @Nonnull
-    AllureGenerateResult generate(Collection<Path> sourceDirs, Path targetDir) {
+    AllureGenerateResult generate(final Collection<Path> sourceDirs,
+                                  final Path targetDir) {
         try {
             final LinkedList<String> args = new LinkedList<>(asList("generate", "-o", targetDir.toString()));
             args.addAll(sourceDirs.stream().map(Path::toString).collect(toList()));
-            String output;
+            final String output;
             if (cmdLine.isUnix() && cmdLine.hasCommand(BASH_CMD)) {
                 args.addFirst(cmdPath.toString());
-                output = cmdLine.runCommand("/bin/bash", args.toArray(new String[args.size()]));
+                output = cmdLine.runCommand(BASH_CMD, args.toArray(new String[0]));
             } else {
-                output = cmdLine.runCommand(cmdPath.toString(), args.toArray(new String[args.size()]));
+                output = cmdLine.runCommand(cmdPath.toString(), args.toArray(new String[0]));
             }
             LOGGER.info(output);
             return cmdLine.parseGenerateOutput(output);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to generate allure report", e);
+            throw new AllurePluginException("Failed to generate allure report", e);
         }
     }
 
-    public void setCustomLogo(String logoUrl) {
+    public void setCustomLogo(final String logoUrl) {
         final String pluginName = "custom-logo-plugin";
         final String allureConfigFileName = "allure.yml";
         final String cssFileName = "styles.css";
 
-        Path rootPath = this.cmdPath.getParent().getParent();
-        Path configFolder = rootPath.resolve("config");
-        Path logoPluginFolder = rootPath.resolve("plugins").resolve(pluginName).resolve("static");
+        final Path rootPath = this.cmdPath.getParent().getParent();
+        final Path configFolder = rootPath.resolve("config");
+        final Path logoPluginFolder = rootPath.resolve("plugins").resolve(pluginName).resolve("static");
 
         /// Editing Yaml to add plugin
-        ObjectMapper objectMapper = new YAMLMapper();
+        final ObjectMapper objectMapper = new YAMLMapper();
         try {
-            File configFile = configFolder.resolve(allureConfigFileName).toFile();
-            AllurePlugins ap = objectMapper.readValue(configFile, AllurePlugins.class);
+            final File configFile = configFolder.resolve(allureConfigFileName).toFile();
+            final AllurePlugins ap = objectMapper.readValue(configFile, AllurePlugins.class);
             //Saving the file only if it necessary
             if (ap.registerPlugin(pluginName)) {
                 objectMapper.writeValue(configFile, ap);
             }
             //Setting new Logo
+            final URL srcLogoUrl = fromPath(logoUrl).build().toURL();
             FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
-                    Pattern.compile("url\\('.+'\\)", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
-                    "url(" + logoUrl + ")"
+                    Pattern.compile("url\\('.+'\\)",
+                            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                    "url(" + srcLogoUrl.toString() + ")"
             );
 
             // aligning logo to center
             FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
-                    Pattern.compile("(?<=\\s )left", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                    Pattern.compile("(?<=\\s )left",
+                            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
                     "center"
-            );
-            // fit logo to area
-            FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
-                    Pattern.compile("(?<=\\s )!important;", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
-                    "!important; background-size: contain !important;"
             );
             // removing margin
             FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
-                    Pattern.compile("10px", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                    Pattern.compile("10px",
+                            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
                     "0px"
             );
 
         } catch (IOException e) {
             LOGGER.error(e.toString());
-            throw new RuntimeException(e);
+            throw new AllurePluginException("Unexpected error", e);
         }
-    }
-
-    public AllureExecutable getCopy() throws IOException {
-        String binary = this.cmdPath.getFileName().toString();
-        String binFolder = this.cmdPath.getParent().getFileName().toString();
-        Path rootPath = this.cmdPath.getParent().getParent();
-        Path rootFolderName = rootPath.getFileName();
-        Path copyPath = createTempDirectory(rootFolderName.toString());
-        copyDirectoryToDirectory(rootPath.toFile(), copyPath.toFile());
-
-        return new AllureExecutable(copyPath
-                .resolve(rootFolderName.toString())
-                .resolve(binFolder)
-                .resolve(binary),
-                this.cmdLine
-        );
     }
 
     Path getCmdPath() {
