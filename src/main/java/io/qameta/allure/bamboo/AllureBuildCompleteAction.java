@@ -126,7 +126,7 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
                     .orElseThrow(() -> new RuntimeException("Failed to find Allure executable by name " + executable));
 
             // Creating a copy for customize report
-            AllureExecutable allureTmp = allure.getCopy();
+            final AllureExecutable allureTmp = allure.getCopy();
 
             LOGGER.info("Starting artifacts downloading into {} for {}", artifactsTempDir.getPath(), chain.getName());
             final Collection<Path> artifactsPaths = artifactsManager.downloadAllArtifactsTo(

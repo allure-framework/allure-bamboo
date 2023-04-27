@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -89,23 +88,27 @@ class AllureExecutable {
             }
             //Setting new Logo
             FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
-                    Pattern.compile("url\\('.+'\\)", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                    Pattern.compile("url\\('.+'\\)",
+                            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
                     "url(" + logoUrl + ")"
             );
 
             // aligning logo to center
             FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
-                    Pattern.compile("(?<=\\s )left", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                    Pattern.compile("(?<=\\s )left",
+                            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
                     "center"
             );
             // fit logo to area
             FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
-                    Pattern.compile("(?<=\\s )!important;", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                    Pattern.compile("(?<=\\s )!important;",
+                            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
                     "!important; background-size: contain !important;"
             );
             // removing margin
             FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
-                    Pattern.compile("10px", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                    Pattern.compile("10px",
+                            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
                     "0px"
             );
 
@@ -116,11 +119,11 @@ class AllureExecutable {
     }
 
     public AllureExecutable getCopy() throws IOException {
-        String binary = this.cmdPath.getFileName().toString();
-        String binFolder = this.cmdPath.getParent().getFileName().toString();
-        Path rootPath = this.cmdPath.getParent().getParent();
-        Path rootFolderName = rootPath.getFileName();
-        Path copyPath = createTempDirectory(rootFolderName.toString());
+        final String binary = this.cmdPath.getFileName().toString();
+        final String binFolder = this.cmdPath.getParent().getFileName().toString();
+        final Path rootPath = this.cmdPath.getParent().getParent();
+        final Path rootFolderName = rootPath.getFileName();
+        final Path copyPath = createTempDirectory(rootFolderName.toString());
         copyDirectoryToDirectory(rootPath.toFile(), copyPath.toFile());
 
         return new AllureExecutable(copyPath

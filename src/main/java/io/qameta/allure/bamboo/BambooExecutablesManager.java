@@ -84,7 +84,7 @@ public class BambooExecutablesManager {
                     final CapabilityImpl capability = new CapabilityImpl(key, DEFAULT_PATH);
                     capSet.addCapability(capability);
                     capabilitySetManager.saveCapabilitySet(capSet);
-        });
+                });
     }
 
     @NotNull

@@ -49,11 +49,11 @@ public class Time extends AbstractSummary {
     }
 
     /**
-     * @param duration duration
+     * @param duration    duration
      * @param sumDuration sum of duration
      * @param minDuration min duration
-     * @param stop stop time
-     * @param start start time
+     * @param stop        stop time
+     * @param start       start time
      * @param maxDuration max duration
      */
     public Time(final Long start,

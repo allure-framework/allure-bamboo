@@ -45,10 +45,10 @@ public class Summary extends AbstractSummary {
     }
 
     /**
-     * @param statistic statistic
+     * @param statistic  statistic
      * @param reportName report name
-     * @param time time
-     * @param testRuns test runs
+     * @param time       time
+     * @param testRuns   test runs
      */
     public Summary(final String reportName,
                    final List<Object> testRuns,

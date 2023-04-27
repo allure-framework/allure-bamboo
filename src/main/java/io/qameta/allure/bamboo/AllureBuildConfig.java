@@ -16,7 +16,6 @@
 package io.qameta.allure.bamboo;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.validator.routines.UrlValidator;
 
 import javax.annotation.Nullable;
 import java.io.Serializable;
