@@ -31,9 +31,10 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 
+import static java.nio.file.Files.createTempDirectory;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
-import static javax.ws.rs.core.UriBuilder.fromPath;
+import static org.apache.commons.io.FileUtils.copyDirectoryToDirectory;
 
 class AllureExecutable {
 
@@ -87,23 +88,24 @@ class AllureExecutable {
                 objectMapper.writeValue(configFile, ap);
             }
             //Setting new Logo
-            final URL srcLogoUrl = fromPath(logoUrl).build().toURL();
             FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
-                    Pattern.compile("url\\('.+'\\)",
-                            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
-                    "url(" + srcLogoUrl.toString() + ")"
+                    Pattern.compile("url\\('.+'\\)", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                    "url(" + logoUrl + ")"
             );
 
             // aligning logo to center
             FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
-                    Pattern.compile("(?<=\\s )left",
-                            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                    Pattern.compile("(?<=\\s )left", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
                     "center"
+            );
+            // fit logo to area
+            FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
+                    Pattern.compile("(?<=\\s )!important;", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                    "!important; background-size: contain !important;"
             );
             // removing margin
             FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
-                    Pattern.compile("10px",
-                            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+                    Pattern.compile("10px", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
                     "0px"
             );
 
@@ -111,6 +113,22 @@ class AllureExecutable {
             LOGGER.error(e.toString());
             throw new AllurePluginException("Unexpected error", e);
         }
+    }
+
+    public AllureExecutable getCopy() throws IOException {
+        String binary = this.cmdPath.getFileName().toString();
+        String binFolder = this.cmdPath.getParent().getFileName().toString();
+        Path rootPath = this.cmdPath.getParent().getParent();
+        Path rootFolderName = rootPath.getFileName();
+        Path copyPath = createTempDirectory(rootFolderName.toString());
+        copyDirectoryToDirectory(rootPath.toFile(), copyPath.toFile());
+
+        return new AllureExecutable(copyPath
+                .resolve(rootFolderName.toString())
+                .resolve(binFolder)
+                .resolve(binary),
+                this.cmdLine
+        );
     }
 
     Path getCmdPath() {
