@@ -1,8 +1,11 @@
 name: Release
 
 on:
-  release:
-    types: [published]
+  pull_request:
+    branches:
+      - '*'
+#  release:
+#    types: [published]
 
 jobs:
   build:
@@ -15,16 +18,13 @@ jobs:
           java-version: '8'
           cache: 'maven'
       - run: echo "VERSION=${GITHUB_REF:10}" >> $GITHUB_ENV
-      - name: Update Version
-        run: ./mvnw versions:set -DnewVersion=${{ env.VERSION }}
-      - name: Build Package
-        run: ./mvnw package
-      - name: Upload Package
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./target/allure-bamboo-${{ env.VERSION }}.jar
-          asset_name: allure-bamboo-${{ env.VERSION }}.jar
-          asset_content_type: application/octet-stream
+      - run: ./mvnw versions:set -DnewVersion=${{ env.VERSION }}
+      - run: ./mvnw package
+#      - uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ github.event.release.upload_url }}
+#          asset_path: ./target/allure-bamboo-${{ env.VERSION }}.jar
+#          asset_name: allure-bamboo-${{ env.VERSION }}.jar
+#          asset_content_type: application/octet-stream
