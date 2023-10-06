@@ -26,14 +26,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
-import static io.qameta.allure.bamboo.AllureExecutableProvider.DEFAULT_VERSION;
 import static io.qameta.allure.bamboo.AllureExecutableProvider.getAllureSubDir;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.verify;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.when;
 import static org.mockito.junit.MockitoJUnit.rule;
 
-public class AllureExecutableProviderTest {
+public class SecondAllureExecutableProviderTest {
 
     private static final String ALLURE_2_0_0 = "Allure 2.0.0";
     private static final String EXECUTABLE_NAME_2_0_0 = "2.0.0";
@@ -60,37 +59,28 @@ public class AllureExecutableProviderTest {
         config = new AllureGlobalConfig();
         allureCmdPath = Paths.get(binaryDir, BIN, "allure");
         allureBatCmdPath = Paths.get(binaryDir, BIN, "allure.bat");
-        when(downloader.downloadAndExtractAllureTo(anyString(), anyString())).thenReturn(Optional.empty());
     }
 
     @Test
-    public void itShouldProvideDefaultVersion() throws Exception {
-        provide("Allure WITHOUT VERSION");
-        verify(downloader).downloadAndExtractAllureTo(binaryDir, DEFAULT_VERSION);
+    public void itShouldProvideExecutableForUnix() throws Exception {
+        when(cmdLine.hasCommand(allureCmdPath.toString())).thenReturn(true);
+        when(cmdLine.isWindows()).thenReturn(false);
+
+        final Optional<AllureExecutable> res = provide("Allure 2.0-BETA5");
+
+        assertThat(res.isPresent(), equalTo(true));
+        assertThat(res.get().getCmdPath(), equalTo(allureCmdPath));
     }
 
     @Test
-    public void itShouldProvideTheGivenVersionWithFullSemverWithoutName() throws Exception {
-        provide(EXECUTABLE_NAME_2_0_0);
-        verify(downloader).downloadAndExtractAllureTo(binaryDir, EXECUTABLE_NAME_2_0_0);
-    }
+    public void itShouldProvideExecutableForWindows() throws Exception {
+        when(cmdLine.hasCommand(allureBatCmdPath.toString())).thenReturn(true);
+        when(cmdLine.isWindows()).thenReturn(true);
 
-    @Test
-    public void itShouldProvideTheGivenVersionWithFullSemverWithoutMilestone() throws Exception {
-        provide(ALLURE_2_0_0);
-        verify(downloader).downloadAndExtractAllureTo(binaryDir, EXECUTABLE_NAME_2_0_0);
-    }
+        final Optional<AllureExecutable> res = provide(ALLURE_2_0_0);
 
-    @Test
-    public void itShouldProvideTheGivenVersionWithMajorMinorWithoutMilestone() throws Exception {
-        provide("Allure 2.0");
-        verify(downloader).downloadAndExtractAllureTo(binaryDir, "2.0");
-    }
-
-    @Test
-    public void itShouldProvideTheGivenVersionWithMilestone() throws Exception {
-        provide("Allure 2.0-BETA4");
-        verify(downloader).downloadAndExtractAllureTo(binaryDir, "2.0-BETA4");
+        assertThat(res.isPresent(), equalTo(true));
+        assertThat(res.get().getCmdPath(), equalTo(allureBatCmdPath));
     }
 
     private Optional<AllureExecutable> provide(String executableName) {
