@@ -360,7 +360,7 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>4.7.3.5</version>
+                <version>4.7.3.6</version>
                 <configuration>
                     <includeFilterFile>.mvn/quality-configs/spotbugs/include.xml</includeFilterFile>
                     <excludeFilterFile>.mvn/quality-configs/spotbugs/exclude.xml</excludeFilterFile>
