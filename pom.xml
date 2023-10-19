@@ -16,7 +16,7 @@
     </organization>
     <properties>
         <spotless.version>2.2.0</spotless.version>
-        <amps.version>8.1.1</amps.version>
+        <amps.version>8.11.4</amps.version>
         <bamboo.version>9.0.4</bamboo.version>
         <bamboo.data.version>${bamboo.version}</bamboo.data.version>
         <plugin.testrunner.version>2.0.2</plugin.testrunner.version>
