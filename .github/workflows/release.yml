@@ -14,18 +14,14 @@ jobs:
           distribution: 'zulu'
           java-version: '8'
           cache: 'maven'
-      - run: echo "::set-output name=name::${GITHUB_REF:10}"
-        id: version
-      - name: Update Version
-        run: ./mvnw versions:set -DnewVersion=${{ steps.version.outputs.name }}
-      - name: Build Package
-        run: ./mvnw package
-      - name: Upload Package
-        uses: actions/upload-release-asset@v1
+      - run: echo "VERSION=${GITHUB_REF:10}" >> $GITHUB_ENV
+      - run: ./mvnw versions:set -DnewVersion=${{ env.VERSION }}
+      - run: ./mvnw package
+      - uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./target/allure-bamboo-${{ steps.version.outputs.name }}.jar
-          asset_name: allure-bamboo-${{ steps.version.outputs.name }}.jar
+          asset_path: ./target/allure-bamboo-${{ env.VERSION }}.jar
+          asset_name: allure-bamboo-${{ env.VERSION }}.jar
           asset_content_type: application/octet-stream

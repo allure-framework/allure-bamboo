@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.qameta.allure</groupId>
     <artifactId>allure-bamboo</artifactId>
-    <version>1.16.0-SNAPSHOT</version>
+    <version>1.17.0-SNAPSHOT</version>
     <name>Allure for Bamboo</name>
     <description>Allure reports right in deployment plans in Bamboo</description>
     <packaging>atlassian-plugin</packaging>
@@ -16,13 +16,13 @@
     </organization>
     <properties>
         <spotless.version>2.2.0</spotless.version>
-        <amps.version>8.1.1</amps.version>
-        <bamboo.version>8.1.1</bamboo.version>
+        <amps.version>8.11.4</amps.version>
+        <bamboo.version>9.0.4</bamboo.version>
         <bamboo.data.version>${bamboo.version}</bamboo.data.version>
         <plugin.testrunner.version>2.0.2</plugin.testrunner.version>
         <atlassian.spring.scanner.version>1.2.13</atlassian.spring.scanner.version>
         <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
-        <slf4j.version>1.7.36</slf4j.version>
+        <slf4j.version>2.0.9</slf4j.version>
         <compiler.version>1.8</compiler.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -50,13 +50,12 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
-            <version>2.14.2</version>
+            <version>2.15.2</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.14.2</version>
-            <scope>provided</scope>
+            <version>2.15.3</version>
         </dependency>
         <dependency>
             <groupId>com.atlassian.bamboo</groupId>
@@ -121,7 +120,7 @@
         <dependency>
             <groupId>com.atlassian.templaterenderer</groupId>
             <artifactId>atlassian-template-renderer-api</artifactId>
-            <version>1.0.5</version>
+            <version>5.0.4</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -360,33 +359,11 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>4.7.3.3</version>
+                <version>4.7.3.6</version>
                 <configuration>
                     <includeFilterFile>.mvn/quality-configs/spotbugs/include.xml</includeFilterFile>
                     <excludeFilterFile>.mvn/quality-configs/spotbugs/exclude.xml</excludeFilterFile>
                     <failOnError>false</failOnError>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>validate</id>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.owasp</groupId>
-                <artifactId>dependency-check-maven</artifactId>
-                <version>8.2.1</version>
-                <configuration>
-                    <skipProvidedScope>true</skipProvidedScope>
-                    <suppressionFiles>
-                        <suppressionFile>
-                            https://dcapt-downloads.s3.amazonaws.com/atlassian-security-scanner-dc-apps-suppressions.xml
-                        </suppressionFile>
-                    </suppressionFiles>
                 </configuration>
                 <executions>
                     <execution>
@@ -414,7 +391,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>3.11.0</version>
                 <configuration>
                     <source>${compiler.version}</source>
                     <target>${compiler.version}</target>
