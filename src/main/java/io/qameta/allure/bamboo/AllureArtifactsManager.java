@@ -179,12 +179,7 @@ public class AllureArtifactsManager {
         if (linkProvider instanceof TrampolineUrlArtifactLinkDataProvider) {
             final TrampolineUrlArtifactLinkDataProvider urlLinkProvider =
                     (TrampolineUrlArtifactLinkDataProvider) linkProvider;
-            final MutableArtifactImpl artifact = new MutableArtifactImpl();
-            artifact.setPlanResultKey(planResultKey);
-            artifact.setLabel(artifactDef.getName());
-            urlLinkProvider.setArtifact(artifact);
-            //urlLinkProvider.setPlanResultKey(planResultKey);
-            //urlLinkProvider.setArtifactName(artifactDef.getName());
+            urlLinkProvider.setArtifact(mutableArtifact(planResultKey, artifactDef.getName()));
         }
         return getArtifactFile(filePath, linkProvider);
     }
