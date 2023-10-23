@@ -79,8 +79,8 @@ class AllureDownloader {
                     return Downloader.download(url, downloadToFile);
                 } catch (Exception e) {
                     LOGGER
-                        .warn("Failed to download from {}. Root cause : {}.",
-                            url, e.toString());
+                            .warn("Failed to download from {}. Root cause : {}.",
+                                    url, e.toString());
                 }
             }
         } catch (Exception e) {
@@ -91,11 +91,11 @@ class AllureDownloader {
 
     private URL[] buildAllureDownloadUrls(final String version) throws MalformedURLException {
         final URL gitUrl = fromPath(settingsManager.getSettings().getDownloadBaseUrl())
-            .path(String.format("%s/allure-%s.zip", version, version))
-            .build().toURL();
+                .path(String.format("%s/allure-%s.zip", version, version))
+                .build().toURL();
         final URL mavenUrl = fromPath(settingsManager.getSettings().getDownloadCliBaseUrl())
-            .path(String.format("allure-commandline/%s/allure-commandline-%s.zip", version, version))
-            .build().toURL();
+                .path(String.format("allure-commandline/%s/allure-commandline-%s.zip", version, version))
+                .build().toURL();
         return new URL[]{gitUrl, mavenUrl};
     }
 }

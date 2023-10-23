@@ -43,7 +43,6 @@ public class Statistic extends AbstractSummary {
 
     /**
      * No args constructor for use in serialization.
-     *
      */
     public Statistic() {
         // empty

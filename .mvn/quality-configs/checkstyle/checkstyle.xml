@@ -104,10 +104,10 @@
         <module name="PackageDeclaration"/>
         <module name="ParameterAssignment"/>  <!-- more strict version is FinalParameters -->
         <!--<module name="RequireThis"/>-->
-<!--        <module name="ReturnCount">-->
-<!--            <property name="max" value="5"/>-->
-<!--            <property name="maxForVoid" value="3"/>-->
-<!--        </module>-->
+        <!--        <module name="ReturnCount">-->
+        <!--            <property name="max" value="5"/>-->
+        <!--            <property name="maxForVoid" value="3"/>-->
+        <!--        </module>-->
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
         <module name="StringLiteralEquality"/>
@@ -136,9 +136,9 @@
         <!--                             org.springframework.data.util"-->
         <!--            />-->
         <!--        </module>-->
-<!--        <module name="ImportControl">-->
-<!--            <property name="file" value="${config_loc}/import-control.xml"/>-->
-<!--        </module>-->
+        <!--        <module name="ImportControl">-->
+        <!--            <property name="file" value="${config_loc}/import-control.xml"/>-->
+        <!--        </module>-->
         <!--<module name="ImportOrder"/>-->
         <module name="RedundantImport"/>
         <module name="UnusedImports"/>

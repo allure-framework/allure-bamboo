@@ -100,7 +100,7 @@ public class AllureReportServlet extends HttpServlet {
             final URI file = new URL(fileUrl).toURI();
             final String mimeType = Optional.ofNullable(getServletContext().getMimeType(fileUrl))
                     .orElse(Files.probeContentType(Paths.get(file.getPath()))
-            );
+                    );
             final String charsetPostfix = Stream.of("application", "text")
                     .anyMatch(mimeType::contains) ? ";charset=utf-8" : "";
             response.setHeader(CONTENT_TYPE, mimeType + charsetPostfix);
@@ -152,7 +152,7 @@ public class AllureReportServlet extends HttpServlet {
         final String errorMessage = isEmpty(uploadResult.getFailureDetails())
                 ? "Unknown error has occurred during Allure Build. Please refer the server logs for details."
                 : "Something went wrong with Allure Report generation. Here are some details: \n"
-                        + uploadResult.getFailureDetails();
+                + uploadResult.getFailureDetails();
         try {
             response.setHeader(CONTENT_TYPE, "text/plain");
             response.setHeader("Content-Length", String.valueOf(errorMessage.length()));

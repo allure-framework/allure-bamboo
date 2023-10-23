@@ -1,19 +1,19 @@
 [#-- @ftlvariable name="" type="io.qameta.allure.bamboo.ViewAllureReport" --]
 <html>
 <head>
-[#assign reportUrl = "${baseUrl}/plugins/servlet/allure/report/${planKey}/${buildNumber}/"]
-[#assign reportZipUrl = "${baseUrl}/plugins/servlet/allure/report/${planKey}/${buildNumber}/report.zip"]
-[@ui.header pageKey='buildResult.changes.title' object='${immutablePlan.name} ${resultsSummary.buildNumber}' title=true/]
+    [#assign reportUrl = "${baseUrl}/plugins/servlet/allure/report/${planKey}/${buildNumber}/"]
+    [#assign reportZipUrl = "${baseUrl}/plugins/servlet/allure/report/${planKey}/${buildNumber}/report.zip"]
+    [@ui.header pageKey='buildResult.changes.title' object='${immutablePlan.name} ${resultsSummary.buildNumber}' title=true/]
     <meta name="tab" content="allure"/>
     <script type="text/javascript">
-        (function(){
+        (function () {
             (window.AJS || (window.AJS = {}));
 
-            AJS.$(function($){
-                $("#allure-report-expand-link").click(function(){
+            AJS.$(function ($) {
+                $("#allure-report-expand-link").click(function () {
                     try {
                         window.open(document.getElementById('allure-report-frame').contentWindow.location.href, '_blank');
-                    } catch (e){
+                    } catch (e) {
                         window.open('${reportUrl}', '_blank');
                     }
                 });

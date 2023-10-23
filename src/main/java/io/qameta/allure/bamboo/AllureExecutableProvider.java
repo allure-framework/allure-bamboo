@@ -70,7 +70,7 @@ public class AllureExecutableProvider {
                     } else if (isDownloadEnabled) {
                         final Matcher nameMatcher = EXEC_NAME_PATTERN.matcher(executableName);
                         return allureDownloader.downloadAndExtractAllureTo(allureHomeSubDir,
-                                nameMatcher.matches() ? nameMatcher.group(1) : DEFAULT_VERSION)
+                                        nameMatcher.matches() ? nameMatcher.group(1) : DEFAULT_VERSION)
                                 .map(path -> executable).orElse(null);
                     }
                     return null;

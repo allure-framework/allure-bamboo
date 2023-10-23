@@ -112,7 +112,8 @@
         <exclude name="JUnitStaticSuite"/>
         <exclude name="LoggerIsNotStaticFinal"/>
         <exclude name="MissingSerialVersionUID"/>
-        <exclude name="NullAssignment"/> <!-- disabled due to false positive for initialization with ternary operator -->
+        <exclude
+                name="NullAssignment"/> <!-- disabled due to false positive for initialization with ternary operator -->
         <exclude name="StaticEJBFieldShouldBeFinal"/> <!-- earlier j2ee group-->
         <exclude name="UseCorrectExceptionLogging"/>
         <exclude name="UseLocaleWithCaseConversions"/>

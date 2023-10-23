@@ -16,7 +16,6 @@
 package io.qameta.allure.bamboo;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.validator.routines.UrlValidator;
 
 import javax.annotation.Nullable;
 import java.io.Serializable;
@@ -49,9 +48,7 @@ public final class AllureBuildConfig implements Serializable {
         this.enabled = StringUtils.isEmpty(enabled) ? FALSE : Boolean.parseBoolean(enabled);
         this.executable = executable;
         this.artifactName = artifactName;
-        // If the URL is not a valid URL it will be omitted
-        final UrlValidator urlValidator = new UrlValidator();
-        this.logoUrl = urlValidator.isValid(logoUrl) ? logoUrl : AllureBuildConfig.DEFAULT_CUSTOM_LOGO_URL;
+        this.logoUrl = !logoUrl.isEmpty() ? logoUrl : AllureBuildConfig.DEFAULT_CUSTOM_LOGO_URL;
     }
 
     static AllureBuildConfig fromContext(final Map<String, String> context) {
