@@ -22,7 +22,7 @@ import static io.qameta.allure.bamboo.AllureConstants.ALLURE_BUILD_REPORT_ARTIFA
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_BUILD_REPORT_FAILURE_DETAILS;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_BUILD_REPORT_SUCCESS;
 import static java.lang.Boolean.parseBoolean;
-import static org.sonatype.aether.util.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 class AllureBuildResult implements Serializable {
     private final boolean success;
