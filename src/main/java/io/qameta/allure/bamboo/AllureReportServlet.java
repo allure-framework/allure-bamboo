@@ -19,6 +19,7 @@ import com.atlassian.bamboo.plan.PlanResultKey;
 import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +42,6 @@ import java.util.stream.Stream;
 import static com.atlassian.bamboo.plan.PlanKeys.getPlanResultKey;
 import static io.qameta.allure.bamboo.AllureBuildResult.fromCustomData;
 import static java.lang.Integer.parseInt;
-import static org.sonatype.aether.util.StringUtils.isEmpty;
 
 public class AllureReportServlet extends HttpServlet {
 
@@ -149,7 +149,7 @@ public class AllureReportServlet extends HttpServlet {
 
     private void uploadResultWasNotSuccess(final HttpServletResponse response,
                                            final AllureBuildResult uploadResult) {
-        final String errorMessage = isEmpty(uploadResult.getFailureDetails())
+        final String errorMessage = StringUtils.isEmpty(uploadResult.getFailureDetails())
                 ? "Unknown error has occurred during Allure Build. Please refer the server logs for details."
                 : "Something went wrong with Allure Report generation. Here are some details: \n"
                 + uploadResult.getFailureDetails();
