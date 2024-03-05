@@ -20,7 +20,7 @@
         <bamboo.version>9.0.4</bamboo.version>
         <bamboo.data.version>${bamboo.version}</bamboo.data.version>
         <plugin.testrunner.version>2.0.2</plugin.testrunner.version>
-        <atlassian.spring.scanner.version>1.2.13</atlassian.spring.scanner.version>
+        <atlassian.spring.scanner.version>3.0.4</atlassian.spring.scanner.version>
         <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
         <slf4j.version>2.0.9</slf4j.version>
         <compiler.version>1.8</compiler.version>
