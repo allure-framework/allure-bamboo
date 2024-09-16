@@ -54,7 +54,7 @@ class AllureDownloader {
                 ZipUtil.unzip(zipFilePath, extractDir.toString());
 
                 if (homeDir.exists()) {
-                    LOGGER.info("Directory " + homeDir + " already exists, removing it..");
+                    LOGGER.info("Directory {} already exists, removing it..", homeDir);
                     deleteQuietly(homeDir);
                 }
                 moveDirectory(extractDir.resolve(extractedDirName).toFile(), homeDir);
@@ -78,9 +78,7 @@ class AllureDownloader {
                     LOGGER.info("Downloading allure.zip from {} to {}", url, downloadToFile);
                     return Downloader.download(url, downloadToFile);
                 } catch (Exception e) {
-                    LOGGER
-                            .warn("Failed to download from {}. Root cause : {}.",
-                                    url, e.toString());
+                    LOGGER.warn("Failed to download from {}. Root cause : {}.", url, e.toString());
                 }
             }
         } catch (Exception e) {

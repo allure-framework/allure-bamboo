@@ -15,7 +15,6 @@
  */
 package io.qameta.allure.bamboo;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,11 +29,12 @@ import static java.util.Objects.requireNonNull;
 import static java.util.regex.Pattern.compile;
 
 public class AllureExecutableProvider {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureExecutableProvider.class);
-    static final String DEFAULT_VERSION = "2.21.0";
-    static final String DEFAULT_PATH = "/tmp/allure/2.21.0";
+    static final String DEFAULT_VERSION = "2.30.0";
+    static final String DEFAULT_PATH = "/tmp/allure/2.30.0";
+    static final String BIN = "bin";
     private static final Pattern EXEC_NAME_PATTERN = compile("[^\\d]*(\\d[0-9\\.]{2,}[a-zA-Z0-9\\-]*)$");
-    private static final String BINARY_SUBDIR = "binary";
 
     private final BambooExecutablesManager bambooExecutablesManager;
     private final AllureDownloader allureDownloader;
@@ -48,28 +48,22 @@ public class AllureExecutableProvider {
         this.cmdLine = requireNonNull(cmdLine);
     }
 
-    @VisibleForTesting
-    public static String getAllureSubDir() {
-        return BINARY_SUBDIR;
-    }
-
     Optional<AllureExecutable> provide(final boolean isDownloadEnabled, final String executableName) {
         return bambooExecutablesManager.getExecutableByName(executableName)
                 .map(allureHomeDir -> {
-                    LOGGER.debug("Found allure executable by name '{}': '{}'", executableName, allureHomeDir);
-                    final String allureHomeSubDir = Paths.get(allureHomeDir, BINARY_SUBDIR).toString();
-                    final Path cmdPath = Paths.get(allureHomeSubDir, "bin", getAllureExecutableName());
+                    LOGGER.info("Found allure executable by name '{}': '{}'", executableName, allureHomeDir);
+                    final Path cmdPath = Paths.get(allureHomeDir, BIN, getAllureExecutableName());
                     final AllureExecutable executable = new AllureExecutable(cmdPath, cmdLine);
-                    LOGGER.debug("Checking the existence of the command path for executable '{}': '{}'",
+                    LOGGER.info("Checking the existence of the command path for executable '{}': '{}'",
                             executableName, cmdPath);
                     final boolean commandExists = cmdLine.hasCommand(cmdPath.toString());
-                    LOGGER.debug("System has command for executable '{}': {}, downloadEnabled={}",
+                    LOGGER.info("System has command for executable '{}': {}, downloadEnabled={}",
                             executableName, commandExists, isDownloadEnabled);
                     if (commandExists) {
                         return executable;
                     } else if (isDownloadEnabled) {
                         final Matcher nameMatcher = EXEC_NAME_PATTERN.matcher(executableName);
-                        return allureDownloader.downloadAndExtractAllureTo(allureHomeSubDir,
+                        return allureDownloader.downloadAndExtractAllureTo(allureHomeDir,
                                         nameMatcher.matches() ? nameMatcher.group(1) : DEFAULT_VERSION)
                                 .map(path -> executable).orElse(null);
                     }

@@ -26,8 +26,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
+import static io.qameta.allure.bamboo.AllureExecutableProvider.BIN;
 import static io.qameta.allure.bamboo.AllureExecutableProvider.DEFAULT_VERSION;
-import static io.qameta.allure.bamboo.AllureExecutableProvider.getAllureSubDir;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,11 +35,9 @@ import static org.mockito.junit.MockitoJUnit.rule;
 
 public class AllureExecutableProviderTest {
 
-    private static final String ALLURE_2_0_0 = "Allure 2.0.0";
-    private static final String EXECUTABLE_NAME_2_0_0 = "2.0.0";
-    private static final String BIN = "bin";
+    private static final String ALLURE_2_21_0 = "Allure 2.21.0";
+    private static final String EXECUTABLE_NAME_2_21_0 = "2.21.0";
     private final String homeDir = "/home/allure";
-    private final String binaryDir = Paths.get(this.homeDir, getAllureSubDir()).toString();
 
     @Rule
     public MockitoRule mockitoRule = rule();
@@ -58,39 +56,39 @@ public class AllureExecutableProviderTest {
     @Before
     public void setUp() throws Exception {
         config = new AllureGlobalConfig();
-        allureCmdPath = Paths.get(binaryDir, BIN, "allure");
-        allureBatCmdPath = Paths.get(binaryDir, BIN, "allure.bat");
+        allureCmdPath = Paths.get(homeDir, BIN, "allure");
+        allureBatCmdPath = Paths.get(homeDir, BIN, "allure.bat");
         when(downloader.downloadAndExtractAllureTo(anyString(), anyString())).thenReturn(Optional.empty());
     }
 
     @Test
     public void itShouldProvideDefaultVersion() throws Exception {
         provide("Allure WITHOUT VERSION");
-        verify(downloader).downloadAndExtractAllureTo(binaryDir, DEFAULT_VERSION);
+        verify(downloader).downloadAndExtractAllureTo(homeDir, DEFAULT_VERSION);
     }
 
     @Test
     public void itShouldProvideTheGivenVersionWithFullSemverWithoutName() throws Exception {
-        provide(EXECUTABLE_NAME_2_0_0);
-        verify(downloader).downloadAndExtractAllureTo(binaryDir, EXECUTABLE_NAME_2_0_0);
+        provide(EXECUTABLE_NAME_2_21_0);
+        verify(downloader).downloadAndExtractAllureTo(homeDir, EXECUTABLE_NAME_2_21_0);
     }
 
     @Test
     public void itShouldProvideTheGivenVersionWithFullSemverWithoutMilestone() throws Exception {
-        provide(ALLURE_2_0_0);
-        verify(downloader).downloadAndExtractAllureTo(binaryDir, EXECUTABLE_NAME_2_0_0);
+        provide(ALLURE_2_21_0);
+        verify(downloader).downloadAndExtractAllureTo(homeDir, EXECUTABLE_NAME_2_21_0);
     }
 
     @Test
     public void itShouldProvideTheGivenVersionWithMajorMinorWithoutMilestone() throws Exception {
-        provide("Allure 2.0");
-        verify(downloader).downloadAndExtractAllureTo(binaryDir, "2.0");
+        provide("Allure 2.13.7");
+        verify(downloader).downloadAndExtractAllureTo(homeDir, "2.13.7");
     }
 
     @Test
     public void itShouldProvideTheGivenVersionWithMilestone() throws Exception {
         provide("Allure 2.0-BETA4");
-        verify(downloader).downloadAndExtractAllureTo(binaryDir, "2.0-BETA4");
+        verify(downloader).downloadAndExtractAllureTo(homeDir, "2.0-BETA4");
     }
 
     private Optional<AllureExecutable> provide(String executableName) {
