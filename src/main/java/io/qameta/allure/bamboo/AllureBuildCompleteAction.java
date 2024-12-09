@@ -32,6 +32,7 @@ import io.qameta.allure.bamboo.info.allurewidgets.summary.Summary;
 import io.qameta.allure.bamboo.util.Downloader;
 import io.qameta.allure.bamboo.util.FileStringReplacer;
 import io.qameta.allure.bamboo.util.ZipUtil;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -44,7 +45,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Collection;
@@ -54,14 +54,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-import static com.google.common.io.Files.createTempDir;
 import static io.qameta.allure.bamboo.AllureBuildResult.allureBuildResult;
 import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
 import static java.lang.String.format;
-import static java.nio.file.Files.createTempFile;
 import static java.util.stream.Collectors.toList;
-import static org.apache.commons.io.FileUtils.deleteQuietly;
-import static org.codehaus.plexus.util.FileUtils.copyDirectory;
 
 @SuppressWarnings("ConstantConditions")
 public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements PostChainAction {
@@ -96,10 +92,11 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
     }
 
     @Override
-    @SuppressWarnings({"UnstableApiUsage", "ExecutableStatementCount", "PMD.NcssCount"})
+    @SuppressWarnings({"ExecutableStatementCount", "PMD.NcssCount"})
     public void execute(final @NotNull ImmutableChain chain,
                         final @NotNull ChainResultsSummary chainResultsSummary,
                         final @NotNull ChainExecution chainExecution) {
+
         final BuildDefinition buildDef = chain.getBuildDefinition();
         final AllureGlobalConfig globalConfig = settingsManager.getSettings();
         final AllureBuildConfig buildConfig = AllureBuildConfig.fromContext(buildDef.getCustomConfiguration());
@@ -109,11 +106,37 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
         if (!allureEnabled || isEnabledForFailedOnly && !chainResultsSummary.isFailed()) {
             return;
         }
-        final File artifactsTempDir = createTempDir();
-        final File allureReportDir = new File(createTempDir(), "report");
-        final Map<String, String> customBuildData = chainResultsSummary.getCustomBuildData();
+
         try {
 
+            final Path artifactsTempDir = Files.createTempDirectory("tmp_artifact");
+            final Path allureReportDir = Files.createTempDirectory("tmp_report");
+
+            buildReport(artifactsTempDir,
+                    allureReportDir,
+                    chainResultsSummary,
+                    chain,
+                    buildConfig,
+                    globalConfig,
+                    chainExecution);
+
+            FileUtils.deleteQuietly(artifactsTempDir.toFile());
+            FileUtils.deleteQuietly(allureReportDir.toFile());
+        } catch (Exception e) {
+            LOGGER.error("Failed to create tmp folders to build report.", e);
+        }
+    }
+
+    private void buildReport(final Path artifactsTempDir,
+                             final Path allureReportDir,
+                             final ChainResultsSummary chainResultsSummary,
+                             final ImmutableChain chain,
+                             final AllureBuildConfig buildConfig,
+                             final AllureGlobalConfig globalConfig,
+                             final ChainExecution chainExecution) {
+
+        final Map<String, String> customBuildData = chainResultsSummary.getCustomBuildData();
+        try {
             final String executable = Optional.ofNullable(buildConfig.getExecutable())
                     .orElse(executablesManager.getDefaultAllureExecutable()
                             .orElseThrow(() -> new RuntimeException("Could not find default Allure executable!"
@@ -122,53 +145,54 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
             LOGGER.info("Allure Report is enabled for {}", chain.getName());
             LOGGER.info("Trying to get executable by name {} for {}", executable, chain.getName());
 
-            final AllureExecutable allure = allureExecutable.provide(globalConfig, executable)
+            AllureExecutable allure = allureExecutable.provide(globalConfig, executable)
                     .orElseThrow(() -> new RuntimeException("Failed to find Allure executable by name " + executable));
 
             // Creating a copy for customize report
-            final AllureExecutable allureTmp = allure.getCopy();
+            final Path copyPath = Files.createTempDirectory("tmp_cmd");
+            if (globalConfig.isCustomLogoEnabled()) {
+                allure = allure.getTempCopy(copyPath);
+            }
 
-            LOGGER.info("Starting artifacts downloading into {} for {}", artifactsTempDir.getPath(), chain.getName());
+            LOGGER.info("Starting artifacts downloading into {} for {}", artifactsTempDir, chain.getName());
             final Collection<Path> artifactsPaths = artifactsManager.downloadAllArtifactsTo(
-                    chainResultsSummary, artifactsTempDir, buildConfig.getArtifactName());
-            if (artifactsTempDir.list().length == 0) {
+                    chainResultsSummary, artifactsTempDir.toFile(), buildConfig.getArtifactName());
+            if (artifactsTempDir.toFile().list().length == 0) {
                 allureBuildResult(false, "Build result does not have any uploaded artifacts!")
                         .dumpToCustomData(customBuildData);
             } else {
-                LOGGER.info("Starting allure generate into {} for {}", allureReportDir.getPath(), chain.getName());
+                LOGGER.info("Starting allure generate into {} for {}", allureReportDir, chain.getName());
                 prepareResults(artifactsPaths.stream().map(Path::toFile).collect(toList()), chain, chainExecution);
 
                 // Setting the new logo in the allure libraries before generate the report.
                 if (globalConfig.isCustomLogoEnabled()) {
-                    allureTmp.setCustomLogo(buildConfig.getCustomLogoUrl());
+                    allure.setCustomLogo(buildConfig.getCustomLogoUrl());
                 }
-                allureTmp.generate(artifactsPaths, allureReportDir.toPath());
+                allure.generate(artifactsPaths, allureReportDir);
                 // Setting report name
                 this.finalizeReport(allureReportDir,
                         chainExecution.getPlanResultKey().getBuildNumber(), chain.getBuildName());
 
                 // Create an exportable zip with the report
-                ZipUtil.zipFolder(allureReportDir.toPath(), allureReportDir.toPath().resolve("report.zip"));
+                ZipUtil.zipReportFolder(allureReportDir, allureReportDir.resolve("report.zip"));
 
                 LOGGER.info("Allure has been generated successfully for {}", chain.getName());
-                artifactsManager.uploadReportArtifacts(chain, chainResultsSummary, allureReportDir)
+                artifactsManager.uploadReportArtifacts(chain, chainResultsSummary, allureReportDir.toFile())
                         .ifPresent(result -> result.dumpToCustomData(customBuildData));
             }
+            FileUtils.deleteQuietly(copyPath.toFile());
         } catch (Exception e) {
             LOGGER.error("Failed to build allure report for {}", chain.getName(), e);
             allureBuildResult(false, stackTraceToString(e)).dumpToCustomData(customBuildData);
-        } finally {
-            deleteQuietly(artifactsTempDir);
-            deleteQuietly(allureReportDir);
         }
     }
 
-    private void finalizeReport(final @NotNull File allureReportDir,
+    private void finalizeReport(final @NotNull Path allureReportDir,
                                 final int buildNumber,
                                 final String buildName) throws IOException {
 
         // Update Report Name (It is the way now)
-        final Path widgetsJsonPath = Paths.get(allureReportDir.getAbsolutePath())
+        final Path widgetsJsonPath = allureReportDir
                 .resolve("widgets")
                 .resolve("summary.json");
         final ObjectMapper mapper = new JsonMapper();
@@ -177,7 +201,7 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
         mapper.writeValue(widgetsJsonPath.toFile(), summary);
 
         // Deleting title from Logo
-        final Path appJsPath = Paths.get(allureReportDir.getAbsolutePath()).resolve("app.js");
+        final Path appJsPath = allureReportDir.resolve("app.js");
         FileStringReplacer.replaceInFile(appJsPath,
                 Pattern.compile(">Allure</span>",
                         Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
@@ -185,7 +209,7 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
         );
 
         // Changing page title
-        final Path indexHtmlPath = Paths.get(allureReportDir.getAbsolutePath()).resolve("index.html");
+        final Path indexHtmlPath = allureReportDir.resolve("index.html");
         FileStringReplacer.replaceInFile(indexHtmlPath,
                 Pattern.compile("<title>.*</title>",
                         Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
@@ -203,21 +227,25 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
     /**
      * Write the history file to results directory.
      */
-    @SuppressWarnings("UnstableApiUsage")
     private void copyHistory(final @NotNull List<File> artifactsTempDirs,
                              final String planKey,
                              final int buildNumber) {
-        final Path tmpDirToDownloadHistory = createTempDir().toPath();
-        getLastBuildNumberWithHistory(planKey, buildNumber)
-                .ifPresent(buildId -> copyHistoryFiles(planKey, tmpDirToDownloadHistory, buildId));
-        artifactsTempDirs.forEach(artifactsTempDir -> {
-            try {
-                copyDirectory(tmpDirToDownloadHistory.toFile(), artifactsTempDir.toPath().resolve(HISTORY).toFile());
-            } catch (IOException e) {
-                LOGGER.error("Failed to copy history files from temp directory into artifacts directory", e);
-            }
-        });
-        deleteQuietly(tmpDirToDownloadHistory.toFile());
+        try {
+            final Path tmpDirToDownloadHistory = Files.createTempDirectory("tmp_history");
+            getLastBuildNumberWithHistory(planKey, buildNumber)
+                    .ifPresent(buildId -> copyHistoryFiles(planKey, tmpDirToDownloadHistory, buildId));
+            artifactsTempDirs.forEach(artifactsTempDir -> {
+                try {
+                    FileUtils.copyDirectory(tmpDirToDownloadHistory.toFile(),
+                            artifactsTempDir.toPath().resolve(HISTORY).toFile());
+                } catch (IOException e) {
+                    LOGGER.error("Failed to copy history files from temp directory into artifacts directory", e);
+                }
+            });
+            FileUtils.deleteQuietly(tmpDirToDownloadHistory.toFile());
+        } catch (Exception e) {
+            LOGGER.error("Failed to create tmp history folder", e);
+        }
     }
 
     private void copyHistoryFiles(final String planKey,
@@ -245,10 +273,12 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
                                           final int buildId) {
         final String artifactUrl = getHistoryArtifactUrl(HISTORY_JSON, planKey, buildId);
         final ObjectMapper mapper = new JsonMapper();
+
         try {
-            final Path historyTmpFile = createTempFile(HISTORY, ".json");
+            final Path historyTmpFile = Files.createTempFile(HISTORY, ".json");
             Downloader.download(new URL(artifactUrl), historyTmpFile);
             mapper.readValue(historyTmpFile.toFile(), Object.class);
+            FileUtils.deleteQuietly(historyTmpFile.toFile());
             return true;
         } catch (Exception e) {
             LOGGER.info("Cannot connect to artifact or the artifact is not valid {}.", artifactUrl, e);
@@ -290,7 +320,7 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
         final String rootUrl = getBambooBaseUrl();
         final String buildName = chain.getBuildName();
         final String buildUrl = format("%s/browse/%s-%s", rootUrl, chain.getPlanKey().getKey(), buildNumber);
-        final String reportUrl = format("%s/plugins/servlet/allure/report/%s/%s", rootUrl,
+        final String reportUrl = format("%s/plugins/servlet/allure/report/%s/%s/", rootUrl,
                 chain.getPlanKey().getKey(), buildNumber);
         final AddExecutorInfo executorInfo = new AddExecutorInfo(
                 rootUrl, Integer.toString(buildNumber), buildName, buildUrl, reportUrl);

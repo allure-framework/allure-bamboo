@@ -51,6 +51,7 @@ public class AllureReportServlet extends HttpServlet {
     private static final String CONTENT_DISPOSITION = "Content-Disposition";
     private static final String CONTENT_TYPE = "Content-Type";
     private static final String FAILED_TO_SEND_FILE_OF_ALLURE_REPORT = "Failed to send file {} of Allure Report ";
+    private static final String X_FRAME_OPTIONS = "X-Frame-Options";
 
     private final transient AllureArtifactsManager artifactsManager;
     private final ResultsSummaryManager resultsSummaryManager;
@@ -116,16 +117,22 @@ public class AllureReportServlet extends HttpServlet {
     private Optional<String> getArtifactUrl(final HttpServletRequest request,
                                             final HttpServletResponse response) {
         final Matcher matcher = URL_PATTERN.matcher(request.getRequestURI());
-        if (matcher.matches()) {
-            response.setHeader("X-Frame-Options", "ALLOWALL");
-            final String planKey = matcher.group(1);
-            final String buildNumber = matcher.group(2);
-            final String filePath = matcher.group(3);
-            if (wasUploadSuccess(response, planKey, parseInt(buildNumber))) {
-                return artifactsManager.getArtifactUrl(planKey, buildNumber, filePath);
+        try {
+            if (matcher.matches()) {
+                if (StringUtils.isBlank(response.getHeader(X_FRAME_OPTIONS))) {
+                    response.setHeader(X_FRAME_OPTIONS, "ALLOWALL");
+                }
+                final String planKey = matcher.group(1);
+                final String buildNumber = matcher.group(2);
+                final String filePath = matcher.group(3);
+                if (wasUploadSuccess(response, planKey, parseInt(buildNumber))) {
+                    return artifactsManager.getArtifactUrl(planKey, buildNumber, filePath);
+                }
+            } else {
+                LOGGER.info("Path {} does not match pattern", request.getRequestURI());
             }
-        } else {
-            LOGGER.info("Path {} does not match pattern", request.getRequestURI());
+        } catch (Exception e) {
+            LOGGER.error("There is a problem to parse request uri: {}", request.getRequestURI(), e);
         }
         return Optional.empty();
     }
