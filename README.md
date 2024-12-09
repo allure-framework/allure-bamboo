@@ -11,7 +11,7 @@ from [existing Allure XML files](https://github.com/allure-framework/allure-core
 Download precompiled JAR from [releases page](https://github.com/allure-framework/allure-bamboo-plugin/releases) and
 install it manually as
 described [here](https://confluence.atlassian.com/display/UPM/Installing+add-ons#Installingadd-ons-Installingbyfileupload).
-We use JDK 1.7+ to compile the plugin so be sure to use Java 1.7+ for running Bamboo.
+We use JDK 1.8+ to compile the plugin so be sure to use Java 1.8+ for running Bamboo.
 
 #### Long way
 
@@ -27,3 +27,12 @@ described [here](https://confluence.atlassian.com/display/UPM/Installing+add-ons
 ### Configuration and Usage
 
 Please follow the guide on the official Allure docs: https://docs.qameta.io/allure/#_bamboo
+
+#### To activate debug log goto:
+
+http://localhost:6990/bamboo/admin/configLog4j.action
+1. add io.qameta.allure.bamboo to classpath
+2. select debug
+3. Save form
+
+Logs will available in ../target/bamboo/home/logs/atlassian-bamboo.log

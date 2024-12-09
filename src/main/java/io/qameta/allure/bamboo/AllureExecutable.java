@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.qameta.allure.bamboo.info.AllurePlugins;
 import io.qameta.allure.bamboo.util.FileStringReplacer;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,10 +31,8 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 
-import static java.nio.file.Files.createTempDirectory;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
-import static org.apache.commons.io.FileUtils.copyDirectoryToDirectory;
 
 class AllureExecutable {
 
@@ -112,22 +111,21 @@ class AllureExecutable {
                     "0px"
             );
 
-        } catch (IOException e) {
-            LOGGER.error(e.toString());
+        } catch (Exception e) {
+            LOGGER.error("Cannot set custom logo", e);
             throw new AllurePluginException("Unexpected error", e);
         }
     }
 
-    public AllureExecutable getCopy() throws IOException {
+    public AllureExecutable getTempCopy(final Path copyPath) throws IOException {
         final String binary = this.cmdPath.getFileName().toString();
         final String binFolder = this.cmdPath.getParent().getFileName().toString();
         final Path rootPath = this.cmdPath.getParent().getParent();
-        final Path rootFolderName = rootPath.getFileName();
-        final Path copyPath = createTempDirectory(rootFolderName.toString());
-        copyDirectoryToDirectory(rootPath.toFile(), copyPath.toFile());
+        final String rootFolderName = rootPath.getFileName().toString();
+        FileUtils.copyDirectoryToDirectory(rootPath.toFile(), copyPath.toFile());
 
         return new AllureExecutable(copyPath
-                .resolve(rootFolderName.toString())
+                .resolve(rootFolderName)
                 .resolve(binFolder)
                 .resolve(binary),
                 this.cmdLine

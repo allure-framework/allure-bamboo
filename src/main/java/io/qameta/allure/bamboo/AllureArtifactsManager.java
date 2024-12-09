@@ -32,7 +32,6 @@ import com.atlassian.bamboo.build.artifact.ArtifactPublishingConfig;
 import com.atlassian.bamboo.build.artifact.BambooRemoteArtifactHandler;
 import com.atlassian.bamboo.build.artifact.FileSystemArtifactLinkDataProvider;
 import com.atlassian.bamboo.build.artifact.TrampolineArtifactFileData;
-import com.atlassian.bamboo.build.artifact.TrampolineUrlArtifactLinkDataProvider;
 import com.atlassian.bamboo.build.artifact.handlers.ArtifactHandlersService;
 import com.atlassian.bamboo.chains.ChainResultsSummary;
 import com.atlassian.bamboo.chains.ChainStageResult;
@@ -168,20 +167,12 @@ public class AllureArtifactsManager {
                                 mutableArtifact(planResultKey, artifactDef.getName()),
                                 configProvider(artifactConfig)
                         ))
-                .map(lp -> getArtifactUrl(filePath, planResultKey, artifactDef, lp))
+                .map(lp -> getArtifactUrl(filePath, lp))
                 .orElse(null);
     }
 
     private String getArtifactUrl(final String filePath,
-                                  final PlanResultKey planResultKey,
-                                  final ArtifactDefinitionContextImpl artifactDef,
                                   final ArtifactLinkDataProvider linkProvider) {
-        if (linkProvider instanceof TrampolineUrlArtifactLinkDataProvider) {
-            final TrampolineUrlArtifactLinkDataProvider urlLinkProvider =
-                    (TrampolineUrlArtifactLinkDataProvider) linkProvider;
-            urlLinkProvider.setPlanResultKey(planResultKey);
-            urlLinkProvider.setArtifactName(artifactDef.getName());
-        }
         return getArtifactFile(filePath, linkProvider);
     }
 
