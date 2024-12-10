@@ -21,21 +21,9 @@ package io.qameta.allure.bamboo;
 final class AllureConstants {
 
     /**
-     * The name of artifact.
-     */
-    static final String ALLURE_ARTIFACT_NAME = "Allure Report";
-    /**
      * The executable prefix.
      */
     static final String ALLURE_EXECUTION_PREFIX = "system.builder.allure";
-    /**
-     * The directory with allure results relative from build directory.
-     */
-    static final String ALLURE_CONFIG_RESULTS_PATH = "custom.allure.config.results.path";
-    /**
-     * The subdirectory (or subdirectories) to put generated report into.
-     */
-    static final String ALLURE_CONFIG_REPORT_PATH = "custom.allure.config.report.path";
     /**
      * The name of executable.
      */
@@ -47,7 +35,6 @@ final class AllureConstants {
     static final String ALLURE_CONFIG_ENABLED = "custom.allure.config.enabled";
     static final String ALLURE_CONFIG_FAILED_ONLY = "custom.allure.config.failed.only";
     static final String ALLURE_CONFIG_ARTIFACT_NAME = "custom.allure.artifact.name";
-    static final String ALLURE_CONFIG_STORAGE_TYPE = "custom.allure.config.storage.type";
     static final String ALLURE_CONFIG_DOWNLOAD_ENABLED = "custom.allure.config.download.enabled";
     static final String ALLURE_CONFIG_ENABLED_BY_DEFAULT = "custom.allure.config.enabled.default";
     static final String ALLURE_CONFIG_DOWNLOAD_URL = "custom.allure.config.download.url";
@@ -55,9 +42,14 @@ final class AllureConstants {
     static final String ALLURE_CONFIG_LOCAL_STORAGE = "custom.allure.config.local.storage";
 
     // ALLURE CUSTOM LOGO
-    static final String ALLURE_CUSTOM_LOGO_ENABLED = "custom.allure.config.logo.enabled";
-    static final String ALLURE_CUSTOM_LOGO_PATH = "custom.allure.logo.url";
+    static final String ALLURE_CONFIG_CUSTOM_LOGO_ENABLED = "custom.allure.config.logo.enabled";
+    static final String ALLURE_CONFIG_CUSTOM_LOGO_PATH = "custom.allure.logo.url";
+
+    // ALLURE CLEANUP OLD REPORTS
+    static final String ALLURE_CONFIG_REPORTS_CLEANUP_ENABLED = "custom.allure.config.reports.cleanup.enabled";
+    static final String ALLURE_CONFIG_MAX_STORED_REPORTS_COUNT = "custom.allure.max.stored.reports.count";
 
     private AllureConstants() {
+        // do not instantiate
     }
 }

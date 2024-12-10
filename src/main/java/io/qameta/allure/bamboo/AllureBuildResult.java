@@ -25,6 +25,9 @@ import static java.lang.Boolean.parseBoolean;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 class AllureBuildResult implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private final boolean success;
     private String artifactHandlerClass;
     private String failureDetails;
