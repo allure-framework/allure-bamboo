@@ -24,7 +24,6 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Executes report generation.
- * Created by bvo2002 on 30.11.16.
  */
 public class AllureReportTask implements TaskType {
 
@@ -37,5 +36,4 @@ public class AllureReportTask implements TaskType {
                 + " the suggested way of configuration as listed in the Allure docs! ");
         return TaskResultBuilder.newBuilder(taskContext).success().build();
     }
-
 }

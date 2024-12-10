@@ -35,6 +35,7 @@ import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.apache.commons.io.FileUtils.moveDirectory;
 
 class AllureDownloader {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureDownloader.class);
 
     private final AllureSettingsManager settingsManager;

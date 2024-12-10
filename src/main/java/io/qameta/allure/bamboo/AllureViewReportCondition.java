@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 public class AllureViewReportCondition implements Condition {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureViewReportCondition.class);
 
     private final ResultsSummaryManager resultsSummaryManager;
@@ -46,19 +47,20 @@ public class AllureViewReportCondition implements Condition {
                 (String) context.get("buildKey")
         );
         final String buildNumberString = (String) context.get("buildNumber");
-        if (buildKey != null && buildNumberString != null) {
-            try {
-                final int buildNumber = Integer.parseInt(buildNumberString);
-                final ResultsSummary resultsSummary = this.resultsSummaryManager
-                        .getResultsSummary(PlanKeys.getPlanResultKey(buildKey, buildNumber));
-                if (resultsSummary != null) {
-                    final AllureBuildResult buildResult = AllureBuildResult
-                            .fromCustomData(resultsSummary.getCustomBuildData());
-                    return buildResult.hasInfo() && (resultsSummary.isFinished() || resultsSummary.isNotBuilt());
-                }
-            } catch (Exception e) {
-                LOGGER.error("Failed to evaluate condition", e);
+        if (StringUtils.isBlank(buildKey) || StringUtils.isBlank(buildNumberString)) {
+            return false;
+        }
+        try {
+            final int buildNumber = Integer.parseInt(buildNumberString);
+            final ResultsSummary resultsSummary = this.resultsSummaryManager
+                    .getResultsSummary(PlanKeys.getPlanResultKey(buildKey, buildNumber));
+            if (resultsSummary != null) {
+                final AllureBuildResult buildResult = AllureBuildResult
+                        .fromCustomData(resultsSummary.getCustomBuildData());
+                return buildResult.hasInfo() && (resultsSummary.isFinished() || resultsSummary.isNotBuilt());
             }
+        } catch (Exception e) {
+            LOGGER.error("Failed to evaluate condition", e);
         }
         return false;
     }

@@ -49,6 +49,7 @@ import com.atlassian.plugin.predicate.ModuleOfClassPredicate;
 import com.atlassian.sal.api.ApplicationProperties;
 import com.atlassian.sal.api.UrlMode;
 import com.google.common.collect.ImmutableList;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tools.ant.types.FileSet;
 import org.jetbrains.annotations.NotNull;
@@ -61,11 +62,14 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -88,14 +92,15 @@ import static java.lang.Integer.parseInt;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
 import static javax.ws.rs.core.UriBuilder.fromPath;
-import static org.apache.commons.io.FileUtils.deleteQuietly;
-import static org.apache.commons.io.FileUtils.forceMkdir;
-import static org.apache.commons.io.FileUtils.moveDirectory;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.codehaus.plexus.util.FileUtils.copyDirectory;
 import static org.codehaus.plexus.util.FileUtils.copyURLToFile;
 
-@SuppressWarnings({"ClassDataAbstractionCoupling", "PMD.AvoidInstantiatingObjectsInLoops", "PMD.GodClass"})
+@SuppressWarnings({
+        "ClassDataAbstractionCoupling",
+        "PMD.AvoidInstantiatingObjectsInLoops",
+        "PMD.GodClass"
+})
 public class AllureArtifactsManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureArtifactsManager.class);
@@ -181,7 +186,7 @@ public class AllureArtifactsManager {
                                       final String buildNumber,
                                       final String filePath) {
         try {
-            final File file = getLocalStoragePath(planKeyString, buildNumber).resolve(filePath).toFile();
+            final File file = getLocalStorageReportPath(planKeyString, buildNumber).resolve(filePath).toFile();
             final String fullPath = (file.isDirectory())
                     ? new File(file, INDEX_HTML).getAbsolutePath() : file.getAbsolutePath();
             return new File(fullPath).toURI().toURL().toString();
@@ -215,7 +220,7 @@ public class AllureArtifactsManager {
                                 artifact.getLabel(), artifactName,
                                 chainResultsSummary.getPlanKey(), chainResultsSummary.getBuildNumber());
                         final File stageDir = new File(baseDir, UUID.randomUUID().toString());
-                        forceMkdir(stageDir);
+                        FileUtils.forceMkdir(stageDir);
                         resultsPaths.add(stageDir.toPath());
                         final ArtifactLinkDataProvider dataProvider
                                 = artifactLinkManager.getArtifactLinkDataProvider(artifact);
@@ -304,11 +309,11 @@ public class AllureArtifactsManager {
                 if (isAgentArtifactHandler(artifactHandler)) {
                     final String planKey = chain.getPlanKey().getKey();
                     final String buildNumber = String.valueOf(summary.getBuildNumber());
-                    final File destDir = getLocalStoragePath(planKey, buildNumber).toFile();
+                    final File destDir = getLocalStorageReportPath(planKey, buildNumber).toFile();
                     if (destDir.exists()) {
-                        deleteQuietly(destDir);
+                        FileUtils.deleteQuietly(destDir);
                     }
-                    moveDirectory(reportDir, destDir);
+                    FileUtils.moveDirectory(reportDir, destDir);
                     return Optional.of(allureBuildResult(true, null)
                             .withHandlerClass(artifactHandler.getClass().getName()));
                 }
@@ -344,8 +349,41 @@ public class AllureArtifactsManager {
         return Optional.empty();
     }
 
-    private Path getLocalStoragePath(final String planKey, final String buildNumber) {
+    void cleanupOldReportArtifacts(final @NotNull ImmutableChain chain,
+                                   final Integer maxStoredReportsCount) {
+        if (maxStoredReportsCount == null || maxStoredReportsCount <= 0) {
+            return;
+        }
+        for (final ArtifactHandler artifactHandler : getArtifactHandlers()) {
+            if (!isAgentArtifactHandler(artifactHandler)) {
+                continue;
+            }
+            final String planKey = chain.getPlanKey().getKey();
+            final Path reports = getLocalStoragePlanReportsPath(planKey);
+            final List<Long> buildNumbers = new ArrayList<>();
+            try (DirectoryStream<Path> ds = Files.newDirectoryStream(reports, Files::isDirectory)) {
+                for (Path p : ds) {
+                    if (!StringUtils.isNumeric(p.getFileName().toString())) {
+                        continue;
+                    }
+                    buildNumbers.add(Long.parseLong(p.getFileName().toString()));
+                }
+            } catch (Exception e) {
+                LOGGER.error("Failed to clean up old Allure Report", e);
+            }
+            buildNumbers.stream()
+                    .sorted(Comparator.reverseOrder())
+                    .skip(maxStoredReportsCount)
+                    .forEach(bn -> FileUtils.deleteQuietly(reports.resolve(bn.toString()).toFile()));
+        }
+    }
+
+    private Path getLocalStorageReportPath(final String planKey, final String buildNumber) {
         return Paths.get(settingsManager.getSettings().getLocalStoragePath(), REPORTS_SUBDIR, planKey, buildNumber);
+    }
+
+    private Path getLocalStoragePlanReportsPath(final String planKey) {
+        return Paths.get(settingsManager.getSettings().getLocalStoragePath(), REPORTS_SUBDIR, planKey);
     }
 
     private void logAndThrow(final Exception e,

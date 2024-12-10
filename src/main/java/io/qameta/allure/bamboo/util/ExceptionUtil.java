@@ -21,6 +21,7 @@ import java.io.StringWriter;
 public final class ExceptionUtil {
 
     private ExceptionUtil() {
+        // do not instantiate
     }
 
     public static String stackTraceToString(final Throwable e) {
