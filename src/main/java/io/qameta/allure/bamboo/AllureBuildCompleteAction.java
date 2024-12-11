@@ -181,6 +181,11 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
                         .ifPresent(result -> result.dumpToCustomData(customBuildData));
             }
             FileUtils.deleteQuietly(copyPath.toFile());
+            if (globalConfig.isEnabledReportsCleanup()
+                    && buildConfig.getMaxStoredReportsCount() != null
+                    && buildConfig.getMaxStoredReportsCount() > 0) {
+                artifactsManager.cleanupOldReportArtifacts(chain, buildConfig.getMaxStoredReportsCount());
+            }
         } catch (Exception e) {
             LOGGER.error("Failed to build allure report for {}", chain.getName(), e);
             allureBuildResult(false, stackTraceToString(e)).dumpToCustomData(customBuildData);

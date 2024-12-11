@@ -1,5 +1,5 @@
 [@ui.bambooSection titleKey="allure.config.title"]
-    [@ww.checkbox labelKey='allure.config.enable.checkbox.label' name='custom.allure.config.enabled' toggle='true' /]
+    [@ww.checkbox labelKey='custom.allure.config.enabled.label' name='custom.allure.config.enabled' toggle='true' /]
 
     [@ww.checkbox labelKey='custom.allure.config.failed.only.label' name='custom.allure.config.failed.only' toggle='true' /]
 
@@ -9,6 +9,8 @@
 
     [@ww.textfield labelKey="custom.allure.artifact.name.label" name="custom.allure.artifact.name" required="false"/]
 
-    [@ww.textarea labelKey="custom.allure.logo.url.label" name="custom.allure.logo.url" required="false"/]
+    [@ww.textfield labelKey="custom.allure.logo.url.label" name="custom.allure.logo.url" required="false"/]
+
+    [@ww.textfield labelKey="custom.allure.max.stored.reports.count.label" name="custom.allure.max.stored.reports.count" required="false"/]
 
 [/@ui.bambooSection]
