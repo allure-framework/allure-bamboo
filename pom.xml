@@ -332,7 +332,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
-                <version>3.21.2</version>
+                <version>3.26.0</version>
                 <configuration>
                     <printFailingErrors>true</printFailingErrors>
                     <rulesets>
