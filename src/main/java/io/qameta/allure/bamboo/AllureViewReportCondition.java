@@ -42,7 +42,7 @@ public class AllureViewReportCondition implements Condition {
 
     @Override
     public boolean shouldDisplay(final Map<String, Object> context) {
-        final String buildKey = StringUtils.defaultString(
+        final String buildKey = StringUtils.defaultIfBlank(
                 (String) context.get("planKey"),
                 (String) context.get("buildKey")
         );

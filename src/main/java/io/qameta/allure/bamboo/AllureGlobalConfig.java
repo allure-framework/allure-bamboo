@@ -36,7 +36,7 @@ import static java.lang.Boolean.TRUE;
 import static java.lang.Boolean.parseBoolean;
 import static org.apache.commons.lang3.SystemUtils.getJavaIoTmpDir;
 
-class AllureGlobalConfig implements Serializable {
+public class AllureGlobalConfig implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -54,7 +54,7 @@ class AllureGlobalConfig implements Serializable {
     private final String downloadBaseUrl;
     private final String downloadCliBaseUrl;
 
-    AllureGlobalConfig() {
+    public AllureGlobalConfig() {
         this(TRUE.toString(),
                 FALSE.toString(),
                 DEFAULT_DOWNLOAD_BASE_URL,
@@ -64,13 +64,13 @@ class AllureGlobalConfig implements Serializable {
                 FALSE.toString());
     }
 
-    AllureGlobalConfig(final String downloadEnabled,
-                       final String enabledByDefault,
-                       final String downloadBaseUrl,
-                       final String localStoragePath,
-                       final String cmdLineUrl,
-                       final String customLogoEnable,
-                       final String enabledReportsCleanup) {
+    public AllureGlobalConfig(final String downloadEnabled,
+                              final String enabledByDefault,
+                              final String downloadBaseUrl,
+                              final String localStoragePath,
+                              final String cmdLineUrl,
+                              final String customLogoEnable,
+                              final String enabledReportsCleanup) {
         this.downloadEnabled = StringUtils.isBlank(downloadEnabled)
                 ? TRUE : parseBoolean(downloadEnabled);
         this.enabledByDefault = StringUtils.isBlank(enabledByDefault)
@@ -88,7 +88,7 @@ class AllureGlobalConfig implements Serializable {
     }
 
     @NotNull
-    static AllureGlobalConfig fromContext(final Map context) {
+    static AllureGlobalConfig fromContext(final Map<String, String[]> context) {
         return new AllureGlobalConfig(
                 getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_ENABLED, FALSE.toString()),
                 getSingleValue(context, ALLURE_CONFIG_ENABLED_BY_DEFAULT, FALSE.toString()),
@@ -101,15 +101,15 @@ class AllureGlobalConfig implements Serializable {
     }
 
     @Nullable
-    private static String getSingleValue(final Map context,
+    private static String getSingleValue(final Map<String, String[]> context,
                                          final String key,
                                          final String defaultVal) {
         return Optional.ofNullable(context.get(key))
-                .map(value -> value instanceof String[] ? ((String[]) value)[0] : (String) value)
+                .map(value -> value[0])
                 .orElse(defaultVal);
     }
 
-    void toContext(final @NotNull Map<String, Object> context) {
+    public void addToContext(final @NotNull Map<String, Object> context) {
         context.put(ALLURE_CONFIG_DOWNLOAD_ENABLED, isDownloadEnabled());
         context.put(ALLURE_CONFIG_ENABLED_BY_DEFAULT, isEnabledByDefault());
         context.put(ALLURE_CONFIG_DOWNLOAD_URL, getDownloadBaseUrl());

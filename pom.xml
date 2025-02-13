@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.qameta.allure</groupId>
     <artifactId>allure-bamboo</artifactId>
-    <version>1.19.1-SNAPSHOT</version>
+    <version>1.20.1-SNAPSHOT-j17-3</version>
     <name>Allure for Bamboo</name>
     <description>Allure reports right in deployment plans in Bamboo</description>
     <packaging>atlassian-plugin</packaging>
@@ -16,8 +16,9 @@
     </organization>
     <properties>
         <spotless.version>2.2.0</spotless.version>
-        <amps.version>8.11.4</amps.version>
-        <bamboo.version>9.0.4</bamboo.version>
+        <amps.version>9.1.1</amps.version>
+        <bamboo.version>9.6.5</bamboo.version>
+<!--        <bamboo.version>10.2.0</bamboo.version>-->
         <bamboo.data.version>${bamboo.version}</bamboo.data.version>
         <plugin.testrunner.version>2.0.2</plugin.testrunner.version>
 <!--        <atlassian.spring.scanner.version>1.2.13</atlassian.spring.scanner.version>-->
@@ -42,19 +43,13 @@
             <version>2.8.2</version>
         </dependency>
         <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.18.0</version>
-            <scope>provided</scope>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.18.2</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
-            <version>2.15.2</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
             <version>2.18.2</version>
         </dependency>
         <dependency>
@@ -117,10 +112,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
         <dependency>
             <groupId>com.atlassian.templaterenderer</groupId>
             <artifactId>atlassian-template-renderer-api</artifactId>
-            <version>5.0.4</version>
+            <version>6.4.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -140,18 +136,6 @@
             <version>${slf4j.version}</version>
             <scope>provided</scope>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>com.atlassian.plugin</groupId>-->
-<!--            <artifactId>atlassian-spring-scanner-annotation</artifactId>-->
-<!--            <version>${atlassian.spring.scanner.version}</version>-->
-<!--            <scope>compile</scope>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>com.atlassian.plugin</groupId>-->
-<!--            <artifactId>atlassian-spring-scanner-runtime</artifactId>-->
-<!--            <version>${atlassian.spring.scanner.version}</version>-->
-<!--            <scope>runtime</scope>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>javax.inject</groupId>
             <artifactId>javax.inject</artifactId>
@@ -363,7 +347,7 @@
                 <configuration>
                     <includeFilterFile>.mvn/quality-configs/spotbugs/include.xml</includeFilterFile>
                     <excludeFilterFile>.mvn/quality-configs/spotbugs/exclude.xml</excludeFilterFile>
-                    <failOnError>false</failOnError>
+                    <failOnError>true</failOnError>
                 </configuration>
                 <executions>
                     <execution>
@@ -386,6 +370,33 @@
                     <enableQuickReload>true</enableQuickReload>
                     <allowGoogleTracking>false</allowGoogleTracking>
                     <extractDependencies>false</extractDependencies>
+                    <banningExcludes>
+                        <exclude>com.fasterxml.jackson.core:jackson-databind</exclude>
+                        <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
+                        <exclude>com.fasterxml.jackson.core:jackson-core</exclude>
+                        <exclude>com.fasterxml.jackson.dataformat:jackson-dataformat-yaml</exclude>
+                        <exclude>org.apache.commons:commons-lang3</exclude>
+                        <exclude>commons-fileupload:commons-fileupload</exclude>
+                        <exclude>commons-io:commons-io</exclude>
+                    </banningExcludes>
+                    <instructions>
+
+                        <!-- Add package to export here -->
+                        <Export-Package>
+                            io.qameta.allure.bamboo,
+                        </Export-Package>
+                        <!-- Add package import here -->
+                        <Import-Package>
+                            com.opensymphony.xwork2.*;resolution:=optional,
+                            com.opensymphony.module.propertyset.*;resolution:=optional,
+                            org.springframework.osgi.*;resolution:="optional",
+                            org.eclipse.gemini.blueprint.*;resolution:="optional",
+                            *;resolution:="optional"
+                        </Import-Package>
+
+                        <!-- Ensure plugin is spring powered -->
+                        <Spring-Context>*</Spring-Context>
+                    </instructions>
                 </configuration>
             </plugin>
             <plugin>
@@ -422,6 +433,13 @@
                 <enabled>true</enabled>
             </releases>
         </repository>
+        <repository>
+            <id>maven-atlassian-external</id>
+            <url>https://packages.atlassian.com/mvn/maven-atlassian-external</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
     </repositories>
     <pluginRepositories>
         <pluginRepository>
@@ -434,6 +452,13 @@
         <pluginRepository>
             <id>2_atlassian-public</id>
             <url>https://maven.atlassian.com/repository/public</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </pluginRepository>
+        <pluginRepository>
+            <id>maven-atlassian-external</id>
+            <url>https://packages.atlassian.com/mvn/maven-atlassian-external</url>
             <releases>
                 <enabled>true</enabled>
             </releases>

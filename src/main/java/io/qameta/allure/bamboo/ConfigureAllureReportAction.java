@@ -16,12 +16,11 @@
 package io.qameta.allure.bamboo;
 
 import com.atlassian.bamboo.configuration.GlobalAdminAction;
-import com.opensymphony.xwork2.ActionContext;
-import com.opensymphony.xwork2.Preparable;
+import com.atlassian.bamboo.util.ActionParamsUtils;
+import com.atlassian.struts.Preparable;
+import org.apache.struts2.ServletActionContext;
 
 import java.util.Map;
-
-import static com.atlassian.bamboo.util.ActionParamsUtils.getStringArrayMap;
 
 public class ConfigureAllureReportAction extends GlobalAdminAction implements Preparable {
 
@@ -34,14 +33,14 @@ public class ConfigureAllureReportAction extends GlobalAdminAction implements Pr
 
     @Override
     public String execute() throws Exception {
-        settingsManager.saveSettings(AllureGlobalConfig.fromContext(getStringArrayMap()));
+        settingsManager.saveSettings(AllureGlobalConfig.fromContext(ActionParamsUtils.getStringArrayMap()));
         return super.execute();
     }
 
     @Override
     public void validate() {
         super.validate();
-        final Map<String, String[]> valuesMap = getStringArrayMap();
+        final Map<String, String[]> valuesMap = ActionParamsUtils.getStringArrayMap();
         if (!valuesMap.containsKey(AllureConstants.ALLURE_CONFIG_DOWNLOAD_URL)) {
             addActionError(getText("allure.config.download.url.error.required"));
         }
@@ -50,14 +49,10 @@ public class ConfigureAllureReportAction extends GlobalAdminAction implements Pr
         }
     }
 
-    private AllureGlobalConfig getAllureConfig() {
-        return settingsManager.getSettings();
-    }
-
     @Override
     public void prepare() throws Exception {
-        this.config = getAllureConfig();
-        getAllureConfig().toContext(ActionContext.getContext().getContextMap());
+        this.config = settingsManager.getSettings();
+        settingsManager.getSettings().addToContext(ServletActionContext.getContext().getContextMap());
     }
 
     public AllureGlobalConfig getConfig() {
