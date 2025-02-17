@@ -15,7 +15,9 @@
  */
 package io.qameta.allure.bamboo;
 
+import com.atlassian.annotations.security.UnrestrictedAccess;
 import com.atlassian.bamboo.build.ChainResultsAction;
 
+@UnrestrictedAccess
 public class ViewAllureReport extends ChainResultsAction {
 }

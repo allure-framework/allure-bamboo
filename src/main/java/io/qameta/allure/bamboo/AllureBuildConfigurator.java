@@ -17,6 +17,7 @@ package io.qameta.allure.bamboo;
 
 import com.atlassian.bamboo.plan.cache.ImmutablePlan;
 import com.atlassian.bamboo.plan.configuration.MiscellaneousPlanConfigurationPlugin;
+import com.atlassian.bamboo.template.TemplateRenderer;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
@@ -33,9 +34,16 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
 public class AllureBuildConfigurator extends BaseConfigurablePlugin
         implements MiscellaneousPlanConfigurationPlugin {
 
-    private BambooExecutablesManager executablesManager;
+    private final BambooExecutablesManager executablesManager;
+    private final AllureSettingsManager settingsManager;
 
-    private AllureSettingsManager settingsManager;
+    public AllureBuildConfigurator(final BambooExecutablesManager executablesManager,
+                                   final AllureSettingsManager settingsManager,
+                                   final TemplateRenderer templateRenderer) {
+        this.executablesManager = executablesManager;
+        this.settingsManager = settingsManager;
+        this.setTemplateRenderer(templateRenderer);
+    }
 
     @Override
     public boolean isApplicableTo(final @NotNull ImmutablePlan plan) {
@@ -67,13 +75,5 @@ public class AllureBuildConfigurator extends BaseConfigurablePlugin
             ofNullable(executablesManager).flatMap(BambooExecutablesManager::getDefaultAllureExecutable)
                     .ifPresent(executable -> buildConfiguration.setProperty(ALLURE_CONFIG_EXECUTABLE, executable));
         }
-    }
-
-    public void setSettingsManager(final AllureSettingsManager settingsManager) {
-        this.settingsManager = settingsManager;
-    }
-
-    public void setExecutablesManager(final BambooExecutablesManager executablesManager) {
-        this.executablesManager = executablesManager;
     }
 }

@@ -42,10 +42,10 @@ public class AllureExecutableProvider {
 
     public AllureExecutableProvider(final BambooExecutablesManager bambooExecutablesManager,
                                     final AllureDownloader allureDownloader,
-                                    final AllureCommandLineSupport cmdLine) {
+                                    final AllureCommandLineSupport allureCommandLineSupport) {
         this.bambooExecutablesManager = requireNonNull(bambooExecutablesManager);
         this.allureDownloader = requireNonNull(allureDownloader);
-        this.cmdLine = requireNonNull(cmdLine);
+        this.cmdLine = requireNonNull(allureCommandLineSupport);
     }
 
     Optional<AllureExecutable> provide(final boolean isDownloadEnabled, final String executableName) {

@@ -16,46 +16,111 @@
 package io.qameta.allure.bamboo;
 
 import com.atlassian.bamboo.configuration.GlobalAdminAction;
-import com.atlassian.bamboo.util.ActionParamsUtils;
 import com.atlassian.struts.Preparable;
-import org.apache.struts2.ServletActionContext;
-
-import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 public class ConfigureAllureReportAction extends GlobalAdminAction implements Preparable {
 
     private final transient AllureSettingsManager settingsManager;
     private AllureGlobalConfig config;
 
+    private boolean downloadEnabled;
+    private boolean customLogoEnabled;
+    private boolean enabledByDefault;
+    private boolean enabledReportsCleanup;
+    private String localStoragePath;
+    private String downloadBaseUrl;
+
     public ConfigureAllureReportAction(final AllureSettingsManager settingsManager) {
         this.settingsManager = settingsManager;
     }
 
     @Override
-    public String execute() throws Exception {
-        settingsManager.saveSettings(AllureGlobalConfig.fromContext(ActionParamsUtils.getStringArrayMap()));
-        return super.execute();
+    public String execute() {
+        final AllureGlobalConfig newConfig = new AllureGlobalConfig(
+                downloadEnabled,
+                enabledByDefault,
+                downloadBaseUrl,
+                localStoragePath,
+                customLogoEnabled,
+                enabledReportsCleanup
+        );
+        settingsManager.saveSettings(newConfig);
+        this.config = settingsManager.getSettings();
+        return SUCCESS;
+    }
+
+    @Override
+    public String input() {
+        this.downloadEnabled = this.config.isDownloadEnabled();
+        this.customLogoEnabled = this.config.isCustomLogoEnabled();
+        this.enabledByDefault = this.config.isEnabledByDefault();
+        this.enabledReportsCleanup = this.config.isEnabledReportsCleanup();
+        this.localStoragePath = this.config.getLocalStoragePath();
+        this.downloadBaseUrl = this.config.getDownloadBaseUrl();
+        return INPUT;
     }
 
     @Override
     public void validate() {
-        super.validate();
-        final Map<String, String[]> valuesMap = ActionParamsUtils.getStringArrayMap();
-        if (!valuesMap.containsKey(AllureConstants.ALLURE_CONFIG_DOWNLOAD_URL)) {
+        if (StringUtils.isBlank(downloadBaseUrl)) {
             addActionError(getText("allure.config.download.url.error.required"));
         }
-        if (!valuesMap.containsKey(AllureConstants.ALLURE_CONFIG_LOCAL_STORAGE)) {
-            addActionError(getText("allure.config.download.local.storage.required"));
+        if (StringUtils.isBlank(localStoragePath)) {
+            addActionError(getText("allure.config.local.storage.required"));
         }
     }
 
     @Override
-    public void prepare() throws Exception {
+    public void prepare() {
         this.config = settingsManager.getSettings();
-        settingsManager.getSettings().addToContext(ServletActionContext.getContext().getContextMap());
     }
 
-    public AllureGlobalConfig getConfig() {
-        return config;
+    public boolean isDownloadEnabled() {
+        return downloadEnabled;
+    }
+
+    public void setDownloadEnabled(final boolean downloadEnabled) {
+        this.downloadEnabled = downloadEnabled;
+    }
+
+    public boolean isCustomLogoEnabled() {
+        return customLogoEnabled;
+    }
+
+    public void setCustomLogoEnabled(final boolean customLogoEnabled) {
+        this.customLogoEnabled = customLogoEnabled;
+    }
+
+    public boolean isEnabledByDefault() {
+        return enabledByDefault;
+    }
+
+    public void setEnabledByDefault(final boolean enabledByDefault) {
+        this.enabledByDefault = enabledByDefault;
+    }
+
+    public boolean isEnabledReportsCleanup() {
+        return enabledReportsCleanup;
+    }
+
+    public void setEnabledReportsCleanup(final boolean enabledReportsCleanup) {
+        this.enabledReportsCleanup = enabledReportsCleanup;
+    }
+
+    public String getLocalStoragePath() {
+        return localStoragePath;
+    }
+
+    public void setLocalStoragePath(final String localStoragePath) {
+        this.localStoragePath = localStoragePath;
+    }
+
+    public String getDownloadBaseUrl() {
+        return downloadBaseUrl;
+    }
+
+    public void setDownloadBaseUrl(final String downloadBaseUrl) {
+        this.downloadBaseUrl = downloadBaseUrl;
     }
 }
