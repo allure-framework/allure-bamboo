@@ -15,7 +15,8 @@
  */
 package io.qameta.allure.bamboo.info;
 
-import net.sf.json.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,10 +45,9 @@ public abstract class AbstractAddInfo implements Serializable {
         }
         final Path testRun = outputDirectory.resolve(getFileName());
         try (Writer writer = Files.newBufferedWriter(testRun, StandardCharsets.UTF_8)) {
-            JSONObject.fromObject(getData())
-                    .write(writer)
-                    .flush();
-        } catch (IOException e) {
+            final ObjectMapper mapper = new JsonMapper();
+            mapper.writeValue(writer, getData());
+        } catch (Exception e) {
             LOGGER.error("Failed to add executor info into the file " + file.getAbsolutePath(), e);
         }
         return testRun;

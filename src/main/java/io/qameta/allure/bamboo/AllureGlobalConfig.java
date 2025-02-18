@@ -16,27 +16,16 @@
 package io.qameta.allure.bamboo;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.Serializable;
-import java.util.Map;
-import java.util.Optional;
 
-import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_CUSTOM_LOGO_ENABLED;
-import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_DOWNLOAD_CLI_URL;
-import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_DOWNLOAD_ENABLED;
-import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_DOWNLOAD_URL;
-import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_ENABLED_BY_DEFAULT;
-import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_LOCAL_STORAGE;
-import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_REPORTS_CLEANUP_ENABLED;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.lang.Boolean.parseBoolean;
 import static org.apache.commons.lang3.SystemUtils.getJavaIoTmpDir;
 
-class AllureGlobalConfig implements Serializable {
+public class AllureGlobalConfig implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -54,7 +43,7 @@ class AllureGlobalConfig implements Serializable {
     private final String downloadBaseUrl;
     private final String downloadCliBaseUrl;
 
-    AllureGlobalConfig() {
+    public AllureGlobalConfig() {
         this(TRUE.toString(),
                 FALSE.toString(),
                 DEFAULT_DOWNLOAD_BASE_URL,
@@ -64,13 +53,13 @@ class AllureGlobalConfig implements Serializable {
                 FALSE.toString());
     }
 
-    AllureGlobalConfig(final String downloadEnabled,
-                       final String enabledByDefault,
-                       final String downloadBaseUrl,
-                       final String localStoragePath,
-                       final String cmdLineUrl,
-                       final String customLogoEnable,
-                       final String enabledReportsCleanup) {
+    public AllureGlobalConfig(final String downloadEnabled,
+                              final String enabledByDefault,
+                              final String downloadBaseUrl,
+                              final String localStoragePath,
+                              final String cmdLineUrl,
+                              final String customLogoEnable,
+                              final String enabledReportsCleanup) {
         this.downloadEnabled = StringUtils.isBlank(downloadEnabled)
                 ? TRUE : parseBoolean(downloadEnabled);
         this.enabledByDefault = StringUtils.isBlank(enabledByDefault)
@@ -87,36 +76,21 @@ class AllureGlobalConfig implements Serializable {
                 ? FALSE : parseBoolean(enabledReportsCleanup);
     }
 
-    @NotNull
-    static AllureGlobalConfig fromContext(final Map context) {
-        return new AllureGlobalConfig(
-                getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_ENABLED, FALSE.toString()),
-                getSingleValue(context, ALLURE_CONFIG_ENABLED_BY_DEFAULT, FALSE.toString()),
-                getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_URL, DEFAULT_DOWNLOAD_BASE_URL),
-                getSingleValue(context, ALLURE_CONFIG_LOCAL_STORAGE, DEFAULT_LOCAL_STORAGE_PATH),
-                getSingleValue(context, ALLURE_CONFIG_DOWNLOAD_CLI_URL, DEFAULT_CLI_BASE_URL),
-                getSingleValue(context, ALLURE_CONFIG_CUSTOM_LOGO_ENABLED, FALSE.toString()),
-                getSingleValue(context, ALLURE_CONFIG_REPORTS_CLEANUP_ENABLED, FALSE.toString())
-        );
-    }
-
-    @Nullable
-    private static String getSingleValue(final Map context,
-                                         final String key,
-                                         final String defaultVal) {
-        return Optional.ofNullable(context.get(key))
-                .map(value -> value instanceof String[] ? ((String[]) value)[0] : (String) value)
-                .orElse(defaultVal);
-    }
-
-    void toContext(final @NotNull Map<String, Object> context) {
-        context.put(ALLURE_CONFIG_DOWNLOAD_ENABLED, isDownloadEnabled());
-        context.put(ALLURE_CONFIG_ENABLED_BY_DEFAULT, isEnabledByDefault());
-        context.put(ALLURE_CONFIG_DOWNLOAD_URL, getDownloadBaseUrl());
-        context.put(ALLURE_CONFIG_DOWNLOAD_CLI_URL, getDownloadCliBaseUrl());
-        context.put(ALLURE_CONFIG_LOCAL_STORAGE, getLocalStoragePath());
-        context.put(ALLURE_CONFIG_CUSTOM_LOGO_ENABLED, isCustomLogoEnabled());
-        context.put(ALLURE_CONFIG_REPORTS_CLEANUP_ENABLED, isEnabledReportsCleanup());
+    public AllureGlobalConfig(final boolean downloadEnabled,
+                              final boolean enabledByDefault,
+                              final String downloadBaseUrl,
+                              final String localStoragePath,
+                              final boolean customLogoEnable,
+                              final boolean enabledReportsCleanup) {
+        this.downloadEnabled = downloadEnabled;
+        this.enabledByDefault = enabledByDefault;
+        this.downloadBaseUrl = StringUtils.isBlank(downloadBaseUrl)
+                ? DEFAULT_DOWNLOAD_BASE_URL : downloadBaseUrl;
+        this.downloadCliBaseUrl = DEFAULT_CLI_BASE_URL;
+        this.localStoragePath = StringUtils.isBlank(localStoragePath)
+                ? DEFAULT_LOCAL_STORAGE_PATH : localStoragePath;
+        this.customLogoEnabled = customLogoEnable;
+        this.enabledReportsCleanup = enabledReportsCleanup;
     }
 
     boolean isDownloadEnabled() {

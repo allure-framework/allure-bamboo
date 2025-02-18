@@ -1,0 +1,70 @@
+version: "3.7"
+
+networks:
+  dev:
+    driver: bridge
+
+volumes:
+  bamboo-data:
+    external: false
+  bamboo-data-db:
+    external: false
+  bamboo-agent-data:
+    external: false
+
+services:
+
+  bamboo:
+    image: atlassian/bamboo
+    container_name: bamboo
+    hostname: bamboo
+    ports:
+      - '54663:5436'
+      - '8085:8085'
+    networks:
+      - dev
+    volumes:
+      - bamboo-data:/var/atlassian/application-data/bamboo
+    environment:
+      CATALINA_OPTS: -Xms256m -Xmx1g -Dupm.plugin.upload.enabled=true
+      JVM_SUPPORT_RECOMMENDED_ARGS: -Dupm.plugin.upload.enabled=true
+      BAMBOO_PROXY_NAME:
+      BAMBOO_PROXY_PORT:
+      BAMBOO_PROXY_SCHEME:
+      BAMBOO_DELAYED_START:
+    labels:
+      com.blacklabelops.description: "Atlassian Bamboo"
+      com.blacklabelops.service: "bamboo"
+
+  db-bamboo:
+    image: postgres
+    container_name: postgres
+    hostname: postgres
+    networks:
+      - dev
+    volumes:
+      - bamboo-data-db:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_PASSWORD: bamboo
+      POSTGRES_USER: bamboo
+      POSTGRES_DB: bamboo
+      POSTGRES_ENCODING: UTF8
+      POSTGRES_COLLATE: C
+      POSTGRES_COLLATE_TYPE: C
+      PGDATA: /var/lib/postgresql/data/pgdata
+    labels:
+      com.blacklabelops.description: "PostgreSQL Database Server"
+      com.blacklabelops.service: "postgresql"
+
+  bamboo-agent:
+    image: atlassian/bamboo-agent-base
+    container_name: bamboo-agent
+    hostname: bamboo-agent
+    networks:
+      - dev
+    volumes:
+      - bamboo-agent-data:/var/atlassian/application-data/bamboo-agent
+    environment:
+      BAMBOO_SERVER: http://bamboo:8085/agentServer/

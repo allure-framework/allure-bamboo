@@ -34,7 +34,7 @@ public class AllureSettingsManager {
         this.settings = settingsFactory.createGlobalSettings();
     }
 
-    AllureGlobalConfig getSettings() {
+    public AllureGlobalConfig getSettings() {
         final String downloadEnabled = (String) settings.get(ALLURE_CONFIG_DOWNLOAD_ENABLED);
         final String customLogoEnabled = (String) settings.get(ALLURE_CONFIG_CUSTOM_LOGO_ENABLED);
         final String enableByDefault = (String) settings.get(ALLURE_CONFIG_ENABLED_BY_DEFAULT);
@@ -53,7 +53,7 @@ public class AllureSettingsManager {
                 enabledReportsCleanup);
     }
 
-    void saveSettings(final AllureGlobalConfig config) {
+    public void saveSettings(final AllureGlobalConfig config) {
         settings.put(ALLURE_CONFIG_DOWNLOAD_ENABLED, String.valueOf(config.isDownloadEnabled()));
         settings.put(ALLURE_CONFIG_CUSTOM_LOGO_ENABLED, String.valueOf(config.isCustomLogoEnabled()));
         settings.put(ALLURE_CONFIG_DOWNLOAD_URL, String.valueOf(config.getDownloadBaseUrl()));

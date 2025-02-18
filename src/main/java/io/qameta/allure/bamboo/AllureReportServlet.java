@@ -15,6 +15,7 @@
  */
 package io.qameta.allure.bamboo;
 
+import com.atlassian.annotations.security.UnrestrictedAccess;
 import com.atlassian.bamboo.plan.PlanResultKey;
 import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
@@ -23,7 +24,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -43,6 +43,7 @@ import static com.atlassian.bamboo.plan.PlanKeys.getPlanResultKey;
 import static io.qameta.allure.bamboo.AllureBuildResult.fromCustomData;
 import static java.lang.Integer.parseInt;
 
+@UnrestrictedAccess
 public class AllureReportServlet extends HttpServlet {
 
     private static final Pattern URL_PATTERN = Pattern
@@ -56,7 +57,6 @@ public class AllureReportServlet extends HttpServlet {
     private final transient AllureArtifactsManager artifactsManager;
     private final ResultsSummaryManager resultsSummaryManager;
 
-    @Inject
     public AllureReportServlet(final AllureArtifactsManager artifactsManager,
                                final ResultsSummaryManager resultsSummaryManager) {
         this.artifactsManager = artifactsManager;
@@ -68,8 +68,8 @@ public class AllureReportServlet extends HttpServlet {
     }
 
     @Override
-    protected void doGet(final HttpServletRequest request,
-                         final HttpServletResponse response) {
+    public void doGet(final HttpServletRequest request,
+                      final HttpServletResponse response) {
         getArtifactUrl(request, response).ifPresent(file -> {
             try (InputStream inputStream = new URL(file).openStream()) {
                 setResponseHeaders(response, file);
@@ -81,7 +81,7 @@ public class AllureReportServlet extends HttpServlet {
     }
 
     @Override
-    protected void doHead(final HttpServletRequest request,
+    public void doHead(final HttpServletRequest request,
                           final HttpServletResponse response) {
         getArtifactUrl(request, response).ifPresent(file -> {
             try (InputStream inputStream = new URL(file).openStream()) {

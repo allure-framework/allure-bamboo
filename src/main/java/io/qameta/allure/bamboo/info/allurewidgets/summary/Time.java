@@ -15,30 +15,15 @@
  */
 package io.qameta.allure.bamboo.info.allurewidgets.summary;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
-
 public class Time extends AbstractSummary {
 
     private static final long serialVersionUID = 1L;
 
-    @SerializedName("start")
-    @Expose
     private Long start;
-    @SerializedName("stop")
-    @Expose
     private Long stop;
-    @SerializedName("duration")
-    @Expose
     private Integer duration;
-    @SerializedName("minDuration")
-    @Expose
     private Integer minDuration;
-    @SerializedName("maxDuration")
-    @Expose
     private Integer maxDuration;
-    @SerializedName("sumDuration")
-    @Expose
     private Integer sumDuration;
 
     /**

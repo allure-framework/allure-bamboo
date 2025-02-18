@@ -66,16 +66,26 @@
         <url-pattern>/allure/report/*</url-pattern>
     </servlet>
 
+<!--    <web-item key="allureReportConfig" name="Allure Report Config" section="system.admin/builds" weight="30">-->
+<!--        <label key="webitems.system.admin.build.allureReport"/>-->
+<!--        <link>/plugins/servlet/admin/allure-settings</link>-->
+<!--    </web-item>-->
+
+<!--    <web-resource key="allureReportConfigResources" name="Allure Report Config Resources">-->
+<!--        <resource name="input" type="freemarker" location="/templates/editAllureReportConfig.ftl"/>-->
+<!--        <resource name="error" type="freemarker" location="/templates/editAllureReportConfig.ftl"/>-->
+<!--    </web-resource>-->
 
     <web-item key="allureReportConfig" name="Allure Report" section="system.admin/builds" weight="30">
         <label key="webitems.system.admin.build.allureReport"/>
         <link linkId="editAllureReportConfig">/admin/editAllureReportConfig.action</link>
     </web-item>
+
     <xwork key="configAllureReport" name="Config Allure Report">
         <package name="allureConfig" extends="admin" namespace="/admin">
 
             <action name="editAllureReportConfig" class="io.qameta.allure.bamboo.ConfigureAllureReportAction"
-                    method="doDefault">
+                    method="input">
                 <result name="input" type="freemarker">/templates/editAllureReportConfig.ftl</result>
                 <result name="error" type="freemarker">/templates/editAllureReportConfig.ftl</result>
             </action>
@@ -87,42 +97,5 @@
             </action>
         </package>
     </xwork>
-
-    <component key="allureInstallTask" name="Allure Install Task"
-               class="io.qameta.allure.bamboo.AllurePluginInstallTask" public="true">
-        <interface>com.atlassian.sal.api.upgrade.PluginUpgradeTask</interface>
-    </component>
-
-    <component key="allureDownloader" name="Allure Downloader" class="io.qameta.allure.bamboo.AllureDownloader"/>
-    <component key="allureSettings" name="Allure Settings" class="io.qameta.allure.bamboo.AllureSettingsManager"/>
-    <component key="allureExecutableProvider" name="Allure Executable Provider"
-               class="io.qameta.allure.bamboo.AllureExecutableProvider"/>
-    <component key="bambooExecutableManager" name="Bamboo Executable Manager"
-               class="io.qameta.allure.bamboo.BambooExecutablesManager"/>
-    <component key="allureArtifactsUploader" name="Allure Artifacts Uploader"
-               class="io.qameta.allure.bamboo.AllureArtifactsManager"/>
-    <component key="allureCommandLineSupport" name="Allure Command Line Support"
-               class="io.qameta.allure.bamboo.AllureCommandLineSupport"/>
-
-    <component-import key="applicationProperties" interface="com.atlassian.sal.api.ApplicationProperties"/>
-    <component-import key="textProvider" interface="com.atlassian.struts.TextProvider"/>
-    <component-import key="artifactLinkManager" interface="com.atlassian.bamboo.build.artifact.ArtifactLinkManager"/>
-    <component-import key="capabilitySetManager"
-                      interface="com.atlassian.bamboo.v2.build.agent.capability.CapabilitySetManager"/>
-    <component-import key="resultsSummaryManager" interface="com.atlassian.bamboo.resultsummary.ResultsSummaryManager"/>
-    <component-import key="errorAccessor" interface="com.atlassian.bamboo.logger.ErrorAccessor"/>
-    <component-import key="commentsService" interface="com.atlassian.bamboo.comment.CommentService"/>
-    <component-import key="deploymentProjectService"
-                      interface="com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService"/>
-    <component-import key="buildDefinitionManager" interface="com.atlassian.bamboo.build.BuildDefinitionManager"/>
-    <component-import key="renderer" interface="com.atlassian.templaterenderer.TemplateRenderer"/>
-    <component-import key="loginUriProvider" interface="com.atlassian.sal.api.auth.LoginUriProvider"/>
-    <component-import key="userManager" interface="com.atlassian.sal.api.user.UserManager"/>
-    <component-import key="pluginSettingsFactory"
-                      interface="com.atlassian.sal.api.pluginsettings.PluginSettingsFactory"/>
-
-    <component-import key="pluginAccessor" interface="com.atlassian.plugin.PluginAccessor"/>
-    <component-import key="artifactHandlersService"
-                      interface="com.atlassian.bamboo.build.artifact.handlers.ArtifactHandlersService"/>
 
 </atlassian-plugin>

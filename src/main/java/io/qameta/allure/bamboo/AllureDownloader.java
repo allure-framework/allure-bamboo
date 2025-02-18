@@ -34,13 +34,13 @@ import static javax.ws.rs.core.UriBuilder.fromPath;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.apache.commons.io.FileUtils.moveDirectory;
 
-class AllureDownloader {
+public class AllureDownloader {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureDownloader.class);
 
     private final AllureSettingsManager settingsManager;
 
-    AllureDownloader(final AllureSettingsManager settingsManager) {
+    public AllureDownloader(final AllureSettingsManager settingsManager) {
         this.settingsManager = settingsManager;
     }
 

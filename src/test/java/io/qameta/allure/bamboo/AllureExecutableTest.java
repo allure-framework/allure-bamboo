@@ -21,10 +21,10 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoRule;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static com.google.common.io.Files.createTempDir;
 import static java.util.Collections.singleton;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,8 +50,8 @@ public class AllureExecutableTest {
     @SuppressWarnings("UnstableApiUsage")
     public void setUp() throws Exception {
         executable = new AllureExecutable(path, cmdLine);
-        fromDir = createTempDir().toPath();
-        toDir = createTempDir().toPath();
+        fromDir = Files.createTempDirectory("tmp_from");
+        toDir = Files.createTempDirectory("tmp_to");
     }
 
     @Test

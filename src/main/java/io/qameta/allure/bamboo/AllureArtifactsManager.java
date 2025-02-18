@@ -48,7 +48,7 @@ import com.atlassian.plugin.predicate.EnabledModulePredicate;
 import com.atlassian.plugin.predicate.ModuleOfClassPredicate;
 import com.atlassian.sal.api.ApplicationProperties;
 import com.atlassian.sal.api.UrlMode;
-import com.google.common.collect.ImmutableList;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tools.ant.types.FileSet;
@@ -83,8 +83,6 @@ import static com.atlassian.bamboo.plan.PlanKeys.getPlanKey;
 import static com.atlassian.bamboo.plan.PlanKeys.getPlanResultKey;
 import static com.atlassian.bamboo.plugin.descriptor.ArtifactHandlerModuleDescriptor.ARTIFACT_HANDLERS_CONFIG_PREFIX;
 import static com.atlassian.bamboo.plugin.descriptor.ArtifactHandlerModuleDescriptorImpl.SHARED_NON_SHARED_ONOFF_OPTION_NAME;
-import static com.google.common.collect.Iterables.size;
-import static com.google.common.io.Files.copy;
 import static io.qameta.allure.bamboo.AllureBuildResult.allureBuildResult;
 import static io.qameta.allure.bamboo.AllureBuildResult.fromCustomData;
 import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
@@ -244,7 +242,7 @@ public class AllureArtifactsManager {
                 .ifPresent(list -> list.forEach(file -> {
                             try {
                                 if (file.isFile()) {
-                                    copy(file, Paths.get(tempDir.getPath(), file.getName()).toFile());
+                                    Files.copy(file.toPath(), Paths.get(tempDir.getPath(), file.getName()));
                                 } else if (!StringUtils.equals(file.getName(), ".")
                                         && !StringUtils.equals(file.getName(), "..")) {
                                     copyDirectory(dataProvider.getFile(), tempDir);
@@ -327,7 +325,11 @@ public class AllureArtifactsManager {
                             public ArtifactHandlerPublishingResult call() {
                                 try {
                                     return artifactHandler.publish(
-                                            summary.getPlanResultKey(), artifact, artifactPublishingConfig);
+                                            summary.getPlanResultKey(),
+                                            artifact,
+                                            artifactPublishingConfig,
+                                            chain.getBuildLogger()
+                                    );
                                 } catch (final Exception e) {
                                     LOGGER.error("Failed to publish Allure Report using handler "
                                             + artifactHandler.getClass().getName(), e);
@@ -360,6 +362,9 @@ public class AllureArtifactsManager {
             }
             final String planKey = chain.getPlanKey().getKey();
             final Path reports = getLocalStoragePlanReportsPath(planKey);
+            if (!Files.exists(reports)) {
+                continue;
+            }
             final List<Long> buildNumbers = new ArrayList<>();
             try (DirectoryStream<Path> ds = Files.newDirectoryStream(reports, Files::isDirectory)) {
                 for (Path p : ds) {
@@ -403,7 +408,7 @@ public class AllureArtifactsManager {
                     .replace(INDEX_HTML, isEmpty(fixedFilePath) ? INDEX_HTML : fixedFilePath);
         } else {
             final Iterable<ArtifactFileData> datas = linkProvider.listObjects(fixedFilePath);
-            if (size(datas) == SINGLE_NUMBER_OF_LIST_ELEMENTS) {
+            if (CollectionUtils.size(datas) == SINGLE_NUMBER_OF_LIST_ELEMENTS) {
                 ArtifactFileData data = datas.iterator().next();
                 if (data instanceof TrampolineArtifactFileData) {
                     final TrampolineArtifactFileData trampolineData = (TrampolineArtifactFileData) data;
@@ -414,7 +419,7 @@ public class AllureArtifactsManager {
                 } else {
                     return getBambooArtifactUrl(data);
                 }
-            } else if (size(datas) > SINGLE_NUMBER_OF_LIST_ELEMENTS) {
+            } else if (CollectionUtils.size(datas) > SINGLE_NUMBER_OF_LIST_ELEMENTS) {
                 return getArtifactFile(INDEX_HTML, linkProvider);
             }
         }
@@ -466,7 +471,7 @@ public class AllureArtifactsManager {
     private List<ArtifactHandler> getArtifactHandlers() {
         final Predicate<ModuleDescriptor<ArtifactHandler>> predicate =
                 new ModuleOfClassPredicate<>(ArtifactHandler.class).and(new EnabledModulePredicate());
-        return ImmutableList.copyOf(pluginAccessor.getModules(predicate));
+        return new ArrayList<>(pluginAccessor.getModules(predicate));
     }
 
 

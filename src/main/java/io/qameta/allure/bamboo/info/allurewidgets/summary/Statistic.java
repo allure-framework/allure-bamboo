@@ -15,30 +15,16 @@
  */
 package io.qameta.allure.bamboo.info.allurewidgets.summary;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
 
 public class Statistic extends AbstractSummary {
 
     private static final long serialVersionUID = 1L;
 
-    @SerializedName("failed")
-    @Expose
     private Integer failed;
-    @SerializedName("broken")
-    @Expose
     private Integer broken;
-    @SerializedName("skipped")
-    @Expose
     private Integer skipped;
-    @SerializedName("passed")
-    @Expose
     private Integer passed;
-    @SerializedName("unknown")
-    @Expose
     private Integer unknown;
-    @SerializedName("total")
-    @Expose
     private Integer total;
 
     /**
