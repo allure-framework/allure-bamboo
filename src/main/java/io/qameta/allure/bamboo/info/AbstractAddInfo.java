@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 
 /**
  * Abstract class to provide an additional information for reports.
@@ -55,7 +56,7 @@ public abstract class AbstractAddInfo implements Serializable {
         return testRun;
     }
 
-    protected abstract Object getData();
+    protected abstract Map<String, Object> getData();
 
     protected abstract String getFileName();
 

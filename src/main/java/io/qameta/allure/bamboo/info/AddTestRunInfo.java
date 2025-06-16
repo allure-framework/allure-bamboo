@@ -41,7 +41,7 @@ public class AddTestRunInfo extends AbstractAddInfo {
     }
 
     @Override
-    protected Object getData() {
+    protected Map<String, Object> getData() {
         return Map.of(
                 "name", name,
                 "start", start,

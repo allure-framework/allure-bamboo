@@ -49,7 +49,7 @@ public class AddExecutorInfo extends AbstractAddInfo {
     }
 
     @Override
-    protected Object getData() {
+    protected Map<String, Object> getData() {
         return Map.of(
                 "name", "Bamboo",
                 "type", "bamboo",
