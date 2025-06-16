@@ -46,6 +46,8 @@ import static java.lang.Integer.parseInt;
 @UnrestrictedAccess
 public class AllureReportServlet extends HttpServlet {
 
+    private static final long serialVersionUID = 1L;
+
     private static final Pattern URL_PATTERN = Pattern
             .compile(".*/plugins/servlet/allure/report/([^/]{2,})/([^/]+)/?(.*)");
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureReportServlet.class);
@@ -80,9 +82,10 @@ public class AllureReportServlet extends HttpServlet {
         });
     }
 
+    @SuppressWarnings("PMD.UnusedLocalVariable")
     @Override
     public void doHead(final HttpServletRequest request,
-                          final HttpServletResponse response) {
+                       final HttpServletResponse response) {
         getArtifactUrl(request, response).ifPresent(file -> {
             try (InputStream inputStream = new URL(file).openStream()) {
                 setResponseHeaders(response, file);

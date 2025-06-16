@@ -17,6 +17,8 @@ package io.qameta.allure.bamboo;
 
 public class AllurePluginException extends RuntimeException {
 
+    private static final long serialVersionUID = 1L;
+
     public AllurePluginException(final String message) {
         super(message);
     }

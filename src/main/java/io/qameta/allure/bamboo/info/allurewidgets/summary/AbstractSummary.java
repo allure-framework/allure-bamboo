@@ -20,6 +20,8 @@ import java.util.Optional;
 
 public abstract class AbstractSummary implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     public static final String NULL_PLACEHOLDER = "<null>";
     protected static final char COMMA_CHAR = ',';
 

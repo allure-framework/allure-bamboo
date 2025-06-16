@@ -15,19 +15,18 @@
         <url>https://github.com/allure-framework</url>
     </organization>
     <properties>
-        <spotless.version>2.2.0</spotless.version>
+        <spotless.version>2.44.4</spotless.version>
         <amps.version>9.1.1</amps.version>
 <!--        <bamboo.version>9.6.5</bamboo.version>-->
         <bamboo.version>10.0.0</bamboo.version>
 <!--        <bamboo.version>10.2.0</bamboo.version>-->
         <bamboo.data.version>${bamboo.version}</bamboo.data.version>
-        <plugin.testrunner.version>2.0.9</plugin.testrunner.version>
+        <plugin.testrunner.version>2.0.10</plugin.testrunner.version>
         <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
-        <spring.version>4.2.5.RELEASE</spring.version>
+        <spring.version>6.2.5</spring.version>
         <osgi.javaconfig.version>0.2.0</osgi.javaconfig.version>
         <slf4j.version>2.0.16</slf4j.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <compiler.version>1.8</compiler.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
@@ -133,7 +132,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>4.11.0</version>
+            <version>5.17.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -272,7 +271,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
-                <version>3.21.2</version>
+                <version>3.26.0</version>
                 <configuration>
                     <printFailingErrors>true</printFailingErrors>
                     <rulesets>
@@ -358,18 +357,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
                 <configuration>
-                    <source>${compiler.version}</source>
-                    <target>${compiler.version}</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-release-plugin</artifactId>
-                <version>3.0.0-M1</version>
-                <configuration>
-                    <tagNameFormat>@{project.version}</tagNameFormat>
+                    <source>9</source>
+                    <target>9</target>
                 </configuration>
             </plugin>
         </plugins>
@@ -420,12 +410,5 @@
             </releases>
         </pluginRepository>
     </pluginRepositories>
-
-    <distributionManagement>
-        <repository>
-            <id>qameta-maven</id>
-            <url>https://api.bintray.com/maven/qameta/maven/allure-bamboo/;publish=1</url>
-        </repository>
-    </distributionManagement>
 
 </project>

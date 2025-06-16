@@ -1,10 +1,20 @@
+amps-*
 .backup
+.test
+
+# Idea
 .idea
 *.iml
-target/*
-.test
-classes
 
-amps-*
+# Maven
+target
 
+# Docker
+work
+
+# Project
+plugin.xml
+xray.xml
+
+# MacOs
 .DS_Store

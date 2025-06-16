@@ -20,4 +20,6 @@ import com.atlassian.bamboo.build.ChainResultsAction;
 
 @UnrestrictedAccess
 public class ViewAllureReport extends ChainResultsAction {
+
+    private static final long serialVersionUID = 1L;
 }

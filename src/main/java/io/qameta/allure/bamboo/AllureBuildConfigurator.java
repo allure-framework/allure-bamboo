@@ -37,6 +37,7 @@ public class AllureBuildConfigurator extends BaseConfigurablePlugin
     private final BambooExecutablesManager executablesManager;
     private final AllureSettingsManager settingsManager;
 
+    @SuppressWarnings("PMD.ConstructorCallsOverridableMethod")
     public AllureBuildConfigurator(final BambooExecutablesManager executablesManager,
                                    final AllureSettingsManager settingsManager,
                                    final TemplateRenderer templateRenderer) {
