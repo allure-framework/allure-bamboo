@@ -15,7 +15,7 @@
  */
 package io.qameta.allure.bamboo.info;
 
-import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Add executor info to reports.
@@ -50,15 +50,15 @@ public class AddExecutorInfo extends AbstractAddInfo {
 
     @Override
     protected Object getData() {
-        final HashMap<String, Object> data = new HashMap<>();
-        data.put("name", "Bamboo");
-        data.put("type", "bamboo");
-        data.put("url", url);
-        data.put("buildOrder", buildId);
-        data.put("buildName", buildName);
-        data.put("buildUrl", buildUrl);
-        data.put("reportUrl", reportUrl);
-        return data;
+        return Map.of(
+                "name", "Bamboo",
+                "type", "bamboo",
+                "url", url,
+                "buildOrder", buildId,
+                "buildName", buildName,
+                "buildUrl", buildUrl,
+                "reportUrl", reportUrl
+        );
     }
 
     @Override

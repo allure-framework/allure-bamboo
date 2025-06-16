@@ -21,6 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 
 public class ConfigureAllureReportAction extends GlobalAdminAction implements Preparable {
 
+    private static final long serialVersionUID = 1L;
+
     private final transient AllureSettingsManager settingsManager;
     private AllureGlobalConfig config;
 

@@ -15,7 +15,7 @@
  */
 package io.qameta.allure.bamboo.info;
 
-import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Add testRun info to reports.
@@ -42,11 +42,11 @@ public class AddTestRunInfo extends AbstractAddInfo {
 
     @Override
     protected Object getData() {
-        final HashMap<String, Object> data = new HashMap<>();
-        data.put("name", name);
-        data.put("start", start);
-        data.put("stop", stop);
-        return data;
+        return Map.of(
+                "name", name,
+                "start", start,
+                "stop", stop
+        );
     }
 
     @Override

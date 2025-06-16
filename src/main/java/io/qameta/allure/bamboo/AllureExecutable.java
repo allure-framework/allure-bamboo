@@ -47,6 +47,7 @@ class AllureExecutable {
         this.cmdLine = commandLine;
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     @Nonnull
     AllureGenerateResult generate(final Collection<Path> sourceDirs,
                                   final Path targetDir) {

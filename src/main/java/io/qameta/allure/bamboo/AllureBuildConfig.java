@@ -37,7 +37,7 @@ public final class AllureBuildConfig implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private static final String DEFAULT_ARTIFACT_NAME = "allure-results";
-    private static final String DEFAULT_CUSTOM_LOGO_URL = "https://qameta.io/allure-report/img/reportlogo.svg";
+    private static final String DEFAULT_CUSTOM_LOGO_URL = "https://allurereport.org/svg/logo-report-sign.svg";
 
     private final boolean onlyForFailed;
     private final String executable;
@@ -58,8 +58,7 @@ public final class AllureBuildConfig implements Serializable {
                 ? FALSE : Boolean.parseBoolean(enabled);
         this.executable = executable;
         this.artifactName = artifactName;
-        this.logoUrl = StringUtils.isBlank(logoUrl)
-                ? AllureBuildConfig.DEFAULT_CUSTOM_LOGO_URL : logoUrl;
+        this.logoUrl = StringUtils.isBlank(logoUrl) ? DEFAULT_CUSTOM_LOGO_URL : logoUrl;
         this.maxStoredReportsCount =
                 StringUtils.isBlank(maxStoredReportsCount) || !StringUtils.isNumeric(maxStoredReportsCount)
                 ? -1 : NumberUtils.toInt(maxStoredReportsCount);
@@ -70,8 +69,8 @@ public final class AllureBuildConfig implements Serializable {
                 getSingleValue(context, ALLURE_CONFIG_EXECUTABLE, null),
                 getSingleValue(context, ALLURE_CONFIG_ENABLED, FALSE.toString()),
                 getSingleValue(context, ALLURE_CONFIG_FAILED_ONLY, FALSE.toString()),
-                getSingleValue(context, ALLURE_CONFIG_ARTIFACT_NAME, AllureBuildConfig.DEFAULT_ARTIFACT_NAME),
-                getSingleValue(context, ALLURE_CONFIG_CUSTOM_LOGO_PATH, AllureBuildConfig.DEFAULT_CUSTOM_LOGO_URL),
+                getSingleValue(context, ALLURE_CONFIG_ARTIFACT_NAME, DEFAULT_ARTIFACT_NAME),
+                getSingleValue(context, ALLURE_CONFIG_CUSTOM_LOGO_PATH, DEFAULT_CUSTOM_LOGO_URL),
                 getSingleValue(context, ALLURE_CONFIG_MAX_STORED_REPORTS_COUNT, null)
         );
     }

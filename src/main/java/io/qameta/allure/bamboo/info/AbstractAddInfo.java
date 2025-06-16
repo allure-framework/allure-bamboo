@@ -34,6 +34,8 @@ import java.nio.file.Paths;
  */
 public abstract class AbstractAddInfo implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractAddInfo.class);
 
     public Path invoke(final File file) {

@@ -97,7 +97,8 @@ import static org.codehaus.plexus.util.FileUtils.copyURLToFile;
 @SuppressWarnings({
         "ClassDataAbstractionCoupling",
         "PMD.AvoidInstantiatingObjectsInLoops",
-        "PMD.GodClass"
+        "PMD.GodClass",
+        "PMD.CouplingBetweenObjects"
 })
 public class AllureArtifactsManager {
 
