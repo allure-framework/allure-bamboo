@@ -27,7 +27,6 @@
         <osgi.javaconfig.version>0.2.0</osgi.javaconfig.version>
         <slf4j.version>2.0.16</slf4j.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <compiler.version>1.8</compiler.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
@@ -355,23 +354,6 @@
                     </instructions>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
-                <configuration>
-                    <source>${compiler.version}</source>
-                    <target>${compiler.version}</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-release-plugin</artifactId>
-                <version>3.0.0-M1</version>
-                <configuration>
-                    <tagNameFormat>@{project.version}</tagNameFormat>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
     <repositories>
@@ -420,12 +402,5 @@
             </releases>
         </pluginRepository>
     </pluginRepositories>
-
-    <distributionManagement>
-        <repository>
-            <id>qameta-maven</id>
-            <url>https://api.bintray.com/maven/qameta/maven/allure-bamboo/;publish=1</url>
-        </repository>
-    </distributionManagement>
 
 </project>
