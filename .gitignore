@@ -9,6 +9,9 @@ amps-*
 # Maven
 target
 
+#VSCode
+/.vscode
+
 # Docker
 work
 

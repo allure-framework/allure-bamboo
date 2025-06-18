@@ -61,6 +61,7 @@ import javax.ws.rs.core.UriBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -90,6 +91,7 @@ import static java.lang.Integer.parseInt;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
 import static javax.ws.rs.core.UriBuilder.fromPath;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.codehaus.plexus.util.FileUtils.copyDirectory;
 import static org.codehaus.plexus.util.FileUtils.copyURLToFile;
@@ -107,6 +109,8 @@ public class AllureArtifactsManager {
     private static final String FAILED_TO_DOWNLOAD_ARTIFACTS_TO = "Failed to download artifacts to ";
     private static final String INDEX_HTML = "index.html";
     private static final int SINGLE_NUMBER_OF_LIST_ELEMENTS = 1;
+    private static final String CS_2 = "..";
+    private static final String SEPARATOR = "/";
 
     private final PluginAccessor pluginAccessor;
     private final ArtifactHandlersService artifactHandlersService;
@@ -130,6 +134,12 @@ public class AllureArtifactsManager {
         this.artifactLinkManager = artifactLinkManager;
         this.appProperties = appProperties;
         this.settingsManager = settingsManager;
+    }
+
+    String getBaseHost() throws Exception {
+        final String baseUrl = appProperties.getBaseUrl(UrlMode.ABSOLUTE);
+        final URL url = URI.create(baseUrl).toURL();
+        return url.getHost().toLowerCase();
     }
 
     /**
@@ -180,14 +190,21 @@ public class AllureArtifactsManager {
         return getArtifactFile(filePath, linkProvider);
     }
 
+    @SuppressWarnings("PMD.ExceptionAsFlowControl")
     @Nullable
     private String getLocalStorageURL(final String planKeyString,
                                       final String buildNumber,
                                       final String filePath) {
         try {
             final File file = getLocalStorageReportPath(planKeyString, buildNumber).resolve(filePath).toFile();
-            final String fullPath = (file.isDirectory())
-                    ? new File(file, INDEX_HTML).getAbsolutePath() : file.getAbsolutePath();
+            final String filename = file.getName();
+            if (filename.contains(CS_2) || filename.contains(SEPARATOR) || filename.contains("\\")) {
+                throw new AllurePluginException("Invalid filename: " + filename);
+            }
+            
+            final String fullPath = file.isDirectory()
+                    ? new File(file, INDEX_HTML).getAbsolutePath()
+                    : file.getAbsolutePath();
             return new File(fullPath).toURI().toURL().toString();
         } catch (MalformedURLException e) {
             // should never happen
@@ -214,7 +231,7 @@ public class AllureArtifactsManager {
                         chainResultsSummary.getPlanKey(), chainResultsSummary.getBuildNumber());
                 for (ArtifactLink link : resultsSummary.getProducedArtifactLinks()) {
                     final MutableArtifact artifact = link.getArtifact();
-                    if (isEmpty(artifactName) || artifactName.equals(artifact.getLabel())) {
+                    if (isBlank(artifactName) || artifact.getLabel().equals(artifactName)) {
                         LOGGER.info("artifact {} matches the configured artifact name {} for the build {}-{}",
                                 artifact.getLabel(), artifactName,
                                 chainResultsSummary.getPlanKey(), chainResultsSummary.getBuildNumber());
@@ -245,7 +262,7 @@ public class AllureArtifactsManager {
                                 if (file.isFile()) {
                                     Files.copy(file.toPath(), Paths.get(tempDir.getPath(), file.getName()));
                                 } else if (!StringUtils.equals(file.getName(), ".")
-                                        && !StringUtils.equals(file.getName(), "..")) {
+                                        && !StringUtils.equals(file.getName(), CS_2)) {
                                     copyDirectory(dataProvider.getFile(), tempDir);
                                 }
                             } catch (IOException e) {
@@ -428,7 +445,7 @@ public class AllureArtifactsManager {
     }
 
     private String getBambooArtifactUrl(final ArtifactFileData data) {
-        return Optional.ofNullable(data.getUrl()).map(url -> (url.startsWith("/"))
+        return Optional.ofNullable(data.getUrl()).map(url -> (url.startsWith(SEPARATOR))
                         ? getBaseUrl().path(url).build().toString() : url)
                 .orElse(null);
     }

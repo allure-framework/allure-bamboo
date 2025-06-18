@@ -153,6 +153,7 @@ public class AllurePluginJavaConfig {
     public PluginAccessor pluginAccessor() {
         return importOsgiService(PluginAccessor.class);
     }
+
     // <component-import key="artifactHandlersService"
     //                   interface="com.atlassian.bamboo.build.artifact.handlers.ArtifactHandlersService"/>
     @Bean
