@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.qameta.allure</groupId>
     <artifactId>allure-bamboo</artifactId>
-    <version>1.21.0-SNAPSHOT-j17-3</version>
+    <version>1.22.0-SNAPSHOT-j17</version>
     <name>Allure for Bamboo</name>
     <description>Allure reports right in deployment plans in Bamboo</description>
     <packaging>atlassian-plugin</packaging>
@@ -15,7 +15,7 @@
         <url>https://github.com/allure-framework</url>
     </organization>
     <properties>
-        <spotless.version>2.44.4</spotless.version>
+        <spotless.version>2.44.5</spotless.version>
         <amps.version>9.1.1</amps.version>
 <!--        <bamboo.version>9.6.5</bamboo.version>-->
         <bamboo.version>10.0.0</bamboo.version>
@@ -23,8 +23,8 @@
         <bamboo.data.version>${bamboo.version}</bamboo.data.version>
         <plugin.testrunner.version>2.0.10</plugin.testrunner.version>
         <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
-        <spring.version>6.2.5</spring.version>
-        <osgi.javaconfig.version>0.2.0</osgi.javaconfig.version>
+        <spring.version>6.2.8</spring.version>
+        <osgi.javaconfig.version>0.6.0</osgi.javaconfig.version>
         <slf4j.version>2.0.16</slf4j.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -249,7 +249,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>3.3.1</version>
+                <version>3.6.0</version>
                 <configuration>
                     <configLocation>.mvn/quality-configs/checkstyle/checkstyle.xml</configLocation>
                     <includeTestSourceDirectory>true</includeTestSourceDirectory>
@@ -298,7 +298,7 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>4.7.3.6</version>
+                <version>4.9.3.0</version>
                 <configuration>
                     <includeFilterFile>.mvn/quality-configs/spotbugs/include.xml</includeFilterFile>
                     <excludeFilterFile>.mvn/quality-configs/spotbugs/exclude.xml</excludeFilterFile>
@@ -358,8 +358,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>9</source>
-                    <target>9</target>
+                    <source>11</source>
+                    <target>11</target>
                 </configuration>
             </plugin>
         </plugins>

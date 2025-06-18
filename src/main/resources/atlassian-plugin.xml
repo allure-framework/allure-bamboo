@@ -66,16 +66,6 @@
         <url-pattern>/allure/report/*</url-pattern>
     </servlet>
 
-<!--    <web-item key="allureReportConfig" name="Allure Report Config" section="system.admin/builds" weight="30">-->
-<!--        <label key="webitems.system.admin.build.allureReport"/>-->
-<!--        <link>/plugins/servlet/admin/allure-settings</link>-->
-<!--    </web-item>-->
-
-<!--    <web-resource key="allureReportConfigResources" name="Allure Report Config Resources">-->
-<!--        <resource name="input" type="freemarker" location="/templates/editAllureReportConfig.ftl"/>-->
-<!--        <resource name="error" type="freemarker" location="/templates/editAllureReportConfig.ftl"/>-->
-<!--    </web-resource>-->
-
     <web-item key="allureReportConfig" name="Allure Report" section="system.admin/builds" weight="30">
         <label key="webitems.system.admin.build.allureReport"/>
         <link linkId="editAllureReportConfig">/admin/editAllureReportConfig.action</link>
