@@ -26,6 +26,7 @@ import com.atlassian.bamboo.template.TemplateRenderer;
 import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySetManager;
 import com.atlassian.plugin.PluginAccessor;
+import com.atlassian.plugins.osgi.javaconfig.ExportOptions;
 import com.atlassian.plugins.osgi.javaconfig.configs.beans.ModuleFactoryBean;
 import com.atlassian.plugins.osgi.javaconfig.configs.beans.PluginAccessorBean;
 import com.atlassian.sal.api.ApplicationProperties;
@@ -153,6 +154,7 @@ public class AllurePluginJavaConfig {
     public PluginAccessor pluginAccessor() {
         return importOsgiService(PluginAccessor.class);
     }
+
     // <component-import key="artifactHandlersService"
     //                   interface="com.atlassian.bamboo.build.artifact.handlers.ArtifactHandlersService"/>
     @Bean
@@ -235,6 +237,6 @@ public class AllurePluginJavaConfig {
     @Bean
     public FactoryBean<ServiceRegistration> registerMyDelegatingService(
             final PluginUpgradeTask allureInstallTask) {
-        return exportOsgiService(allureInstallTask, null, PluginUpgradeTask.class);
+        return exportOsgiService(allureInstallTask, ExportOptions.as(PluginUpgradeTask.class));
     }
 }

@@ -33,7 +33,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
 public final class ZipUtil {
@@ -54,9 +53,11 @@ public final class ZipUtil {
             try (ArchiveInputStream ais = asf.createArchiveInputStream(ArchiveStreamFactory.ZIP, zipStream)) {
                 ArchiveEntry entry = ais.getNextEntry();
                 while (entry != null) {
-                    final Path entryPath = Paths.get(outputDir, entry.getName());
+                    final Path entryPath = Path.of(outputDir, entry.getName());
+                    if (!entryPath.normalize().startsWith(outputDir)) {
+                        throw new IOException("Invalid zip file");
+                    }
                     final File entryFile = entryPath.toFile();
-
                     if (!entry.isDirectory()) {
                         final File parentEntryFile = entryFile.getParentFile();
                         if (parentEntryFile.isDirectory() && !(parentEntryFile.mkdirs() || parentEntryFile.exists())) {

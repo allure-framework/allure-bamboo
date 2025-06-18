@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
 public class AllureReportServletTest {
 
     @Test
-    public void itShouldMatchThePattern() throws Exception {
+    public void itShouldMatchThePattern() {
         final Matcher matcher = getUrlPattern().matcher("/plugins/servlet/allure/report/STPCI-STPITCONFLUENCE60/15/");
         assertTrue(matcher.matches());
     }

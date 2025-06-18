@@ -29,11 +29,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -65,15 +66,36 @@ public class AllureReportServlet extends HttpServlet {
         this.resultsSummaryManager = resultsSummaryManager;
     }
 
-    public static Pattern getUrlPattern() {
+    static Pattern getUrlPattern() {
         return URL_PATTERN;
     }
 
+    private boolean isValidUrl(final String urlString) {
+        try {
+
+            final URL url = URI.create(urlString).toURL();
+            final String protocol = url.getProtocol().toLowerCase();
+            final String host = url.getHost().toLowerCase();
+
+            final String baseHost = artifactsManager.getBaseHost();
+
+            return List.of("file", "http", "https").contains(protocol)
+                    && List.of("", "localhost", baseHost).contains(host);
+        } catch (Exception e) {
+            LOGGER.error("Invalid URL: {}", urlString, e);
+            return false;
+        }
+    }
+                
     @Override
     public void doGet(final HttpServletRequest request,
                       final HttpServletResponse response) {
         getArtifactUrl(request, response).ifPresent(file -> {
-            try (InputStream inputStream = new URL(file).openStream()) {
+            if (!isValidUrl(file)) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                return;
+            }
+            try (InputStream inputStream = URI.create(file).toURL().openStream()) {
                 setResponseHeaders(response, file);
                 IOUtils.copy(inputStream, response.getOutputStream());
             } catch (IOException e) {
@@ -87,7 +109,11 @@ public class AllureReportServlet extends HttpServlet {
     public void doHead(final HttpServletRequest request,
                        final HttpServletResponse response) {
         getArtifactUrl(request, response).ifPresent(file -> {
-            try (InputStream inputStream = new URL(file).openStream()) {
+            if (!isValidUrl(file)) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                return;
+            }
+            try (InputStream inputStream = URI.create(file).toURL().openStream()) {
                 setResponseHeaders(response, file);
             } catch (IOException e) {
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -96,22 +122,29 @@ public class AllureReportServlet extends HttpServlet {
         });
     }
 
+    @SuppressWarnings("PMD.ExceptionAsFlowControl")
     private void setResponseHeaders(final HttpServletResponse response,
                                     final String fileUrl) throws IOException {
 
         try {
+            
             response.setStatus(HttpServletResponse.SC_OK);
-            final URI file = new URL(fileUrl).toURI();
+            final URI file = URI.create(fileUrl);
+            final Path filePath = Path.of(file.getPath());
+            final String fileName = filePath.getFileName().toString();
+            if (fileName.contains("..") || fileName.contains("/") || fileName.contains("\\")) {
+                throw new AllurePluginException("Invalid file name: " + fileName);
+            }
+
+            final String sanitizedFileName = fileName.replaceAll("[^a-zA-Z0-9.-]", "_");
             final String mimeType = Optional.ofNullable(getServletContext().getMimeType(fileUrl))
-                    .orElse(Files.probeContentType(Paths.get(file.getPath()))
-                    );
+                    .orElse(Files.probeContentType(filePath));
             final String charsetPostfix = Stream.of("application", "text")
                     .anyMatch(mimeType::contains) ? ";charset=utf-8" : "";
             response.setHeader(CONTENT_TYPE, mimeType + charsetPostfix);
-            response.setHeader(CONTENT_DISPOSITION,
-                    "inline; filename=\"" + Paths.get(file.getPath()).getFileName().toString() + "\"");
+            response.setHeader(CONTENT_DISPOSITION, "inline; filename=\"" + sanitizedFileName + "\"");
 
-        } catch (URISyntaxException e) {
+        } catch (MalformedURLException e) {
             // should never happen
             throw new AllurePluginException("Unexpected error", e);
         }
