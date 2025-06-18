@@ -24,7 +24,7 @@
         <plugin.testrunner.version>2.0.10</plugin.testrunner.version>
         <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
         <spring.version>6.2.8</spring.version>
-        <osgi.javaconfig.version>0.2.0</osgi.javaconfig.version>
+        <osgi.javaconfig.version>0.6.0</osgi.javaconfig.version>
         <slf4j.version>2.0.16</slf4j.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
