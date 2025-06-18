@@ -1,5 +1,9 @@
 name: Release
 
+permissions:
+  contents: read
+  packages: write
+
 on:
   release:
     types: [ published ]
