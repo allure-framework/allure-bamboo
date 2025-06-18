@@ -16,7 +16,7 @@
     </organization>
     <properties>
         <spotless.version>2.44.5</spotless.version>
-        <amps.version>9.1.1</amps.version>
+        <amps.version>9.3.69.3.6-1c2d97cd</amps.version>
 <!--        <bamboo.version>9.6.5</bamboo.version>-->
         <bamboo.version>10.0.0</bamboo.version>
 <!--        <bamboo.version>10.2.0</bamboo.version>-->
