@@ -3,6 +3,7 @@ name: Release
 permissions:
   contents: read
   packages: write
+  attestations: write
 
 on:
   release:
