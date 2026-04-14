@@ -18,6 +18,7 @@ work
 # Project
 plugin.xml
 xray.xml
+compat-artifacts/
 
 # MacOs
 .DS_Store
