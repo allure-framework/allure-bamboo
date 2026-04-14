@@ -1,0 +1,91 @@
+name: Compatibility Smoke
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      bamboo_version:
+        description: Bamboo version to test
+        required: true
+        default: '10.2.5'
+        type: string
+
+jobs:
+  build-plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Build plugin artifact
+        run: ./mvnw -q clean package
+      - name: Upload plugin jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-jar
+          path: target/allure-bamboo-*.jar
+          if-no-files-found: error
+
+  compat:
+    runs-on: ubuntu-latest
+    needs: build-plugin
+    timeout-minutes: 30
+    env:
+      BAMBOO_PRODUCT_LICENSE: ${{ secrets.BAMBOO_COMPAT_PRODUCT_LICENSE }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Resolve Bamboo version
+        id: resolve-version
+        run: |
+          echo "bamboo_version=${{ github.event.inputs.bamboo_version }}" >> "$GITHUB_OUTPUT"
+      - name: Download plugin jar
+        uses: actions/download-artifact@v4
+        with:
+          name: plugin-jar
+          path: target
+      - name: Run Bamboo compatibility smoke
+        env:
+          BAMBOO_VERSION: ${{ steps.resolve-version.outputs.bamboo_version }}
+          BAMBOO_ARTIFACT_ROOT: ${{ github.workspace }}/compat-artifacts/${{ steps.resolve-version.outputs.bamboo_version }}
+        run: |
+          echo "Running Bamboo compatibility smoke for version: $BAMBOO_VERSION"
+          ./mvnw -B -e -f compat/bamboo-specs/pom.xml \
+            -Dcompat.rootDir="${{ github.workspace }}" \
+            -Dcompat.version="$BAMBOO_VERSION" \
+            -Dcompat.productLicense="$BAMBOO_PRODUCT_LICENSE" \
+            -Dcompat.artifactRoot="$BAMBOO_ARTIFACT_ROOT" \
+            compile exec:java
+      - name: Print compatibility artifact index
+        if: always()
+        run: |
+          if [[ -d "compat-artifacts/${{ steps.resolve-version.outputs.bamboo_version }}" ]]; then
+            find "compat-artifacts/${{ steps.resolve-version.outputs.bamboo_version }}" -maxdepth 2 -type f | sort
+          else
+            echo "No compatibility artifacts directory found."
+          fi
+      - name: Upload compatibility artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compat-${{ steps.resolve-version.outputs.bamboo_version }}
+          path: compat-artifacts/${{ steps.resolve-version.outputs.bamboo_version }}
+          if-no-files-found: warn
+      - name: Append workflow summary
+        if: always()
+        run: |
+          echo "## Bamboo ${{ steps.resolve-version.outputs.bamboo_version }}" >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f "compat-artifacts/${{ steps.resolve-version.outputs.bamboo_version }}/summary.md" ]]; then
+            cat "compat-artifacts/${{ steps.resolve-version.outputs.bamboo_version }}/summary.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Smoke run did not complete successfully." >> "$GITHUB_STEP_SUMMARY"
+          fi
