@@ -3,15 +3,15 @@ package io.qameta.allure.bamboo.compat;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.h2.Driver;
-import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 
 import java.io.IOException;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -30,8 +30,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-
 /**
  * Starts Bamboo in Docker, loads the plugin from Bamboo home, publishes a smoke plan, and verifies report rendering.
  */
@@ -48,14 +46,16 @@ public final class CompatibilitySmokeRunner {
     private static final String ALLURE_DOWNLOAD_BASE_URL
             = "https://github.com/allure-framework/allure2/releases/download/";
     private static final String BAMBOO_HOME_PATH = "/var/atlassian/application-data/bamboo";
-    private static final String BAMBOO_SHARED_PLUGINS_PATH = "shared/plugins";
+    private static final String BAMBOO_AGENT_HOME_PATH = "/var/atlassian/application-data/bamboo-agent";
     private static final String BAMBOO_INSTALL_LIB_PATH = "/opt/atlassian/bamboo/lib";
     private static final String BAMBOO_NETWORK_ALIAS = "bamboo";
+    private static final String STAGED_PLUGIN_JAR_PATH = "/tmp/allure-bamboo-compat-plugin.jar";
     private static final String GENERAL_SETUP_FORM_ID = "setupGeneralConfiguration";
     private static final String LICENSE_SETUP_FORM_ID = "validateLicense";
     private static final String ALLURE_CONFIG_FORM_ID = "saveAllureReportConfigForm";
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    private final CookieManager cookieManager = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
     private HttpClient client = buildClient();
     private final Config config = Config.fromSystemProperties();
     private final Path diagnosticsRoot = config.artifactRoot();
@@ -79,21 +79,20 @@ public final class CompatibilitySmokeRunner {
         prepareDirectories();
         final Path pluginJar = resolvePluginJar();
         final Path h2Jar = resolveH2Jar();
-        stagePluginJar(pluginJar);
 
         try (Network network = Network.newNetwork();
-             GenericContainer<?> bamboo = createContainer(network, h2Jar)) {
+             GenericContainer<?> bamboo = createContainer(network, pluginJar, h2Jar)) {
             GenericContainer<?> agent = null;
             try {
                 bamboo.start();
                 currentBaseUrl = "http://" + bamboo.getHost() + ":" + bamboo.getMappedPort(BAMBOO_HTTP_PORT);
                 waitForBamboo(currentBaseUrl);
+                installPlugin(bamboo, pluginJar);
                 verifyPluginPage(currentBaseUrl);
                 configurePlugin(currentBaseUrl);
                 agent = createAgentContainer(network, resolveContainerHostname(bamboo), resolveContainerIpAddress(bamboo));
                 agent.start();
-                final AgentIdentity agentIdentity = resolveAgentIdentity(agent);
-                waitForRemoteAgent(currentBaseUrl, agent, agentIdentity);
+                waitForRemoteAgent(currentBaseUrl, agent, resolveAgentIdentity(agent));
                 SmokePlanSpecs.publish(currentBaseUrl, BAMBOO_ADMIN_USERNAME, BAMBOO_ADMIN_PASSWORD);
                 currentBuildNumber = queueAndWaitForBuild(currentBaseUrl);
                 verifyReportEndpoints(currentBaseUrl, currentBuildNumber);
@@ -117,7 +116,7 @@ public final class CompatibilitySmokeRunner {
         Files.createDirectories(responsesDir);
         Files.createDirectories(logsDir);
         Files.createDirectories(downloadsDir);
-        Files.createDirectories(bambooHomeDir.resolve(BAMBOO_SHARED_PLUGINS_PATH));
+        Files.createDirectories(bambooHomeDir);
         Files.createDirectories(agentHomeDir);
     }
 
@@ -136,12 +135,6 @@ public final class CompatibilitySmokeRunner {
         }
     }
 
-    private Path stagePluginJar(final Path pluginJar) throws IOException {
-        final Path destination = bambooHomeDir.resolve(BAMBOO_SHARED_PLUGINS_PATH).resolve(pluginJar.getFileName());
-        Files.copy(pluginJar, destination, REPLACE_EXISTING);
-        return destination;
-    }
-
     private Path resolveH2Jar() {
         try {
             return Path.of(Driver.class.getProtectionDomain().getCodeSource().getLocation().toURI());
@@ -150,13 +143,18 @@ public final class CompatibilitySmokeRunner {
         }
     }
 
-    private GenericContainer<?> createContainer(final Network network, final Path h2Jar) {
+    private GenericContainer<?> createContainer(final Network network,
+                                                final Path pluginJar,
+                                                final Path h2Jar) {
         return new GenericContainer<>(DockerImageName.parse("atlassian/bamboo:" + config.bambooVersion()))
                 .withNetwork(network)
                 .withNetworkAliases(BAMBOO_NETWORK_ALIAS)
                 .withCreateContainerCmdModifier(command -> command.withHostName(BAMBOO_NETWORK_ALIAS))
                 .withExposedPorts(BAMBOO_HTTP_PORT)
-                .withFileSystemBind(bambooHomeDir.toAbsolutePath().toString(), BAMBOO_HOME_PATH, BindMode.READ_WRITE)
+                .withCopyFileToContainer(
+                        MountableFile.forHostPath(pluginJar),
+                        STAGED_PLUGIN_JAR_PATH
+                )
                 .withCopyFileToContainer(
                         MountableFile.forHostPath(h2Jar),
                         BAMBOO_INSTALL_LIB_PATH + "/" + h2Jar.getFileName()
@@ -185,9 +183,6 @@ public final class CompatibilitySmokeRunner {
                 DockerImageName.parse("atlassian/bamboo-agent-base:" + config.bambooVersion())
         )
                 .withNetwork(network)
-                .withFileSystemBind(agentHomeDir.toAbsolutePath().toString(),
-                        "/var/atlassian/application-data/bamboo-agent",
-                        BindMode.READ_WRITE)
                 .withEnv("BAMBOO_SERVER", "http://" + BAMBOO_NETWORK_ALIAS + ":" + BAMBOO_HTTP_PORT + "/agentServer")
                 .withEnv("WRAPPER_JAVA_INITMEMORY", "512")
                 .withEnv("WRAPPER_JAVA_MAXMEMORY", "1024");
@@ -231,6 +226,24 @@ public final class CompatibilitySmokeRunner {
         resetClient();
     }
 
+    private void installPlugin(final GenericContainer<?> bamboo,
+                               final Path pluginJar) throws Exception {
+        final String targetPath = BAMBOO_HOME_PATH + "/shared/plugins/" + pluginJar.getFileName();
+        final String command = String.join(" && ",
+                "install -d -o bamboo -g bamboo " + BAMBOO_HOME_PATH + "/shared/plugins",
+                "cp " + STAGED_PLUGIN_JAR_PATH + " " + targetPath,
+                "chown bamboo:bamboo " + targetPath
+        );
+        final var result = bamboo.execInContainer("sh", "-lc", command);
+        Files.writeString(logsDir.resolve("plugin-shared-home-install.log"),
+                "exitCode=" + result.getExitCode() + "\nstdout:\n" + result.getStdout()
+                        + "\nstderr:\n" + result.getStderr(),
+                StandardCharsets.UTF_8);
+        if (result.getExitCode() != 0) {
+            throw new IllegalStateException("Failed to stage plugin in Bamboo shared home: " + result.getStderr());
+        }
+    }
+
     private void verifyPluginPage(final String baseUrl) throws Exception {
         pollUntil(baseUrl + "/admin/editAllureReportConfig.action", Duration.ofMinutes(5),
                 "Allure admin page",
@@ -269,9 +282,10 @@ public final class CompatibilitySmokeRunner {
 
     private void waitForRemoteAgent(final String baseUrl,
                                     final GenericContainer<?> agent,
-                                    final AgentIdentity agentIdentity) throws Exception {
+                                    final AgentIdentity initialAgentIdentity) throws Exception {
         final Instant deadline = Instant.now().plus(config.agentTimeout());
         Exception lastException = null;
+        AgentIdentity agentIdentity = initialAgentIdentity;
 
         while (Instant.now().isBefore(deadline)) {
             if (!agent.isRunning()) {
@@ -280,7 +294,10 @@ public final class CompatibilitySmokeRunner {
 
             try {
                 enableRemoteAgentSupportIfPresent(baseUrl);
-                approvePendingRemoteAgents(baseUrl, agentIdentity);
+                final HttpResponse<String> agentsResponse = sendText(baseUrl + "/admin/agent/viewAgents.action");
+                Files.writeString(responsesDir.resolve("agents.html"), agentsResponse.body(), StandardCharsets.UTF_8);
+                agentIdentity = enrichAgentIdentity(agentsResponse.body(), agentIdentity);
+                approvePendingRemoteAgents(baseUrl, agentsResponse.body(), agentIdentity);
 
                 final HttpResponse<String> onlineAgents = sendText(baseUrl + "/rest/api/latest/agent/remote?online=true");
                 Files.writeString(responsesDir.resolve("remote-agents-online.json"),
@@ -300,15 +317,8 @@ public final class CompatibilitySmokeRunner {
 
     private AgentIdentity resolveAgentIdentity(final GenericContainer<?> agent) throws Exception {
         final String agentName = agent.execInContainer("hostname").getStdout().trim();
-        final Instant deadline = Instant.now().plus(Duration.ofSeconds(30));
-        while (Instant.now().isBefore(deadline)) {
-            final Optional<String> agentUuid = readCurrentAgentUuid();
-            if (agentUuid.isPresent()) {
-                return new AgentIdentity(agentName, agentUuid.get());
-            }
-            Thread.sleep(1_000L);
-        }
-        throw new IllegalStateException("Timed out waiting for the remote agent UUID to appear on disk");
+        final String agentIp = resolveContainerIpAddress(agent);
+        return new AgentIdentity(agentName, agentIp, null);
     }
 
     private String resolveContainerHostname(final GenericContainer<?> container) throws Exception {
@@ -357,10 +367,9 @@ public final class CompatibilitySmokeRunner {
     }
 
     private void approvePendingRemoteAgents(final String baseUrl,
+                                            final String agentsHtml,
                                             final AgentIdentity agentIdentity) throws Exception {
-        final HttpResponse<String> agentsResponse = sendText(baseUrl + "/admin/agent/viewAgents.action");
-        Files.writeString(responsesDir.resolve("agents.html"), agentsResponse.body(), StandardCharsets.UTF_8);
-        approvePendingRemoteAgentAuthentication(baseUrl, agentsResponse.body(), agentIdentity);
+        approvePendingRemoteAgentAuthentication(baseUrl, agentsHtml, agentIdentity);
 
         final HttpResponse<String> pendingResponse = sendText(baseUrl + "/rest/api/latest/agent/authentication?pending=true");
         Files.writeString(responsesDir.resolve("remote-agents-pending.json"),
@@ -388,7 +397,7 @@ public final class CompatibilitySmokeRunner {
     private void approvePendingRemoteAgentAuthentication(final String baseUrl,
                                                          final String html,
                                                          final AgentIdentity agentIdentity) throws Exception {
-        final Optional<String> pendingAgentUuid = extractPendingAuthenticationUuid(html, agentIdentity.agentUuid());
+        final Optional<String> pendingAgentUuid = extractPendingAuthenticationUuid(html, agentIdentity);
         if (pendingAgentUuid.isEmpty()) {
             return;
         }
@@ -417,6 +426,13 @@ public final class CompatibilitySmokeRunner {
             throw new IllegalStateException("Failed to approve remote agent authentication, HTTP "
                     + approvalResponse.statusCode());
         }
+    }
+
+    private AgentIdentity enrichAgentIdentity(final String html,
+                                              final AgentIdentity currentIdentity) {
+        return extractAuthenticationUuid(html, currentIdentity.agentIp())
+                .map(currentIdentity::withUuid)
+                .orElse(currentIdentity);
     }
 
     private int queueAndWaitForBuild(final String baseUrl) throws Exception {
@@ -500,8 +516,10 @@ public final class CompatibilitySmokeRunner {
                                     final String baseUrl,
                                     final Integer buildNumber) throws IOException {
         Files.writeString(logsDir.resolve("docker.log"), bamboo.getLogs(), StandardCharsets.UTF_8);
+        copyBambooDiagnostics(bamboo);
         if (agent != null) {
             Files.writeString(logsDir.resolve("agent-docker.log"), agent.getLogs(), StandardCharsets.UTF_8);
+            copyAgentDiagnostics(agent);
         }
         if (baseUrl != null && !baseUrl.isBlank()) {
             writeResponseDump(baseUrl, "/", "root.html");
@@ -516,6 +534,58 @@ public final class CompatibilitySmokeRunner {
                                 + "/" + buildNumber + "/index.html",
                         "allure-index.html");
             }
+        }
+    }
+
+    private void copyBambooDiagnostics(final GenericContainer<?> bamboo) throws IOException {
+        copyFromContainerIfPresent(bamboo,
+                BAMBOO_HOME_PATH + "/logs/atlassian-bamboo.log",
+                bambooHomeDir.resolve("logs/atlassian-bamboo.log"));
+        copyFromContainerIfPresent(bamboo,
+                BAMBOO_HOME_PATH + "/logs/atlassian-bamboo-access.log",
+                bambooHomeDir.resolve("logs/atlassian-bamboo-access.log"));
+        copyFromContainerIfPresent(bamboo,
+                BAMBOO_HOME_PATH + "/bamboo.cfg.xml",
+                bambooHomeDir.resolve("bamboo.cfg.xml"));
+        copyFromContainerIfPresent(bamboo,
+                BAMBOO_HOME_PATH + "/cluster-node.properties",
+                bambooHomeDir.resolve("cluster-node.properties"));
+        copyFromContainerIfPresent(bamboo,
+                BAMBOO_HOME_PATH + "/unattended-setup.properties",
+                bambooHomeDir.resolve("unattended-setup.properties"));
+    }
+
+    private void copyAgentDiagnostics(final GenericContainer<?> agent) throws IOException {
+        copyFromContainerIfPresent(agent,
+                BAMBOO_AGENT_HOME_PATH + "/atlassian-bamboo-agent.log",
+                agentHomeDir.resolve("atlassian-bamboo-agent.log"));
+        copyFromContainerIfPresent(agent,
+                BAMBOO_AGENT_HOME_PATH + "/logs/atlassian-bamboo.log",
+                agentHomeDir.resolve("logs/atlassian-bamboo.log"));
+        copyFromContainerIfPresent(agent,
+                BAMBOO_AGENT_HOME_PATH + "/conf/wrapper.conf",
+                agentHomeDir.resolve("conf/wrapper.conf"));
+        copyFromContainerIfPresent(agent,
+                BAMBOO_AGENT_HOME_PATH + "/configuration/jmsclient.ts",
+                agentHomeDir.resolve("configuration/jmsclient.ts"));
+        copyFromContainerIfPresent(agent,
+                BAMBOO_AGENT_HOME_PATH + "/installer.properties",
+                agentHomeDir.resolve("installer.properties"));
+        copyFromContainerIfPresent(agent,
+                BAMBOO_AGENT_HOME_PATH + "/bamboo-agent.cfg.xml",
+                agentHomeDir.resolve("bamboo-agent.cfg.xml"));
+    }
+
+    private void copyFromContainerIfPresent(final GenericContainer<?> container,
+                                            final String containerPath,
+                                            final Path hostPath) throws IOException {
+        try {
+            Files.createDirectories(hostPath.getParent());
+            container.copyFileFromContainer(containerPath, hostPath.toString());
+        } catch (Exception e) {
+            Files.writeString(logsDir.resolve(hostPath.getFileName() + ".copy-error.txt"),
+                    "Failed to copy " + containerPath + ": " + e,
+                    StandardCharsets.UTF_8);
         }
     }
 
@@ -912,38 +982,43 @@ public final class CompatibilitySmokeRunner {
         return Optional.empty();
     }
 
-    private Optional<String> extractPendingAuthenticationUuid(final String html, final String expectedAgentUuid) {
+    private Optional<String> extractPendingAuthenticationUuid(final String html,
+                                                              final AgentIdentity agentIdentity) {
         final Pattern pattern = Pattern.compile(
-                "(?is)<input[^>]*name=\"remoteAgentAuthentications\"[^>]*value=\"([^\"]+)\""
-                        + "[^>]*data-selector-discriminator=\"([^\"]+)\"[^>]*>"
+                "(?is)<tr[^>]*data-row=\"([^\"]+)\"[^>]*>.*?"
+                        + "<td[^>]*data-cell-type=\"ipAddress\">\\s*([^<]+?)\\s*</td>.*?"
+                        + "<td[^>]*data-cell-type=\"uuid\">\\s*([^<]+?)\\s*</td>.*?"
+                        + "<td[^>]*data-cell-type=\"status\"[^>]*>\\s*([^<]+?)\\s*</td>.*?</tr>"
         );
         final Matcher matcher = pattern.matcher(html);
         while (matcher.find()) {
-            final String agentUuid = matcher.group(1);
-            final String discriminator = matcher.group(2);
-            if (expectedAgentUuid.equalsIgnoreCase(agentUuid)
-                    && discriminator.toUpperCase().contains("WAITING")) {
-                return Optional.of(agentUuid);
+            final String rowUuid = matcher.group(1).trim();
+            final String ipAddress = matcher.group(2).trim();
+            final String agentUuid = matcher.group(3).trim();
+            final String status = matcher.group(4).trim();
+            if (!agentIdentity.matchesIp(ipAddress)) {
+                continue;
+            }
+            if (status.toUpperCase().contains("WAITING")) {
+                return Optional.of(agentUuid.isBlank() ? rowUuid : agentUuid);
             }
         }
         return Optional.empty();
     }
 
-    private Optional<String> readCurrentAgentUuid() {
-        for (String fileName : new String[]{"uuid.properties", "uuid-temp.properties"}) {
-            final Path candidate = agentHomeDir.resolve(fileName);
-            if (!Files.isRegularFile(candidate)) {
-                continue;
-            }
-            try {
-                return Files.lines(candidate, StandardCharsets.UTF_8)
-                        .map(String::trim)
-                        .filter(line -> line.startsWith("agentUuid="))
-                        .map(line -> line.substring("agentUuid=".length()))
-                        .filter(value -> !value.isBlank())
-                        .findFirst();
-            } catch (IOException e) {
-                throw new IllegalStateException("Failed to read agent UUID from " + candidate, e);
+    private Optional<String> extractAuthenticationUuid(final String html, final String expectedIpAddress) {
+        final Pattern pattern = Pattern.compile(
+                "(?is)<tr[^>]*data-row=\"([^\"]+)\"[^>]*>.*?"
+                        + "<td[^>]*data-cell-type=\"ipAddress\">\\s*([^<]+?)\\s*</td>.*?"
+                        + "<td[^>]*data-cell-type=\"uuid\">\\s*([^<]+?)\\s*</td>.*?</tr>"
+        );
+        final Matcher matcher = pattern.matcher(html);
+        while (matcher.find()) {
+            final String rowUuid = matcher.group(1).trim();
+            final String ipAddress = matcher.group(2).trim();
+            final String agentUuid = matcher.group(3).trim();
+            if (expectedIpAddress.equalsIgnoreCase(ipAddress)) {
+                return Optional.of(agentUuid.isBlank() ? rowUuid : agentUuid);
             }
         }
         return Optional.empty();
@@ -956,6 +1031,7 @@ public final class CompatibilitySmokeRunner {
     private HttpClient buildClient() {
         return HttpClient.newBuilder()
                 .connectTimeout(REQUEST_TIMEOUT)
+                .cookieHandler(cookieManager)
                 .version(HttpClient.Version.HTTP_1_1)
                 .followRedirects(HttpClient.Redirect.ALWAYS)
                 .build();
@@ -1012,7 +1088,11 @@ public final class CompatibilitySmokeRunner {
     private record FormSubmission(String action, Map<String, String> fields) {
     }
 
-    private record AgentIdentity(String agentName, String agentUuid) {
+    private record AgentIdentity(String agentName, String agentIp, String agentUuid) {
+
+        private AgentIdentity withUuid(final String resolvedAgentUuid) {
+            return new AgentIdentity(agentName, agentIp, resolvedAgentUuid);
+        }
 
         private boolean matches(final String reportedAgentName, final String reportedAgentUuid) {
             return matchesName(reportedAgentName) || matchesUuid(reportedAgentUuid);
@@ -1023,7 +1103,13 @@ public final class CompatibilitySmokeRunner {
         }
 
         private boolean matchesUuid(final String reportedAgentUuid) {
-            return reportedAgentUuid != null && agentUuid.equalsIgnoreCase(reportedAgentUuid);
+            return reportedAgentUuid != null
+                    && agentUuid != null
+                    && agentUuid.equalsIgnoreCase(reportedAgentUuid);
+        }
+
+        private boolean matchesIp(final String reportedAgentIp) {
+            return reportedAgentIp != null && agentIp.equalsIgnoreCase(reportedAgentIp);
         }
     }
 
