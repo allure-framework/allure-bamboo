@@ -35,6 +35,7 @@ jobs:
   compat:
     runs-on: ubuntu-latest
     needs: build-plugin
+    timeout-minutes: 30
     env:
       BAMBOO_PRODUCT_LICENSE: ${{ secrets.BAMBOO_COMPAT_PRODUCT_LICENSE }}
     steps:
@@ -58,12 +59,21 @@ jobs:
           BAMBOO_VERSION: ${{ steps.resolve-version.outputs.bamboo_version }}
           BAMBOO_ARTIFACT_ROOT: ${{ github.workspace }}/compat-artifacts/${{ steps.resolve-version.outputs.bamboo_version }}
         run: |
-          ./mvnw -q -f compat/bamboo-specs/pom.xml \
+          echo "Running Bamboo compatibility smoke for version: $BAMBOO_VERSION"
+          ./mvnw -B -e -f compat/bamboo-specs/pom.xml \
             -Dcompat.rootDir="${{ github.workspace }}" \
             -Dcompat.version="$BAMBOO_VERSION" \
             -Dcompat.productLicense="$BAMBOO_PRODUCT_LICENSE" \
             -Dcompat.artifactRoot="$BAMBOO_ARTIFACT_ROOT" \
             exec:java
+      - name: Print compatibility artifact index
+        if: always()
+        run: |
+          if [[ -d "compat-artifacts/${{ steps.resolve-version.outputs.bamboo_version }}" ]]; then
+            find "compat-artifacts/${{ steps.resolve-version.outputs.bamboo_version }}" -maxdepth 2 -type f | sort
+          else
+            echo "No compatibility artifacts directory found."
+          fi
       - name: Upload compatibility artifacts
         if: always()
         uses: actions/upload-artifact@v4
