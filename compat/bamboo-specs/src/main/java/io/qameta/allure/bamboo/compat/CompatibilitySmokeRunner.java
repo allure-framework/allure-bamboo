@@ -90,7 +90,6 @@ public final class CompatibilitySmokeRunner {
                 waitForBamboo(currentBaseUrl);
                 verifyPluginPage(currentBaseUrl);
                 configurePlugin(currentBaseUrl);
-                recordAppLicenseNote();
                 agent = createAgentContainer(network, resolveContainerHostname(bamboo), resolveContainerIpAddress(bamboo));
                 agent.start();
                 final AgentIdentity agentIdentity = resolveAgentIdentity(agent);
@@ -417,15 +416,6 @@ public final class CompatibilitySmokeRunner {
         if (approvalResponse.statusCode() < 200 || approvalResponse.statusCode() >= 400) {
             throw new IllegalStateException("Failed to approve remote agent authentication, HTTP "
                     + approvalResponse.statusCode());
-        }
-    }
-
-    private void recordAppLicenseNote() throws IOException {
-        if (config.appLicense().isPresent()) {
-            Files.writeString(logsDir.resolve("app-license.txt"),
-                    "An app license value was provided, but this workflow loads a local plugin build from Bamboo home,\n"
-                            + "so Marketplace license application is not required for the current smoke test.\n",
-                    StandardCharsets.UTF_8);
         }
     }
 
@@ -1041,7 +1031,6 @@ public final class CompatibilitySmokeRunner {
             Path rootDir,
             String bambooVersion,
             String productLicense,
-            Optional<String> appLicense,
             Path artifactRoot,
             Path pluginJar,
             String bambooStoragePath,
@@ -1053,8 +1042,6 @@ public final class CompatibilitySmokeRunner {
             final Path rootDir = Path.of(getRequiredProperty("compat.rootDir")).toAbsolutePath();
             final String bambooVersion = getRequiredProperty("compat.version");
             final String productLicense = getRequiredProperty("compat.productLicense");
-            final Optional<String> appLicense = Optional.ofNullable(System.getProperty("compat.appLicense"))
-                    .filter(value -> !value.isBlank());
             final Path artifactRoot = Path.of(System.getProperty(
                     "compat.artifactRoot",
                     rootDir.resolve("compat-artifacts").resolve(bambooVersion).toString()
@@ -1079,7 +1066,6 @@ public final class CompatibilitySmokeRunner {
                     rootDir,
                     bambooVersion,
                     productLicense,
-                    appLicense,
                     artifactRoot,
                     pluginJar,
                     bambooStoragePath,
