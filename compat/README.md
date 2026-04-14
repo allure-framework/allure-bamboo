@@ -2,9 +2,9 @@
 
 This directory contains the Java compatibility smoke runner used by the manual GitHub Actions workflow.
 
-## Repository Variables
+## Repository Secrets
 
-The workflow expects these repository-level GitHub Actions variables:
+The workflow expects these repository-level GitHub Actions secrets:
 
 - `BAMBOO_COMPAT_PRODUCT_LICENSE`
   Atlassian Bamboo Data Center host timebomb license from the official Atlassian page.

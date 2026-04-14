@@ -36,8 +36,8 @@ jobs:
     needs: build-plugin
     env:
       BAMBOO_VERSION: ${{ inputs.bamboo_version }}
-      BAMBOO_PRODUCT_LICENSE: ${{ vars.BAMBOO_COMPAT_PRODUCT_LICENSE }}
-      BAMBOO_APP_LICENSE: ${{ vars.BAMBOO_COMPAT_APP_LICENSE }}
+      BAMBOO_PRODUCT_LICENSE: ${{ secrets.BAMBOO_COMPAT_PRODUCT_LICENSE }}
+      BAMBOO_APP_LICENSE: ${{ secrets.BAMBOO_COMPAT_APP_LICENSE }}
       BAMBOO_ARTIFACT_ROOT: ${{ github.workspace }}/compat-artifacts/${{ inputs.bamboo_version }}
     steps:
       - uses: actions/checkout@v4
