@@ -4,7 +4,6 @@ permissions:
   contents: read
 
 on:
-  pull_request:
   workflow_dispatch:
     inputs:
       bamboo_version:
@@ -48,7 +47,7 @@ jobs:
       - name: Resolve Bamboo version
         id: resolve-version
         run: |
-          echo "bamboo_version=${{ github.event_name == 'pull_request' && '10.2.9' || github.event.inputs.bamboo_version }}" >> "$GITHUB_OUTPUT"
+          echo "bamboo_version=${{ github.event.inputs.bamboo_version }}" >> "$GITHUB_OUTPUT"
       - name: Download plugin jar
         uses: actions/download-artifact@v4
         with:
