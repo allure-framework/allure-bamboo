@@ -65,7 +65,7 @@ jobs:
             -Dcompat.version="$BAMBOO_VERSION" \
             -Dcompat.productLicense="$BAMBOO_PRODUCT_LICENSE" \
             -Dcompat.artifactRoot="$BAMBOO_ARTIFACT_ROOT" \
-            exec:java
+            compile exec:java
       - name: Print compatibility artifact index
         if: always()
         run: |
