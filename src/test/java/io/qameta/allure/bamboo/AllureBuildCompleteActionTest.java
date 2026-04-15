@@ -53,6 +53,9 @@ import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_ENABLED;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_EXECUTABLE;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_FAILED_ONLY;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_MAX_STORED_REPORTS_COUNT;
+import static io.qameta.allure.bamboo.TestSupport.attachDirectoryTree;
+import static io.qameta.allure.bamboo.TestSupport.attachText;
+import static io.qameta.allure.bamboo.TestSupport.step;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -173,59 +176,74 @@ public class AllureBuildCompleteActionTest {
 
     @Test
     public void itShouldRecordFailureWhenNoArtifactsAreDownloaded() throws Exception {
-        when(chainResultsSummary.isFailed()).thenReturn(true);
-        when(buildDefinition.getCustomConfiguration()).thenReturn(config("exec-1", true, false, null));
-        when(settingsManager.getSettings()).thenReturn(globalConfig(false, false));
-        when(executableProvider.provide(any(AllureGlobalConfig.class), anyString()))
-                .thenReturn(Optional.of(allureExecutable));
-        when(artifactsManager.downloadAllArtifactsTo(any(ChainResultsSummary.class), any(File.class), anyString()))
-                .thenReturn(emptyList());
+        step("configure a failing chain whose Allure artifacts download to an empty set", () -> {
+            when(chainResultsSummary.isFailed()).thenReturn(true);
+            when(buildDefinition.getCustomConfiguration()).thenReturn(config("exec-1", true, false, null));
+            when(settingsManager.getSettings()).thenReturn(globalConfig(false, false));
+            when(executableProvider.provide(any(AllureGlobalConfig.class), anyString()))
+                    .thenReturn(Optional.of(allureExecutable));
+            when(artifactsManager.downloadAllArtifactsTo(any(ChainResultsSummary.class), any(File.class), anyString()))
+                    .thenReturn(emptyList());
+        });
 
-        newAction().execute(chain, chainResultsSummary, chainExecution);
+        step("execute the build completion action",
+                () -> newAction().execute(chain, chainResultsSummary, chainExecution));
 
-        final AllureBuildResult buildResult = fromCustomData(chainResultsSummary.getCustomBuildData());
-        assertFalse(buildResult.isSuccess());
-        assertThat(buildResult.getFailureDetails(), containsString("does not have any uploaded artifacts"));
-        verify(allureExecutable, never()).generate(any(Collection.class), any(Path.class));
+        step("verify the action records a missing-artifacts failure without generating a report", () -> {
+            final AllureBuildResult buildResult = fromCustomData(chainResultsSummary.getCustomBuildData());
+            attachText("Failure details", buildResult.getFailureDetails());
+            assertFalse(buildResult.isSuccess());
+            assertThat(buildResult.getFailureDetails(), containsString("does not have any uploaded artifacts"));
+            verify(allureExecutable, never()).generate(any(Collection.class), any(Path.class));
+        });
     }
 
     @Test
     public void itShouldGenerateUploadAndCleanupReport() throws Exception {
-        when(chainResultsSummary.isFailed()).thenReturn(true);
-        when(buildDefinition.getCustomConfiguration()).thenReturn(config("exec-1", true, false, "2"));
-        when(settingsManager.getSettings()).thenReturn(globalConfig(false, true));
-        when(executableProvider.provide(any(AllureGlobalConfig.class), anyString()))
-                .thenReturn(Optional.of(allureExecutable));
-        when(artifactsManager.downloadAllArtifactsTo(any(ChainResultsSummary.class), any(File.class), anyString()))
-                .thenAnswer(invocation -> {
-                    final File baseDir = invocation.getArgument(1);
-                    final Path artifactsDir = baseDir.toPath().resolve("artifacts");
-                    Files.createDirectories(artifactsDir);
-                    return new ArrayList<>(java.util.List.of(artifactsDir));
-                });
-        when(allureExecutable.generate(any(Collection.class), any(Path.class))).thenAnswer(invocation -> {
-            TestSupport.writeMinimalReport(invocation.getArgument(1));
-            return new AllureGenerateResult("ok", true);
-        });
-        when(artifactsManager.uploadReportArtifacts(any(ImmutableChain.class),
-                any(ChainResultsSummary.class), any(File.class))).thenAnswer(invocation -> {
-            final Path reportDir = ((File) invocation.getArgument(2)).toPath();
-            final Summary summary = new JsonMapper()
-                    .readValue(reportDir.resolve("widgets").resolve("summary.json").toFile(), Summary.class);
-            assertThat(summary.getReportName(), equalTo("Build 5 - Smoke Build"));
-            assertThat(Files.readString(reportDir.resolve("app.js")), containsString(">&nbsp;</span>"));
-            assertThat(Files.readString(reportDir.resolve("index.html")),
-                    containsString("<title> Build 5 - Smoke Build </title>"));
-            assertTrue(Files.exists(reportDir.resolve("report.zip")));
-            return Optional.of(allureBuildResult(true, null).withHandlerClass("handler"));
+        step("configure report generation, upload, and cleanup for a failed chain", () -> {
+            when(chainResultsSummary.isFailed()).thenReturn(true);
+            when(buildDefinition.getCustomConfiguration()).thenReturn(config("exec-1", true, false, "2"));
+            when(settingsManager.getSettings()).thenReturn(globalConfig(false, true));
+            when(executableProvider.provide(any(AllureGlobalConfig.class), anyString()))
+                    .thenReturn(Optional.of(allureExecutable));
+            when(artifactsManager.downloadAllArtifactsTo(any(ChainResultsSummary.class), any(File.class), anyString()))
+                    .thenAnswer(invocation -> {
+                        final File baseDir = invocation.getArgument(1);
+                        final Path artifactsDir = baseDir.toPath().resolve("artifacts");
+                        Files.createDirectories(artifactsDir);
+                        return new ArrayList<>(java.util.List.of(artifactsDir));
+                    });
+            when(allureExecutable.generate(any(Collection.class), any(Path.class))).thenAnswer(invocation -> {
+                final Path reportDir = invocation.getArgument(1);
+                TestSupport.writeMinimalReport(reportDir);
+                attachDirectoryTree("Generated report before upload", reportDir);
+                return new AllureGenerateResult("ok", true);
+            });
+            when(artifactsManager.uploadReportArtifacts(any(ImmutableChain.class),
+                    any(ChainResultsSummary.class), any(File.class))).thenAnswer(invocation -> {
+                final Path reportDir = ((File) invocation.getArgument(2)).toPath();
+                final Summary summary = new JsonMapper()
+                        .readValue(reportDir.resolve("widgets").resolve("summary.json").toFile(), Summary.class);
+                attachDirectoryTree("Uploaded report contents", reportDir);
+                assertThat(summary.getReportName(), equalTo("Build 5 - Smoke Build"));
+                assertThat(Files.readString(reportDir.resolve("app.js")), containsString(">&nbsp;</span>"));
+                assertThat(Files.readString(reportDir.resolve("index.html")),
+                        containsString("<title> Build 5 - Smoke Build </title>"));
+                assertTrue(Files.exists(reportDir.resolve("report.zip")));
+                return Optional.of(allureBuildResult(true, null).withHandlerClass("handler"));
+            });
         });
 
-        newAction().execute(chain, chainResultsSummary, chainExecution);
+        step("execute the build completion action",
+                () -> newAction().execute(chain, chainResultsSummary, chainExecution));
 
-        final AllureBuildResult buildResult = fromCustomData(chainResultsSummary.getCustomBuildData());
-        assertTrue(buildResult.isSuccess());
-        assertThat(buildResult.getArtifactHandlerClass(), equalTo("handler"));
-        verify(artifactsManager).cleanupOldReportArtifacts(chain, 2);
+        step("verify the successful result stores the handler and triggers cleanup", () -> {
+            final AllureBuildResult buildResult = fromCustomData(chainResultsSummary.getCustomBuildData());
+            attachText("Artifact handler class", buildResult.getArtifactHandlerClass());
+            assertTrue(buildResult.isSuccess());
+            assertThat(buildResult.getArtifactHandlerClass(), equalTo("handler"));
+            verify(artifactsManager).cleanupOldReportArtifacts(chain, 2);
+        });
     }
 
     @Test

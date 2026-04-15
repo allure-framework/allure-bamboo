@@ -40,6 +40,8 @@ import java.util.regex.Matcher;
 import static com.atlassian.bamboo.plan.PlanKeys.getPlanResultKey;
 import static io.qameta.allure.bamboo.AllureBuildResult.allureBuildResult;
 import static io.qameta.allure.bamboo.AllureReportServlet.getUrlPattern;
+import static io.qameta.allure.bamboo.TestSupport.attachText;
+import static io.qameta.allure.bamboo.TestSupport.step;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertTrue;
@@ -170,15 +172,19 @@ public class AllureReportServletTest {
     public void itShouldReturnNotFoundForMissingArtifactsOnHeadRequests() throws Exception {
         final java.nio.file.Path missingFile = temporaryFolder.getRoot().toPath().resolve("missing.html");
         final ResultsSummary resultsSummary = successfulResultSummary();
-        when(request.getRequestURI()).thenReturn(reportUri("missing.html"));
-        when(resultsSummaryManager.getResultsSummary(getPlanResultKey(PLAN_KEY, BUILD_NUMBER)))
-                .thenReturn(resultsSummary);
-        when(artifactsManager.getArtifactUrl(PLAN_KEY, Integer.toString(BUILD_NUMBER), "missing.html"))
-                .thenReturn(Optional.of(missingFile.toUri().toURL().toString()));
+        step("prepare a successful build summary whose requested artifact is missing on disk", () -> {
+            when(request.getRequestURI()).thenReturn(reportUri("missing.html"));
+            when(resultsSummaryManager.getResultsSummary(getPlanResultKey(PLAN_KEY, BUILD_NUMBER)))
+                    .thenReturn(resultsSummary);
+            when(artifactsManager.getArtifactUrl(PLAN_KEY, Integer.toString(BUILD_NUMBER), "missing.html"))
+                    .thenReturn(Optional.of(missingFile.toUri().toURL().toString()));
+            attachText("Missing artifact URL", missingFile.toUri().toString());
+        });
 
-        servlet.doHead(request, response);
+        step("issue a HEAD request for the missing report artifact", () -> servlet.doHead(request, response));
 
-        verify(response).setStatus(HttpServletResponse.SC_NOT_FOUND);
+        step("verify the servlet returns not found for the missing artifact", () ->
+                verify(response).setStatus(HttpServletResponse.SC_NOT_FOUND));
     }
 
     private String reportUri(final String fileName) {

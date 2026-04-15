@@ -36,6 +36,8 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoRule;
 
+import static io.qameta.allure.bamboo.TestSupport.attachText;
+import static io.qameta.allure.bamboo.TestSupport.step;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertNotNull;
@@ -67,33 +69,49 @@ public class AllurePluginJavaConfigTest {
     private ApplicationProperties applicationProperties;
 
     @Test
-    public void itShouldConstructTheCoreBeans() {
+    public void itShouldConstructTheCoreBeans() throws Exception {
         when(pluginSettingsFactory.createGlobalSettings()).thenReturn(pluginSettings);
-        final AllurePluginJavaConfig config = new AllurePluginJavaConfig();
+        final AllurePluginJavaConfig config = step("create the plugin Java configuration",
+                AllurePluginJavaConfig::new);
+        final AllureCommandLineSupport commandLineSupport = step("create the command line support bean",
+                config::allureCommandLineSupport);
+        final AllureSettingsManager settingsManager = step("create the global settings manager",
+                () -> config.allureSettings(pluginSettingsFactory));
+        final AllureDownloader downloader = step("create the Allure downloader bean",
+                () -> config.allureDownloader(settingsManager));
+        final BambooExecutablesManager executablesManager = step("create the Bamboo executables manager",
+                () -> config.bambooExecutableManager(capabilitySetManager));
+        final AllureExecutableProvider executableProvider = step("create the executable provider",
+                () -> config.allureExecutableProvider(executablesManager, downloader, commandLineSupport));
+        final AllureArtifactsManager artifactsManager = step("create the artifacts manager",
+                () -> config.allureArtifactsUploader(
+                        pluginAccessor,
+                        artifactHandlersService,
+                        buildDefinitionManager,
+                        resultsSummaryManager,
+                        artifactLinkManager,
+                        applicationProperties,
+                        settingsManager));
+        final AllurePluginInstallTask installTask = step("create the plugin install task",
+                () -> (AllurePluginInstallTask) config.allureInstallTask(executablesManager));
 
-        final AllureCommandLineSupport commandLineSupport = config.allureCommandLineSupport();
-        final AllureSettingsManager settingsManager = config.allureSettings(pluginSettingsFactory);
-        final AllureDownloader downloader = config.allureDownloader(settingsManager);
-        final BambooExecutablesManager executablesManager = config.bambooExecutableManager(capabilitySetManager);
-        final AllureExecutableProvider executableProvider = config.allureExecutableProvider(
-                executablesManager, downloader, commandLineSupport);
-        final AllureArtifactsManager artifactsManager = config.allureArtifactsUploader(
-                pluginAccessor,
-                artifactHandlersService,
-                buildDefinitionManager,
-                resultsSummaryManager,
-                artifactLinkManager,
-                applicationProperties,
-                settingsManager);
-        final AllurePluginInstallTask installTask =
-                (AllurePluginInstallTask) config.allureInstallTask(executablesManager);
-
-        assertNotNull(commandLineSupport);
-        assertThat(settingsManager, instanceOf(AllureSettingsManager.class));
-        assertThat(downloader, instanceOf(AllureDownloader.class));
-        assertThat(executablesManager, instanceOf(BambooExecutablesManager.class));
-        assertThat(executableProvider, instanceOf(AllureExecutableProvider.class));
-        assertThat(artifactsManager, instanceOf(AllureArtifactsManager.class));
-        assertThat(installTask, instanceOf(AllurePluginInstallTask.class));
+        step("verify each configuration entry returns the expected implementation", () -> {
+            attachText("Constructed bean types",
+                    String.join("\n",
+                            commandLineSupport.getClass().getName(),
+                            settingsManager.getClass().getName(),
+                            downloader.getClass().getName(),
+                            executablesManager.getClass().getName(),
+                            executableProvider.getClass().getName(),
+                            artifactsManager.getClass().getName(),
+                            installTask.getClass().getName()));
+            assertNotNull(commandLineSupport);
+            assertThat(settingsManager, instanceOf(AllureSettingsManager.class));
+            assertThat(downloader, instanceOf(AllureDownloader.class));
+            assertThat(executablesManager, instanceOf(BambooExecutablesManager.class));
+            assertThat(executableProvider, instanceOf(AllureExecutableProvider.class));
+            assertThat(artifactsManager, instanceOf(AllureArtifactsManager.class));
+            assertThat(installTask, instanceOf(AllurePluginInstallTask.class));
+        });
     }
 }
