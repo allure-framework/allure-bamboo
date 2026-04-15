@@ -94,9 +94,16 @@ public final class CompatibilitySmokeRunner {
                 agent.start();
                 waitForRemoteAgent(currentBaseUrl, agent, resolveAgentIdentity(agent));
                 SmokePlanSpecs.publish(currentBaseUrl, BAMBOO_ADMIN_USERNAME, BAMBOO_ADMIN_PASSWORD);
+                final int firstBuildNumber = queueAndWaitForBuild(currentBaseUrl);
+                verifyReportEndpoints(currentBaseUrl, firstBuildNumber);
+                final int secondBuildNumber = queueAndWaitForBuild(currentBaseUrl);
+                verifyReportEndpoints(currentBaseUrl, secondBuildNumber);
+                verifyHistoryEndpoints(currentBaseUrl, secondBuildNumber);
                 currentBuildNumber = queueAndWaitForBuild(currentBaseUrl);
                 verifyReportEndpoints(currentBaseUrl, currentBuildNumber);
-                writeSummary(currentBaseUrl, currentBuildNumber);
+                verifyHistoryEndpoints(currentBaseUrl, currentBuildNumber);
+                verifyCleanupBehavior(currentBaseUrl, firstBuildNumber, secondBuildNumber, currentBuildNumber);
+                writeSummary(currentBaseUrl, firstBuildNumber, secondBuildNumber, currentBuildNumber);
             } finally {
                 captureDiagnostics(bamboo, agent, currentBaseUrl, currentBuildNumber);
                 if (agent != null) {
@@ -257,7 +264,7 @@ public final class CompatibilitySmokeRunner {
         form.put("downloadEnabled", "true");
         form.put("customLogoEnabled", "false");
         form.put("enabledByDefault", "true");
-        form.put("enabledReportsCleanup", "false");
+        form.put("enabledReportsCleanup", "true");
         form.put("localStoragePath", config.bambooStoragePath());
         form.put("downloadBaseUrl", ALLURE_DOWNLOAD_BASE_URL);
 
@@ -484,30 +491,89 @@ public final class CompatibilitySmokeRunner {
                 + "/" + buildNumber + "/index.html";
         final String zipUrl = baseUrl + "/plugins/servlet/allure/report/" + SmokePlanSpecs.getPlanKey()
                 + "/" + buildNumber + "/report.zip";
+        final Path buildDownloadsDir = downloadsDir.resolve("build-" + buildNumber);
+        Files.createDirectories(buildDownloadsDir);
 
         final HttpResponse<String> reportResponse = pollUntil(reportUrl, REPORT_READY_TIMEOUT,
                 "Allure report", response -> response.statusCode() == 200 && response.body().contains("<html"));
-        Files.writeString(downloadsDir.resolve("index.html"), reportResponse.body(), StandardCharsets.UTF_8);
+        Files.writeString(buildDownloadsDir.resolve("index.html"), reportResponse.body(), StandardCharsets.UTF_8);
 
         final HttpResponse<byte[]> zipResponse = sendBytes(zipUrl);
         if (zipResponse.statusCode() != 200 || zipResponse.body().length == 0) {
             throw new IllegalStateException("Expected non-empty report.zip from " + zipUrl);
         }
-        Files.write(downloadsDir.resolve("report.zip"), zipResponse.body());
+        Files.write(buildDownloadsDir.resolve("report.zip"), zipResponse.body());
     }
 
-    private void writeSummary(final String baseUrl, final int buildNumber) throws IOException {
-        final String reportUrl = baseUrl + "/plugins/servlet/allure/report/" + SmokePlanSpecs.getPlanKey()
-                + "/" + buildNumber + "/index.html";
-        final String zipUrl = baseUrl + "/plugins/servlet/allure/report/" + SmokePlanSpecs.getPlanKey()
-                + "/" + buildNumber + "/report.zip";
+    private void verifyHistoryEndpoints(final String baseUrl, final int buildNumber) throws Exception {
+        final String historyJsonUrl = baseUrl + "/plugins/servlet/allure/report/" + SmokePlanSpecs.getPlanKey()
+                + "/" + buildNumber + "/history/history.json";
+        final String trendUrl = baseUrl + "/plugins/servlet/allure/report/" + SmokePlanSpecs.getPlanKey()
+                + "/" + buildNumber + "/history/history-trend.json";
+        final Path buildDownloadsDir = downloadsDir.resolve("build-" + buildNumber);
+        Files.createDirectories(buildDownloadsDir);
+
+        final HttpResponse<String> historyResponse = pollUntil(historyJsonUrl, REPORT_READY_TIMEOUT,
+                "Allure history",
+                response -> response.statusCode() == 200 && !response.body().isBlank());
+        final HttpResponse<String> trendResponse = pollUntil(trendUrl, REPORT_READY_TIMEOUT,
+                "Allure history trend",
+                response -> response.statusCode() == 200 && !response.body().isBlank());
+        Files.writeString(buildDownloadsDir.resolve("history.json"), historyResponse.body(), StandardCharsets.UTF_8);
+        Files.writeString(buildDownloadsDir.resolve("history-trend.json"),
+                trendResponse.body(),
+                StandardCharsets.UTF_8);
+    }
+
+    private void verifyCleanupBehavior(final String baseUrl,
+                                       final int removedBuildNumber,
+                                       final int retainedBuildNumber,
+                                       final int latestBuildNumber) throws Exception {
+        final String removedReportUrl = baseUrl + "/plugins/servlet/allure/report/" + SmokePlanSpecs.getPlanKey()
+                + "/" + removedBuildNumber + "/index.html";
+        final String retainedReportUrl = baseUrl + "/plugins/servlet/allure/report/" + SmokePlanSpecs.getPlanKey()
+                + "/" + retainedBuildNumber + "/index.html";
+        final String latestReportUrl = baseUrl + "/plugins/servlet/allure/report/" + SmokePlanSpecs.getPlanKey()
+                + "/" + latestBuildNumber + "/index.html";
+
+        final HttpResponse<String> removedResponse = sendHead(removedReportUrl);
+        if (removedResponse.statusCode() != 404) {
+            throw new IllegalStateException("Expected cleaned up report to return 404, got "
+                    + removedResponse.statusCode() + " from " + removedReportUrl);
+        }
+
+        final HttpResponse<String> retainedResponse = sendHead(retainedReportUrl);
+        if (retainedResponse.statusCode() != 200) {
+            throw new IllegalStateException("Expected retained report to return 200, got "
+                    + retainedResponse.statusCode() + " from " + retainedReportUrl);
+        }
+
+        final HttpResponse<String> latestResponse = sendHead(latestReportUrl);
+        if (latestResponse.statusCode() != 200) {
+            throw new IllegalStateException("Expected latest report to return 200, got "
+                    + latestResponse.statusCode() + " from " + latestReportUrl);
+        }
+    }
+
+    private void writeSummary(final String baseUrl,
+                              final int firstBuildNumber,
+                              final int secondBuildNumber,
+                              final int thirdBuildNumber) throws IOException {
+        final String latestReportUrl = baseUrl + "/plugins/servlet/allure/report/" + SmokePlanSpecs.getPlanKey()
+                + "/" + thirdBuildNumber + "/index.html";
+        final String latestZipUrl = baseUrl + "/plugins/servlet/allure/report/" + SmokePlanSpecs.getPlanKey()
+                + "/" + thirdBuildNumber + "/report.zip";
         Files.writeString(diagnosticsRoot.resolve("summary.md"),
                 "# Bamboo compatibility smoke summary\n\n"
                         + "- Bamboo version: `" + config.bambooVersion() + "`\n"
                         + "- Plan key: `" + SmokePlanSpecs.getPlanKey() + "`\n"
-                        + "- Build number: `" + buildNumber + "`\n"
-                        + "- Report URL: " + reportUrl + "\n"
-                        + "- Zip URL: " + zipUrl + "\n",
+                        + "- Build numbers: `" + firstBuildNumber + "`, `" + secondBuildNumber
+                        + "`, `" + thirdBuildNumber + "`\n"
+                        + "- Latest report URL: " + latestReportUrl + "\n"
+                        + "- Latest zip URL: " + latestZipUrl + "\n"
+                        + "- History verified on builds: `" + secondBuildNumber + "`, `" + thirdBuildNumber + "`\n"
+                        + "- Cleanup verified: build `" + firstBuildNumber + "` removed after build `"
+                        + thirdBuildNumber + "`\n",
                 StandardCharsets.UTF_8);
     }
 
@@ -647,6 +713,17 @@ public final class CompatibilitySmokeRunner {
                 .GET()
                 .build();
         return sendWithRetry(request, HttpResponse.BodyHandlers.ofByteArray());
+    }
+
+    private HttpResponse<String> sendHead(final String url) throws IOException, InterruptedException {
+        final HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(REQUEST_TIMEOUT)
+                .header("Authorization", basicAuth())
+                .header("Accept", "text/html, application/json;q=0.9, */*;q=0.8")
+                .method("HEAD", HttpRequest.BodyPublishers.noBody())
+                .build();
+        return sendWithRetry(request, HttpResponse.BodyHandlers.ofString());
     }
 
     private HttpResponse<String> sendPostWithoutBody(final String url) throws IOException, InterruptedException {
