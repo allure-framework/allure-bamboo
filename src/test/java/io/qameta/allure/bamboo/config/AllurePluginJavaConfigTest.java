@@ -38,9 +38,7 @@ import org.mockito.junit.MockitoRule;
 
 import static io.qameta.allure.bamboo.TestSupport.attachText;
 import static io.qameta.allure.bamboo.TestSupport.step;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static org.mockito.junit.MockitoJUnit.rule;
 
@@ -105,13 +103,13 @@ public class AllurePluginJavaConfigTest {
                             executableProvider.getClass().getName(),
                             artifactsManager.getClass().getName(),
                             installTask.getClass().getName()));
-            assertNotNull(commandLineSupport);
-            assertThat(settingsManager, instanceOf(AllureSettingsManager.class));
-            assertThat(downloader, instanceOf(AllureDownloader.class));
-            assertThat(executablesManager, instanceOf(BambooExecutablesManager.class));
-            assertThat(executableProvider, instanceOf(AllureExecutableProvider.class));
-            assertThat(artifactsManager, instanceOf(AllureArtifactsManager.class));
-            assertThat(installTask, instanceOf(AllurePluginInstallTask.class));
+            assertThat(commandLineSupport).isNotNull();
+            assertThat(settingsManager).isInstanceOf(AllureSettingsManager.class);
+            assertThat(downloader).isInstanceOf(AllureDownloader.class);
+            assertThat(executablesManager).isInstanceOf(BambooExecutablesManager.class);
+            assertThat(executableProvider).isInstanceOf(AllureExecutableProvider.class);
+            assertThat(artifactsManager).isInstanceOf(AllureArtifactsManager.class);
+            assertThat(installTask).isInstanceOf(AllurePluginInstallTask.class);
         });
     }
 }

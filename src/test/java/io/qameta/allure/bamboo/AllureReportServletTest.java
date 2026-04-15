@@ -42,9 +42,7 @@ import static io.qameta.allure.bamboo.AllureBuildResult.allureBuildResult;
 import static io.qameta.allure.bamboo.AllureReportServlet.getUrlPattern;
 import static io.qameta.allure.bamboo.TestSupport.attachText;
 import static io.qameta.allure.bamboo.TestSupport.step;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
@@ -100,7 +98,7 @@ public class AllureReportServletTest {
     public void itShouldMatchThePattern() {
         final Matcher matcher = getUrlPattern()
                 .matcher("/plugins/servlet/allure/report/" + PLAN_KEY + "/" + BUILD_NUMBER + "/");
-        assertTrue(matcher.matches());
+        assertThat(matcher.matches()).isTrue();
     }
 
     @Test
@@ -116,7 +114,7 @@ public class AllureReportServletTest {
 
         servlet.doGet(request, response);
 
-        assertThat(outputStream.toString(StandardCharsets.UTF_8), containsString("<html>ok</html>"));
+        assertThat(outputStream.toString(StandardCharsets.UTF_8)).contains("<html>ok</html>");
         verify(response).setStatus(HttpServletResponse.SC_OK);
         verify(response).setHeader("X-Frame-Options", "ALLOWALL");
         verify(response).setHeader("Content-Type", "text/html;charset=utf-8");
@@ -163,7 +161,7 @@ public class AllureReportServletTest {
 
         servlet.doGet(request, response);
 
-        assertThat(responseWriter.toString(), containsString("Detailed failure"));
+        assertThat(responseWriter.toString()).contains("Detailed failure");
         verify(response).setHeader("Content-Type", "text/plain");
         verify(artifactsManager, never()).getArtifactUrl(anyString(), anyString(), anyString());
     }

@@ -25,6 +25,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static io.qameta.allure.bamboo.TestSupport.attachText;
+import static io.qameta.allure.bamboo.TestSupport.step;
 import static java.util.Collections.singleton;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -56,15 +58,22 @@ public class AllureExecutableTest {
 
     @Test
     public void itShouldInvokeAllureGenerateOnUnixWithBash() throws Exception {
-        when(cmdLine.hasCommand(BIN_BASH))
-                .thenReturn(true);
-        when(cmdLine.isUnix())
-                .thenReturn(true);
+        step("prepare a Unix environment with bash available", () -> {
+            when(cmdLine.hasCommand(BIN_BASH))
+                    .thenReturn(true);
+            when(cmdLine.isUnix())
+                    .thenReturn(true);
+            attachText("Executable invocation context",
+                    "binary=" + path + "\nsourceDir=" + fromDir + "\ntargetDir=" + toDir);
+        });
 
-        executable.generate(singleton(fromDir), toDir);
+        step("generate the report through the bash launcher",
+                () -> executable.generate(singleton(fromDir), toDir));
 
-        verify(cmdLine)
-                .runCommand(BIN_BASH, path.toString(), GENERATE, OPTIONS, toDir.toString(), fromDir.toString());
+        step("verify the command line support receives the bash invocation", () ->
+                verify(cmdLine)
+                        .runCommand(BIN_BASH, path.toString(), GENERATE, OPTIONS, toDir.toString(),
+                                fromDir.toString()));
     }
 
     @Test

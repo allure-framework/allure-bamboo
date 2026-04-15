@@ -27,8 +27,7 @@ import java.nio.file.Paths;
 import java.util.Optional;
 
 import static io.qameta.allure.bamboo.AllureExecutableProvider.BIN;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static org.mockito.junit.MockitoJUnit.rule;
 
@@ -66,8 +65,8 @@ public class SecondAllureExecutableProviderTest {
 
         final Optional<AllureExecutable> res = provide("Allure 2.0-BETA5");
 
-        assertThat(res.isPresent(), equalTo(true));
-        assertThat(res.get().getCmdPath(), equalTo(allureCmdPath));
+        assertThat(res).isPresent();
+        assertThat(res).hasValueSatisfying(executable -> assertThat(executable.getCmdPath()).isEqualTo(allureCmdPath));
     }
 
     @Test
@@ -77,8 +76,9 @@ public class SecondAllureExecutableProviderTest {
 
         final Optional<AllureExecutable> res = provide(ALLURE_2_21_0);
 
-        assertThat(res.isPresent(), equalTo(true));
-        assertThat(res.get().getCmdPath(), equalTo(allureBatCmdPath));
+        assertThat(res).isPresent();
+        assertThat(res).hasValueSatisfying(executable ->
+                assertThat(executable.getCmdPath()).isEqualTo(allureBatCmdPath));
     }
 
     private Optional<AllureExecutable> provide(String executableName) {

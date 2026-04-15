@@ -63,13 +63,8 @@ import static io.qameta.allure.bamboo.AllureBuildResult.allureBuildResult;
 import static io.qameta.allure.bamboo.TestSupport.attachDirectoryTree;
 import static io.qameta.allure.bamboo.TestSupport.attachText;
 import static io.qameta.allure.bamboo.TestSupport.step;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
@@ -148,7 +143,7 @@ public class AllureArtifactsManagerTest {
 
         final String artifactUrl = manager.getArtifactUrl(PLAN_KEY, BUILD_NUMBER, "index.html").orElse(null);
 
-        assertThat(artifactUrl, equalTo(reportFile.toUri().toURL().toString()));
+        assertThat(artifactUrl).isEqualTo(reportFile.toUri().toURL().toString());
     }
 
     @Test
@@ -165,8 +160,10 @@ public class AllureArtifactsManagerTest {
         });
 
         step("reject a path that escapes the report root", () -> {
-            final AllurePluginException error = assertThrows(AllurePluginException.class,
-                    () -> manager.getArtifactUrl(PLAN_KEY, BUILD_NUMBER, ".."));
+            final AllurePluginException error = catchThrowableOfType(
+                    () -> manager.getArtifactUrl(PLAN_KEY, BUILD_NUMBER, ".."),
+                    AllurePluginException.class);
+            assertThat(error).isNotNull();
             attachText("Rejected artifact path", ".. -> " + error.getMessage());
         });
     }
@@ -192,7 +189,7 @@ public class AllureArtifactsManagerTest {
 
         final String artifactUrl = manager.getArtifactUrl(PLAN_KEY, BUILD_NUMBER, "").orElse(null);
 
-        assertThat(artifactUrl, equalTo("https://reports.example/index.html"));
+        assertThat(artifactUrl).isEqualTo("https://reports.example/index.html");
     }
 
     @Test
@@ -224,8 +221,8 @@ public class AllureArtifactsManagerTest {
         final Path downloadedDir = downloaded.iterator().next();
         try (java.util.stream.Stream<Path> resultFiles = Files.walk(downloadedDir);
              java.util.stream.Stream<Path> historyFiles = Files.walk(downloadedDir)) {
-            assertTrue(resultFiles.anyMatch(path -> path.getFileName().toString().equals("result.json")));
-            assertTrue(historyFiles.anyMatch(path -> path.getFileName().toString().equals("history.json")));
+            assertThat(resultFiles.anyMatch(path -> path.getFileName().toString().equals("result.json"))).isTrue();
+            assertThat(historyFiles.anyMatch(path -> path.getFileName().toString().equals("history.json"))).isTrue();
         }
     }
 
@@ -265,7 +262,7 @@ public class AllureArtifactsManagerTest {
         final Path downloadedDir = downloaded.iterator().next();
         step("verify the flattened download contains the expected result file", () -> {
             attachDirectoryTree("Downloaded remote artifacts", downloadedDir);
-            assertTrue(Files.exists(downloadedDir.resolve("remote-result.json")));
+            assertThat(downloadedDir.resolve("remote-result.json")).exists();
         });
     }
 
@@ -293,9 +290,8 @@ public class AllureArtifactsManagerTest {
                 .resolve("index.html");
         step("verify the stored report is available under the build-specific directory", () -> {
             attachDirectoryTree("Stored local report", storedReport.getParent());
-            assertTrue(result.isPresent());
-            assertTrue(result.get().isSuccess());
-            assertTrue(Files.exists(storedReport));
+            assertThat(result).hasValueSatisfying(buildResult -> assertThat(buildResult.isSuccess()).isTrue());
+            assertThat(storedReport).exists();
         });
     }
 
@@ -332,9 +328,10 @@ public class AllureArtifactsManagerTest {
         step("verify the published result carries the handler identity", () -> {
             attachText("Remote publish outcome",
                     "handlerKey=handler-key\nhandlerClass=" + handler.getClass().getName());
-            assertTrue(result.isPresent());
-            assertTrue(result.get().isSuccess());
-            assertThat(result.get().getArtifactHandlerClass(), equalTo(handler.getClass().getName()));
+            assertThat(result).hasValueSatisfying(buildResult -> {
+                assertThat(buildResult.isSuccess()).isTrue();
+                assertThat(buildResult.getArtifactHandlerClass()).isEqualTo(handler.getClass().getName());
+            });
             verify(publishingResult).setArtifactHandlerKey("handler-key");
         });
     }
@@ -361,10 +358,10 @@ public class AllureArtifactsManagerTest {
 
         step("verify the latest numeric reports and named directories remain", () -> {
             attachDirectoryTree("Reports after cleanup", reportsDir);
-            assertFalse(Files.exists(reportsDir.resolve("1")));
-            assertTrue(Files.exists(reportsDir.resolve("2")));
-            assertTrue(Files.exists(reportsDir.resolve("10")));
-            assertTrue(Files.exists(reportsDir.resolve("abc")));
+            assertThat(reportsDir.resolve("1")).doesNotExist();
+            assertThat(reportsDir.resolve("2")).exists();
+            assertThat(reportsDir.resolve("10")).exists();
+            assertThat(reportsDir.resolve("abc")).exists();
         });
     }
 
@@ -389,14 +386,13 @@ public class AllureArtifactsManagerTest {
 
         step("verify plan values win and shared-only flags are filtered out", () -> {
             attachText("Merged artifact handler config", config.toString());
-            assertThat(config.keySet(),
-                    containsInAnyOrder(
-                            "custom.artifactHandlers.main.url",
-                            "custom.artifactHandlers.other.path",
-                            "custom.artifactHandlers.useCustomArtifactHandlers"));
-            assertThat(config.get("custom.artifactHandlers.main.url"), equalTo("https://plan.example"));
-            assertThat(config.get("custom.artifactHandlers.other.path"), equalTo("/tmp/path"));
-            assertNull(config.get("custom.artifactHandlers.main.enabledForShared"));
+            assertThat(config.keySet()).containsExactlyInAnyOrder(
+                    "custom.artifactHandlers.main.url",
+                    "custom.artifactHandlers.other.path",
+                    "custom.artifactHandlers.useCustomArtifactHandlers");
+            assertThat(config.get("custom.artifactHandlers.main.url")).isEqualTo("https://plan.example");
+            assertThat(config.get("custom.artifactHandlers.other.path")).isEqualTo("/tmp/path");
+            assertThat(config).doesNotContainKey("custom.artifactHandlers.main.enabledForShared");
         });
     }
 

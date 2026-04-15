@@ -29,10 +29,7 @@ import java.util.List;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_EXECUTION_PREFIX;
 import static io.qameta.allure.bamboo.AllureExecutableProvider.DEFAULT_PATH;
 import static io.qameta.allure.bamboo.AllureExecutableProvider.DEFAULT_VERSION;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.junit.MockitoJUnit.rule;
@@ -57,8 +54,8 @@ public class BambooExecutablesManagerTest {
 
         final BambooExecutablesManager manager = new BambooExecutablesManager(capabilitySetManager);
 
-        assertThat(manager.getAllureExecutables(), contains("allure-2.30.0"));
-        assertThat(manager.getExecutableByName("allure-2.30.0").orElse(null), equalTo("/opt/allure"));
+        assertThat(manager.getAllureExecutables()).containsExactly("allure-2.30.0");
+        assertThat(manager.getExecutableByName("allure-2.30.0")).hasValue("/opt/allure");
     }
 
     @Test
@@ -69,9 +66,9 @@ public class BambooExecutablesManagerTest {
         final BambooExecutablesManager manager = new BambooExecutablesManager(capabilitySetManager);
         manager.addDefaultAllureExecutableCapability();
 
-        assertTrue(capabilitySet.getCapability(ALLURE_EXECUTION_PREFIX + ".allure-" + DEFAULT_VERSION) != null);
-        assertThat(capabilitySet.getCapability(ALLURE_EXECUTION_PREFIX + ".allure-" + DEFAULT_VERSION).getValue(),
-                equalTo(DEFAULT_PATH));
+        assertThat(capabilitySet.getCapability(ALLURE_EXECUTION_PREFIX + ".allure-" + DEFAULT_VERSION)).isNotNull();
+        assertThat(capabilitySet.getCapability(ALLURE_EXECUTION_PREFIX + ".allure-" + DEFAULT_VERSION).getValue())
+                .isEqualTo(DEFAULT_PATH);
         verify(capabilitySetManager).saveCapabilitySet(capabilitySet);
     }
 }

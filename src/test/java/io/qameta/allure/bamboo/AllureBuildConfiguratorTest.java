@@ -28,10 +28,9 @@ import java.util.Optional;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_ENABLED;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_EXECUTABLE;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_FAILED_ONLY;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertTrue;
+import static io.qameta.allure.bamboo.TestSupport.attachText;
+import static io.qameta.allure.bamboo.TestSupport.step;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static org.mockito.junit.MockitoJUnit.rule;
 
@@ -49,21 +48,25 @@ public class AllureBuildConfiguratorTest {
     private TemplateRenderer templateRenderer;
 
     @Test
-    public void itShouldValidateMissingExecutableWhenAllureIsEnabled() {
+    public void itShouldValidateMissingExecutableWhenAllureIsEnabled() throws Exception {
         final AllureBuildConfigurator configurator = new AllureBuildConfigurator(
                 executablesManager, settingsManager, templateRenderer);
         final BuildConfiguration configuration = new BuildConfiguration();
         configuration.setProperty(ALLURE_CONFIG_ENABLED, true);
         configuration.setProperty(ALLURE_CONFIG_EXECUTABLE, "");
 
-        final ErrorCollection errors = configurator.validate(configuration);
+        final ErrorCollection errors = step("validate an enabled configuration without an executable",
+                () -> configurator.validate(configuration));
 
-        assertTrue(errors.hasAnyErrors());
-        assertThat(errors.getErrors().get(ALLURE_CONFIG_EXECUTABLE), contains("Cannot be empty!"));
+        step("verify validation reports the missing executable", () -> {
+            attachText("Validation errors", errors.getErrors().toString());
+            assertThat(errors.hasAnyErrors()).isTrue();
+            assertThat(errors.getErrors().get(ALLURE_CONFIG_EXECUTABLE)).contains("Cannot be empty!");
+        });
     }
 
     @Test
-    public void itShouldPopulateDefaultsFromSettingsAndCapabilities() {
+    public void itShouldPopulateDefaultsFromSettingsAndCapabilities() throws Exception {
         final AllureBuildConfigurator configurator = new AllureBuildConfigurator(
                 executablesManager, settingsManager, templateRenderer);
         final BuildConfiguration configuration = new BuildConfiguration();
@@ -76,10 +79,17 @@ public class AllureBuildConfiguratorTest {
                 "false"));
         when(executablesManager.getDefaultAllureExecutable()).thenReturn(Optional.of("Allure 2.30.0"));
 
-        configurator.prepareConfigObject(configuration);
+        step("populate the build configuration from settings and capabilities",
+                () -> configurator.prepareConfigObject(configuration));
 
-        assertTrue(configuration.getBoolean(ALLURE_CONFIG_ENABLED));
-        assertTrue(configuration.getBoolean(ALLURE_CONFIG_FAILED_ONLY));
-        assertThat(configuration.getString(ALLURE_CONFIG_EXECUTABLE), equalTo("Allure 2.30.0"));
+        step("verify the default flags and executable name were applied", () -> {
+            attachText("Prepared configuration",
+                    "enabled=" + configuration.getBoolean(ALLURE_CONFIG_ENABLED)
+                            + "\nfailedOnly=" + configuration.getBoolean(ALLURE_CONFIG_FAILED_ONLY)
+                            + "\nexecutable=" + configuration.getString(ALLURE_CONFIG_EXECUTABLE));
+            assertThat(configuration.getBoolean(ALLURE_CONFIG_ENABLED)).isTrue();
+            assertThat(configuration.getBoolean(ALLURE_CONFIG_FAILED_ONLY)).isTrue();
+            assertThat(configuration.getString(ALLURE_CONFIG_EXECUTABLE)).isEqualTo("Allure 2.30.0");
+        });
     }
 }

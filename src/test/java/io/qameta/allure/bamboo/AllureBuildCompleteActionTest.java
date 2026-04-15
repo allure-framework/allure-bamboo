@@ -57,11 +57,7 @@ import static io.qameta.allure.bamboo.TestSupport.attachDirectoryTree;
 import static io.qameta.allure.bamboo.TestSupport.attachText;
 import static io.qameta.allure.bamboo.TestSupport.step;
 import static java.util.Collections.emptyList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -150,13 +146,20 @@ public class AllureBuildCompleteActionTest {
 
     @Test
     public void itShouldSkipSuccessfulBuildsWhenConfiguredForFailedOnly() throws Exception {
-        when(chainResultsSummary.isFailed()).thenReturn(false);
-        when(buildDefinition.getCustomConfiguration()).thenReturn(config("exec-1", true, true, null));
-        when(settingsManager.getSettings()).thenReturn(globalConfig(false, false));
+        step("configure a successful chain that should skip Allure when failed-only mode is enabled", () -> {
+            when(chainResultsSummary.isFailed()).thenReturn(false);
+            when(buildDefinition.getCustomConfiguration()).thenReturn(config("exec-1", true, true, null));
+            when(settingsManager.getSettings()).thenReturn(globalConfig(false, false));
+            attachText("Build configuration", buildDefinition.getCustomConfiguration().toString());
+        });
 
-        newAction().execute(chain, chainResultsSummary, chainExecution);
+        step("execute the build completion action",
+                () -> newAction().execute(chain, chainResultsSummary, chainExecution));
 
-        verify(artifactsManager, never()).downloadAllArtifactsTo(any(), any(File.class), anyString());
+        step("verify report generation is skipped for a successful build", () -> {
+            verify(artifactsManager, never()).downloadAllArtifactsTo(any(), any(File.class), anyString());
+            verify(allureExecutable, never()).generate(any(Collection.class), any(Path.class));
+        });
     }
 
     @Test
@@ -169,8 +172,8 @@ public class AllureBuildCompleteActionTest {
         newAction().execute(chain, chainResultsSummary, chainExecution);
 
         final AllureBuildResult buildResult = fromCustomData(chainResultsSummary.getCustomBuildData());
-        assertFalse(buildResult.isSuccess());
-        assertThat(buildResult.getFailureDetails(), containsString("Could not find default Allure executable"));
+        assertThat(buildResult.isSuccess()).isFalse();
+        assertThat(buildResult.getFailureDetails()).contains("Could not find default Allure executable");
         verify(artifactsManager, never()).downloadAllArtifactsTo(any(), any(File.class), anyString());
     }
 
@@ -192,8 +195,8 @@ public class AllureBuildCompleteActionTest {
         step("verify the action records a missing-artifacts failure without generating a report", () -> {
             final AllureBuildResult buildResult = fromCustomData(chainResultsSummary.getCustomBuildData());
             attachText("Failure details", buildResult.getFailureDetails());
-            assertFalse(buildResult.isSuccess());
-            assertThat(buildResult.getFailureDetails(), containsString("does not have any uploaded artifacts"));
+            assertThat(buildResult.isSuccess()).isFalse();
+            assertThat(buildResult.getFailureDetails()).contains("does not have any uploaded artifacts");
             verify(allureExecutable, never()).generate(any(Collection.class), any(Path.class));
         });
     }
@@ -225,11 +228,11 @@ public class AllureBuildCompleteActionTest {
                 final Summary summary = new JsonMapper()
                         .readValue(reportDir.resolve("widgets").resolve("summary.json").toFile(), Summary.class);
                 attachDirectoryTree("Uploaded report contents", reportDir);
-                assertThat(summary.getReportName(), equalTo("Build 5 - Smoke Build"));
-                assertThat(Files.readString(reportDir.resolve("app.js")), containsString(">&nbsp;</span>"));
-                assertThat(Files.readString(reportDir.resolve("index.html")),
-                        containsString("<title> Build 5 - Smoke Build </title>"));
-                assertTrue(Files.exists(reportDir.resolve("report.zip")));
+                assertThat(summary.getReportName()).isEqualTo("Build 5 - Smoke Build");
+                assertThat(Files.readString(reportDir.resolve("app.js"))).contains(">&nbsp;</span>");
+                assertThat(Files.readString(reportDir.resolve("index.html")))
+                        .contains("<title> Build 5 - Smoke Build </title>");
+                assertThat(reportDir.resolve("report.zip")).exists();
                 return Optional.of(allureBuildResult(true, null).withHandlerClass("handler"));
             });
         });
@@ -240,8 +243,8 @@ public class AllureBuildCompleteActionTest {
         step("verify the successful result stores the handler and triggers cleanup", () -> {
             final AllureBuildResult buildResult = fromCustomData(chainResultsSummary.getCustomBuildData());
             attachText("Artifact handler class", buildResult.getArtifactHandlerClass());
-            assertTrue(buildResult.isSuccess());
-            assertThat(buildResult.getArtifactHandlerClass(), equalTo("handler"));
+            assertThat(buildResult.isSuccess()).isTrue();
+            assertThat(buildResult.getArtifactHandlerClass()).isEqualTo("handler");
             verify(artifactsManager).cleanupOldReportArtifacts(chain, 2);
         });
     }
@@ -276,8 +279,8 @@ public class AllureBuildCompleteActionTest {
             @SuppressWarnings("unchecked")
             final Collection<Path> sourceDirs = invocation.getArgument(0);
             final Path artifactsDir = sourceDirs.iterator().next();
-            assertTrue(Files.exists(artifactsDir.resolve("history").resolve("history.json")));
-            assertTrue(Files.exists(artifactsDir.resolve("history").resolve("history-trend.json")));
+            assertThat(artifactsDir.resolve("history").resolve("history.json")).exists();
+            assertThat(artifactsDir.resolve("history").resolve("history-trend.json")).exists();
             TestSupport.writeMinimalReport(invocation.getArgument(1));
             return new AllureGenerateResult("ok", true);
         });
@@ -288,7 +291,7 @@ public class AllureBuildCompleteActionTest {
         newAction().execute(chain, chainResultsSummary, chainExecution);
 
         final AllureBuildResult buildResult = fromCustomData(chainResultsSummary.getCustomBuildData());
-        assertTrue(buildResult.isSuccess());
+        assertThat(buildResult.isSuccess()).isTrue();
     }
 
     private void createHistoryContext(final String fileName,
