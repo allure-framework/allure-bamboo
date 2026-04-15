@@ -22,4 +22,11 @@ jobs:
           java-version: '17'
           cache: 'maven'
       - name: Maven Build
-        run: ./mvnw clean package
+        run: ./mvnw clean verify
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco
+          if-no-files-found: warn

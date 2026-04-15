@@ -82,13 +82,26 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
                                      final AllureArtifactsManager artifactsManager,
                                      final BambooExecutablesManager executablesManager,
                                      final ResultsSummaryManager resultsSummaryManager) {
+        this(allureExecutable,
+                settingsManager,
+                artifactsManager,
+                executablesManager,
+                resultsSummaryManager,
+                (AdministrationConfiguration) ContainerManager.getComponent("administrationConfiguration"));
+    }
+
+    AllureBuildCompleteAction(final AllureExecutableProvider allureExecutable,
+                              final AllureSettingsManager settingsManager,
+                              final AllureArtifactsManager artifactsManager,
+                              final BambooExecutablesManager executablesManager,
+                              final ResultsSummaryManager resultsSummaryManager,
+                              final AdministrationConfiguration adminConfiguration) {
         this.allureExecutable = allureExecutable;
         this.settingsManager = settingsManager;
         this.artifactsManager = artifactsManager;
         this.executablesManager = executablesManager;
         this.resultsSummaryManager = resultsSummaryManager;
-        this.adminConfiguration = (AdministrationConfiguration) ContainerManager
-                .getComponent("administrationConfiguration");
+        this.adminConfiguration = adminConfiguration;
     }
 
     @Override

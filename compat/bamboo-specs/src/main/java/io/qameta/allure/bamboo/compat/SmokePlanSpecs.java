@@ -4,10 +4,14 @@ import com.atlassian.bamboo.specs.api.builders.plan.Job;
 import com.atlassian.bamboo.specs.api.builders.plan.Plan;
 import com.atlassian.bamboo.specs.api.builders.plan.Stage;
 import com.atlassian.bamboo.specs.api.builders.plan.artifact.Artifact;
+import com.atlassian.bamboo.specs.api.builders.plan.configuration.AllOtherPluginsConfiguration;
 import com.atlassian.bamboo.specs.api.builders.project.Project;
 import com.atlassian.bamboo.specs.builders.task.ScriptTask;
 import com.atlassian.bamboo.specs.util.BambooServer;
 import com.atlassian.bamboo.specs.util.SimpleUserPasswordCredentials;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Publishes a minimal Bamboo plan that produces one shared {@code allure-results} artifact.
@@ -17,6 +21,9 @@ public final class SmokePlanSpecs {
     private static final String PROJECT_KEY = "ALCOMP";
     private static final String PLAN_KEY = "SMOKE";
     private static final String JOB_KEY = "JOB1";
+    private static final String ALLURE_CONFIG_ENABLED = "custom.allure.config.enabled";
+    private static final String ALLURE_CONFIG_FAILED_ONLY = "custom.allure.config.failed.only";
+    private static final String ALLURE_CONFIG_MAX_STORED_REPORTS_COUNT = "custom.allure.max.stored.reports.count";
 
     private SmokePlanSpecs() {
         // utility class
@@ -47,6 +54,11 @@ public final class SmokePlanSpecs {
     }
 
     private static Plan createPlan() {
+        final Map<String, Object> allureConfig = new LinkedHashMap<>();
+        allureConfig.put(ALLURE_CONFIG_ENABLED, true);
+        allureConfig.put(ALLURE_CONFIG_FAILED_ONLY, false);
+        allureConfig.put(ALLURE_CONFIG_MAX_STORED_REPORTS_COUNT, 2);
+
         final Project project = new Project()
                 .key(PROJECT_KEY)
                 .name("Allure Compatibility");
@@ -91,6 +103,7 @@ public final class SmokePlanSpecs {
 
         return new Plan(project, "Allure Smoke", PLAN_KEY)
                 .description("Nightly compatibility smoke plan for the Allure Bamboo plugin")
+                .pluginConfigurations(new AllOtherPluginsConfiguration().configuration(allureConfig))
                 .stages(new Stage("Smoke Stage").jobs(smokeJob));
     }
 

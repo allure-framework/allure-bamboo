@@ -1,0 +1,99 @@
+/*
+ *  Copyright 2016-2024 Qameta Software Inc
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+package io.qameta.allure.bamboo.config;
+
+import com.atlassian.bamboo.build.BuildDefinitionManager;
+import com.atlassian.bamboo.build.artifact.ArtifactLinkManager;
+import com.atlassian.bamboo.build.artifact.handlers.ArtifactHandlersService;
+import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
+import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySetManager;
+import com.atlassian.plugin.PluginAccessor;
+import com.atlassian.sal.api.ApplicationProperties;
+import com.atlassian.sal.api.pluginsettings.PluginSettings;
+import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
+import io.qameta.allure.bamboo.AllureArtifactsManager;
+import io.qameta.allure.bamboo.AllureCommandLineSupport;
+import io.qameta.allure.bamboo.AllureDownloader;
+import io.qameta.allure.bamboo.AllureExecutableProvider;
+import io.qameta.allure.bamboo.AllurePluginInstallTask;
+import io.qameta.allure.bamboo.AllureSettingsManager;
+import io.qameta.allure.bamboo.BambooExecutablesManager;
+import org.junit.Rule;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoRule;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.when;
+import static org.mockito.junit.MockitoJUnit.rule;
+
+public class AllurePluginJavaConfigTest {
+
+    @Rule
+    public MockitoRule mockitoRule = rule();
+
+    @Mock
+    private PluginSettingsFactory pluginSettingsFactory;
+    @Mock
+    private PluginSettings pluginSettings;
+    @Mock
+    private CapabilitySetManager capabilitySetManager;
+    @Mock
+    private PluginAccessor pluginAccessor;
+    @Mock
+    private ArtifactHandlersService artifactHandlersService;
+    @Mock
+    private BuildDefinitionManager buildDefinitionManager;
+    @Mock
+    private ResultsSummaryManager resultsSummaryManager;
+    @Mock
+    private ArtifactLinkManager artifactLinkManager;
+    @Mock
+    private ApplicationProperties applicationProperties;
+
+    @Test
+    public void itShouldConstructTheCoreBeans() {
+        when(pluginSettingsFactory.createGlobalSettings()).thenReturn(pluginSettings);
+        final AllurePluginJavaConfig config = new AllurePluginJavaConfig();
+
+        final AllureCommandLineSupport commandLineSupport = config.allureCommandLineSupport();
+        final AllureSettingsManager settingsManager = config.allureSettings(pluginSettingsFactory);
+        final AllureDownloader downloader = config.allureDownloader(settingsManager);
+        final BambooExecutablesManager executablesManager = config.bambooExecutableManager(capabilitySetManager);
+        final AllureExecutableProvider executableProvider = config.allureExecutableProvider(
+                executablesManager, downloader, commandLineSupport);
+        final AllureArtifactsManager artifactsManager = config.allureArtifactsUploader(
+                pluginAccessor,
+                artifactHandlersService,
+                buildDefinitionManager,
+                resultsSummaryManager,
+                artifactLinkManager,
+                applicationProperties,
+                settingsManager);
+        final AllurePluginInstallTask installTask =
+                (AllurePluginInstallTask) config.allureInstallTask(executablesManager);
+
+        assertNotNull(commandLineSupport);
+        assertThat(settingsManager, instanceOf(AllureSettingsManager.class));
+        assertThat(downloader, instanceOf(AllureDownloader.class));
+        assertThat(executablesManager, instanceOf(BambooExecutablesManager.class));
+        assertThat(executableProvider, instanceOf(AllureExecutableProvider.class));
+        assertThat(artifactsManager, instanceOf(AllureArtifactsManager.class));
+        assertThat(installTask, instanceOf(AllurePluginInstallTask.class));
+    }
+}
