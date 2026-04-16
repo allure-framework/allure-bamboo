@@ -20,7 +20,6 @@ jobs:
           java-version: '17'
           cache: 'maven'
       - run: echo "VERSION=${GITHUB_REF:10}" >> $GITHUB_ENV
-      - run: ./mvnw versions:set -DnewVersion=${{ env.VERSION }}
       - run: ./mvnw package
       - uses: actions/upload-release-asset@v1
         env:
