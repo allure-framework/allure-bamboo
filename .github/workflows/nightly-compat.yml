@@ -26,7 +26,7 @@ jobs:
       - name: Build plugin artifact
         run: ./mvnw -q clean package
       - name: Upload plugin jar
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: plugin-jar
           path: target/allure-bamboo-*.jar
@@ -76,7 +76,7 @@ jobs:
           fi
       - name: Upload compatibility artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: compat-${{ steps.resolve-version.outputs.bamboo_version }}
           path: compat-artifacts/${{ steps.resolve-version.outputs.bamboo_version }}
