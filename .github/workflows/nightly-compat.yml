@@ -50,7 +50,7 @@ jobs:
         run: |
           echo "bamboo_version=${{ github.event.inputs.bamboo_version }}" >> "$GITHUB_OUTPUT"
       - name: Download plugin jar
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: plugin-jar
           path: target
