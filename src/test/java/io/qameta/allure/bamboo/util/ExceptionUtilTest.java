@@ -17,20 +17,27 @@ package io.qameta.allure.bamboo.util;
 
 import org.junit.Test;
 
+import static io.qameta.allure.bamboo.TestSupport.attachText;
+import static io.qameta.allure.bamboo.TestSupport.step;
 import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ExceptionUtilTest {
 
     @Test
-    public void itShouldPrintStackTraceIntoString() {
-        try {
-            throw new RuntimeException("Print me please");
-        } catch (RuntimeException e) {
-            final String trace = stackTraceToString(e);
-            assertThat(trace, containsString("RuntimeException: Print me please"));
-            assertThat(trace, containsString("itShouldPrintStackTraceIntoString(ExceptionUtilTest.java:29)"));
-        }
+    public void itShouldPrintStackTraceIntoString() throws Exception {
+        final String trace = step("convert a thrown runtime exception into a stack trace string", () -> {
+            try {
+                throw new RuntimeException("Print me please");
+            } catch (RuntimeException e) {
+                return stackTraceToString(e);
+            }
+        });
+
+        step("verify the rendered trace preserves the message and calling method", () -> {
+            attachText("Rendered stack trace", trace);
+            assertThat(trace).contains("RuntimeException: Print me please");
+            assertThat(trace).contains("itShouldPrintStackTraceIntoString(ExceptionUtilTest.java:");
+        });
     }
 }

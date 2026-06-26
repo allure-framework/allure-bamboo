@@ -1,31 +1,72 @@
 name: Release
+run-name: Release ${{ inputs.releaseVersion }} (next ${{ inputs.nextVersion }}) by ${{ github.actor }}
 
-permissions:
-  contents: read
-  packages: write
+permissions: {}
 
 on:
-  release:
-    types: [ published ]
+  workflow_dispatch:
+    inputs:
+      releaseVersion:
+        description: "The release version in <MAJOR>.<MINOR>.<PATCH> or <MAJOR>.<MINOR>.<PATCH>-<BUILD> format"
+        required: true
+      nextVersion:
+        description: "The next version in <MAJOR>.<MINOR>.<PATCH> format without the SNAPSHOT suffix"
+        required: true
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - name: Check release version
+        run: |
+          echo "${{ github.event.inputs.releaseVersion }}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9]+)?$'
+
+      - name: Check next version
+        run: |
+          echo "${{ github.event.inputs.nextVersion }}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+          token: ${{ secrets.QAMETA_CI }}
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
           cache: 'maven'
-      - run: echo "VERSION=${GITHUB_REF:10}" >> $GITHUB_ENV
-      - run: ./mvnw versions:set -DnewVersion=${{ env.VERSION }}
-      - run: ./mvnw package
-      - uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure CI Git User
+        run: |
+          git config --global user.name qameta-ci
+          git config --global user.email qameta-ci@qameta.io
+
+      - name: Set release version
+        run: |
+          ./mvnw versions:set -DnewVersion=${{ github.event.inputs.releaseVersion }}
+
+      - name: Commit release version and create tag
+        run: |
+          git commit -am "release ${{ github.event.inputs.releaseVersion }}"
+          git tag ${{ github.event.inputs.releaseVersion }}
+          git push origin ${{ github.event.inputs.releaseVersion }}
+
+      - name: Set next development version
+        run: |
+          ./mvnw versions:set -DnewVersion=${{ github.event.inputs.nextVersion }}-SNAPSHOT-j17
+
+      - name: Commit next development version and push it
+        run: |
+          git commit -am "set next development version ${{ github.event.inputs.nextVersion }}"
+          git push origin HEAD:${{ github.ref_name }}
+
+      - name: Publish GitHub Release
+        uses: octokit/request-action@v2.x
         with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./target/allure-bamboo-${{ env.VERSION }}.jar
-          asset_name: allure-bamboo-${{ env.VERSION }}.jar
-          asset_content_type: application/octet-stream
+          route: POST /repos/${{ github.repository }}/releases
+          tag_name: ${{ github.event.inputs.releaseVersion }}
+          generate_release_notes: true
+          target_commitish: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.QAMETA_CI }}
