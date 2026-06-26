@@ -27,8 +27,10 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.file.Paths;
 
+import static io.qameta.allure.bamboo.TestSupport.attachDirectoryTree;
+import static io.qameta.allure.bamboo.TestSupport.step;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static org.mockito.junit.MockitoJUnit.rule;
 
@@ -69,12 +71,15 @@ public class AllureDownloaderTest {
     }
 
     @Test
-    public void itShouldDownloadAndExtractAllureRelease() {
-        downloader.downloadAndExtractAllureTo(homeDir, "2.17.2");
-        assertTrue(Paths.get(homeDir, "bin", "allure").toFile().exists());
-        assertTrue(Paths.get(homeDir, "config", "allure.yml").toFile().exists());
-        assertTrue(Paths.get(homeDir, "plugins", "custom-logo-plugin", "static", "styles.css")
-                .toFile().exists());
+    public void itShouldDownloadAndExtractAllureRelease() throws Exception {
+        step("download and extract the requested Allure distribution", () ->
+                downloader.downloadAndExtractAllureTo(homeDir, "2.17.2"));
+        step("verify the extracted home contains the expected CLI layout", () -> {
+            attachDirectoryTree("Extracted Allure home", Paths.get(homeDir));
+            assertThat(Paths.get(homeDir, "bin", "allure")).exists();
+            assertThat(Paths.get(homeDir, "config", "allure.yml")).exists();
+            assertThat(Paths.get(homeDir, "plugins", "custom-logo-plugin", "static", "styles.css")).exists();
+        });
     }
 
     @After

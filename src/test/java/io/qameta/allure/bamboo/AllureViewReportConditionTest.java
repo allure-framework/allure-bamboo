@@ -27,8 +27,7 @@ import java.util.Map;
 
 import static com.atlassian.bamboo.plan.PlanKeys.getPlanResultKey;
 import static io.qameta.allure.bamboo.AllureBuildResult.allureBuildResult;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static org.mockito.junit.MockitoJUnit.rule;
 
@@ -57,7 +56,7 @@ public class AllureViewReportConditionTest {
         when(resultsSummary.isNotBuilt()).thenReturn(false);
         when(resultsSummary.getCustomBuildData()).thenReturn(customData("handler", null));
 
-        assertTrue(condition.shouldDisplay(context));
+        assertThat(condition.shouldDisplay(context)).isTrue();
     }
 
     @Test
@@ -71,7 +70,7 @@ public class AllureViewReportConditionTest {
         when(resultsSummary.isNotBuilt()).thenReturn(true);
         when(resultsSummary.getCustomBuildData()).thenReturn(customData("handler", null));
 
-        assertTrue(condition.shouldDisplay(context));
+        assertThat(condition.shouldDisplay(context)).isTrue();
     }
 
     @Test
@@ -80,7 +79,7 @@ public class AllureViewReportConditionTest {
         final Map<String, Object> context = new HashMap<>();
         context.put("planKey", PLAN_KEY);
 
-        assertFalse(condition.shouldDisplay(context));
+        assertThat(condition.shouldDisplay(context)).isFalse();
     }
 
     @Test
@@ -94,7 +93,7 @@ public class AllureViewReportConditionTest {
         when(resultsSummary.isNotBuilt()).thenReturn(false);
         when(resultsSummary.getCustomBuildData()).thenReturn(customData("handler", null));
 
-        assertFalse(condition.shouldDisplay(context));
+        assertThat(condition.shouldDisplay(context)).isFalse();
     }
 
     @Test
@@ -104,7 +103,7 @@ public class AllureViewReportConditionTest {
         context.put("buildKey", PLAN_KEY);
         context.put("buildNumber", "not-a-number");
 
-        assertFalse(condition.shouldDisplay(context));
+        assertThat(condition.shouldDisplay(context)).isFalse();
     }
 
     private Map<String, String> customData(final String handlerClass,
