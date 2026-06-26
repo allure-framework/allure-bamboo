@@ -1,7 +1,7 @@
 name: Publish Release
 
 permissions:
-  contents: read
+  contents: write
   packages: write
   attestations: write
 
@@ -20,12 +20,9 @@ jobs:
           java-version: '17'
           cache: 'maven'
       - run: echo "VERSION=${GITHUB_REF:10}" >> $GITHUB_ENV
-      - run: ./mvnw package
-      - uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: ./mvnw versions:set -DnewVersion=${{ env.VERSION }}
+      - run: ./mvnw clean package -q
+      - run: ./mvnw versions:revert
+      - uses: softprops/action-gh-release@v3
         with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./target/allure-bamboo-${{ env.VERSION }}.jar
-          asset_name: allure-bamboo-${{ env.VERSION }}.jar
-          asset_content_type: application/octet-stream
+          files: ./target/allure-bamboo-${{ env.VERSION }}.jar
