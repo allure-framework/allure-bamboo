@@ -66,7 +66,7 @@ jobs:
 
       - name: "Set next development version"
         run: |
-          ./mvnw versions:set -DnewVersion=${{ github.event.inputs.nextVersion }}-SNAPSHOT-j17
+          ./mvnw versions:set -DnewVersion=${{ github.event.inputs.nextVersion }}-SNAPSHOT
 
       - name: "Commit next development version and push it"
         run: |
