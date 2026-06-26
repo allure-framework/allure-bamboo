@@ -20,9 +20,7 @@
         <jacoco.version>0.8.12</jacoco.version>
         <spotless.version>2.44.5</spotless.version>
         <amps.version>9.12.4</amps.version>
-<!--        <bamboo.version>9.6.5</bamboo.version>-->
-        <bamboo.version>10.0.0</bamboo.version>
-<!--        <bamboo.version>10.2.0</bamboo.version>-->
+        <bamboo.version>10.2.21</bamboo.version>
         <bamboo.data.version>${bamboo.version}</bamboo.data.version>
         <plugin.testrunner.version>2.0.10</plugin.testrunner.version>
         <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
@@ -65,6 +63,14 @@
             <groupId>org.buildobjects</groupId>
             <artifactId>jproc</artifactId>
             <version>2.8.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
         </dependency>
         <dependency>
             <groupId>net.lingala.zip4j</groupId>

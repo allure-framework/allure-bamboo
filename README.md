@@ -10,7 +10,7 @@ from [existing Allure XML files](https://github.com/allure-framework/allure-core
 
 Download precompiled JAR from [releases page](https://github.com/allure-framework/allure-bamboo-plugin/releases) and
 install it manually as
-described [here](https://confluence.atlassian.com/display/UPM/Installing+add-ons#Installingadd-ons-Installingbyfileupload).
+described [here](https://confluence.atlassian.com/upm/installing-marketplace-apps-273875715.html#InstallingMarketplaceapps-Installanappfromafile).
 We use JDK 1.8+ to compile the plugin so be sure to use Java 1.8+ for running Bamboo.
 
 #### Long way
@@ -22,7 +22,7 @@ described [here](https://developer.atlassian.com/display/DOCS/Set+up+the+Atlassi
 4. Access http://localhost:6990/bamboo/ to view development instance of Bamboo
 5. Verify that plugin is working as expected
 6. Install **target/allure-bamboo-plugin-VERSION.jar** manually as
-described [here](https://confluence.atlassian.com/display/UPM/Installing+add-ons#Installingadd-ons-Installingbyfileupload).
+described [here](https://confluence.atlassian.com/upm/installing-marketplace-apps-273875715.html#InstallingMarketplaceapps-Installanappfromafile).
 
 ### Configuration and Usage
 
