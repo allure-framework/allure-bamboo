@@ -14,6 +14,9 @@ changelog:
     - title: '⬆️ Dependency Updates'
       labels:
         - 'type:dependencies'
+    - title: '⛔️ Security'
+      labels:
+        - 'type:security'
     - title: '👻 Internal changes'
       labels:
         - 'type:internal'

@@ -16,6 +16,7 @@
 package io.qameta.allure.bamboo;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import io.qameta.allure.Allure;
 import io.qameta.allure.bamboo.info.allurewidgets.summary.Statistic;
 import io.qameta.allure.bamboo.info.allurewidgets.summary.Summary;
 import io.qameta.allure.bamboo.info.allurewidgets.summary.Time;
@@ -32,6 +33,8 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -39,7 +42,7 @@ import java.util.zip.ZipOutputStream;
         "checkstyle:ClassDataAbstractionCoupling",
         "checkstyle:MultipleStringLiterals"
 })
-final class TestSupport {
+public final class TestSupport {
 
     private TestSupport() {
         // utility class
@@ -81,6 +84,36 @@ final class TestSupport {
                 StandardCharsets.UTF_8);
     }
 
+    public static void step(final String name,
+                            final ThrowingRunnable action) throws Exception {
+        Allure.step(name, action::run);
+    }
+
+    public static <T> T step(final String name,
+                             final ThrowingSupplier<T> action) throws Exception {
+        final Object[] value = new Object[1];
+        Allure.step(name, () -> value[0] = action.get());
+        @SuppressWarnings("unchecked")
+        final T typedValue = (T) value[0];
+        return typedValue;
+    }
+
+    public static void attachText(final String name,
+                                  final String value) {
+        Allure.addAttachment(name, "text/plain", value, ".txt");
+    }
+
+    static void attachDirectoryTree(final String name,
+                                    final Path root) throws IOException {
+        try (Stream<Path> paths = Files.walk(root)) {
+            final String listing = paths
+                    .map(path -> root.equals(path) ? "." : root.relativize(path).toString())
+                    .sorted()
+                    .collect(Collectors.joining(System.lineSeparator()));
+            attachText(name, listing);
+        }
+    }
+
     static ServletOutputStream servletOutputStream(final ByteArrayOutputStream outputStream) {
         return new ServletOutputStream() {
             @Override
@@ -112,5 +145,17 @@ final class TestSupport {
             }
             separatorIndex = entryName.indexOf('/', separatorIndex + 1);
         }
+    }
+
+    @FunctionalInterface
+    public interface ThrowingRunnable {
+
+        void run() throws Exception;
+    }
+
+    @FunctionalInterface
+    public interface ThrowingSupplier<T> {
+
+        T get() throws Exception;
     }
 }
