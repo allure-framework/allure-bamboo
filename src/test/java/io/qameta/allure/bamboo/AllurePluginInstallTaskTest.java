@@ -23,8 +23,7 @@ import org.mockito.junit.MockitoRule;
 import java.util.Collections;
 import java.util.List;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -44,7 +43,7 @@ public class AllurePluginInstallTaskTest {
 
         final AllurePluginInstallTask task = new AllurePluginInstallTask(executablesManager);
 
-        assertThat(task.doUpgrade(), empty());
+        assertThat(task.doUpgrade()).isEmpty();
         verify(executablesManager).addDefaultAllureExecutableCapability();
     }
 
@@ -54,7 +53,7 @@ public class AllurePluginInstallTaskTest {
 
         final AllurePluginInstallTask task = new AllurePluginInstallTask(executablesManager);
 
-        assertThat(task.doUpgrade(), empty());
+        assertThat(task.doUpgrade()).isEmpty();
         verify(executablesManager, never()).addDefaultAllureExecutableCapability();
     }
 }

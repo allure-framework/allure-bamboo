@@ -21,10 +21,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoRule;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.junit.MockitoJUnit.rule;
@@ -53,12 +50,12 @@ public class ConfigureAllureReportActionTest {
         action.prepare();
         action.input();
 
-        assertThat(action.getDownloadBaseUrl(), equalTo("https://downloads.example/"));
-        assertThat(action.getLocalStoragePath(), equalTo("/var/allure"));
-        assertThat(action.isDownloadEnabled(), equalTo(true));
-        assertThat(action.isEnabledByDefault(), equalTo(true));
-        assertThat(action.isCustomLogoEnabled(), equalTo(true));
-        assertThat(action.isEnabledReportsCleanup(), equalTo(true));
+        assertThat(action.getDownloadBaseUrl()).isEqualTo("https://downloads.example/");
+        assertThat(action.getLocalStoragePath()).isEqualTo("/var/allure");
+        assertThat(action.isDownloadEnabled()).isTrue();
+        assertThat(action.isEnabledByDefault()).isTrue();
+        assertThat(action.isCustomLogoEnabled()).isTrue();
+        assertThat(action.isEnabledReportsCleanup()).isTrue();
     }
 
     @Test
@@ -69,8 +66,8 @@ public class ConfigureAllureReportActionTest {
 
         action.validate();
 
-        assertThat(action.getActionErrors(),
-                contains("allure.config.download.url.error.required", "allure.config.local.storage.required"));
+        assertThat(action.getActionErrors())
+                .containsExactly("allure.config.download.url.error.required", "allure.config.local.storage.required");
     }
 
     @Test
@@ -88,10 +85,10 @@ public class ConfigureAllureReportActionTest {
         final String result = action.execute();
 
         verify(settingsManager).saveSettings(captor.capture());
-        assertThat(result, equalTo("success"));
-        assertFalse(captor.getValue().isDownloadEnabled());
-        assertThat(captor.getValue().getDownloadBaseUrl(), equalTo("https://downloads.example/"));
-        assertThat(captor.getValue().getLocalStoragePath(), equalTo("/tmp/allure"));
+        assertThat(result).isEqualTo("success");
+        assertThat(captor.getValue().isDownloadEnabled()).isFalse();
+        assertThat(captor.getValue().getDownloadBaseUrl()).isEqualTo("https://downloads.example/");
+        assertThat(captor.getValue().getLocalStoragePath()).isEqualTo("/tmp/allure");
     }
 
     private static final class TestConfigureAllureReportAction extends ConfigureAllureReportAction {

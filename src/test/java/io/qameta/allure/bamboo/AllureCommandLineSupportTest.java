@@ -17,8 +17,7 @@ package io.qameta.allure.bamboo;
 
 import org.junit.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class AllureCommandLineSupportTest {
 
@@ -41,13 +40,13 @@ public class AllureCommandLineSupportTest {
     @Test
     public void itShouldReturnNotContainingTestcasesResult() throws Exception {
         final AllureGenerateResult result = support.parseGenerateOutput(String.format(OUTPUT, 0, 0, 0, 0, "Unknown"));
-        assertThat(result.isContainsTestCases(), equalTo(false));
+        assertThat(result.isContainsTestCases()).isFalse();
     }
 
     @Test
     public void itShouldReturnContainingTestcasesResult() throws Exception {
         final AllureGenerateResult result = support.parseGenerateOutput(String.format(OUTPUT, 1, 5, 2, 1, "80"));
-        assertThat(result.isContainsTestCases(), equalTo(true));
+        assertThat(result.isContainsTestCases()).isTrue();
 
     }
 }

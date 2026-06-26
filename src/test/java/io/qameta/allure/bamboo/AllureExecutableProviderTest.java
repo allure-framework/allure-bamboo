@@ -28,6 +28,8 @@ import java.util.Optional;
 
 import static io.qameta.allure.bamboo.AllureExecutableProvider.BIN;
 import static io.qameta.allure.bamboo.AllureExecutableProvider.DEFAULT_VERSION;
+import static io.qameta.allure.bamboo.TestSupport.attachText;
+import static io.qameta.allure.bamboo.TestSupport.step;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -64,7 +66,8 @@ public class AllureExecutableProviderTest {
     @Test
     public void itShouldProvideDefaultVersion() throws Exception {
         provide("Allure WITHOUT VERSION");
-        verify(downloader).downloadAndExtractAllureTo(homeDir, DEFAULT_VERSION);
+        step("verify the provider falls back to the default Allure version", () ->
+                verify(downloader).downloadAndExtractAllureTo(homeDir, DEFAULT_VERSION));
     }
 
     @Test
@@ -91,8 +94,11 @@ public class AllureExecutableProviderTest {
         verify(downloader).downloadAndExtractAllureTo(homeDir, "2.0-BETA4");
     }
 
-    private Optional<AllureExecutable> provide(String executableName) {
+    private Optional<AllureExecutable> provide(final String executableName) throws Exception {
         when(executablesManager.getExecutableByName(executableName)).thenReturn(Optional.of(homeDir));
-        return provider.provide(config, executableName);
+        return step("resolve executable " + executableName, () -> {
+            attachText("Requested executable name", executableName);
+            return provider.provide(config, executableName);
+        });
     }
 }
