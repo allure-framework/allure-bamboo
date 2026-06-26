@@ -201,7 +201,7 @@ public class AllureArtifactsManager {
             if (filename.contains(CS_2) || filename.contains(SEPARATOR) || filename.contains("\\")) {
                 throw new AllurePluginException("Invalid filename: " + filename);
             }
-            
+
             final String fullPath = file.isDirectory()
                     ? new File(file, INDEX_HTML).getAbsolutePath()
                     : file.getAbsolutePath();
@@ -263,7 +263,7 @@ public class AllureArtifactsManager {
                                     Files.copy(file.toPath(), Paths.get(tempDir.getPath(), file.getName()));
                                 } else if (!StringUtils.equals(file.getName(), ".")
                                         && !StringUtils.equals(file.getName(), CS_2)) {
-                                    copyDirectory(dataProvider.getFile(), tempDir);
+                                    copyDirectory(file, new File(tempDir, file.getName()));
                                 }
                             } catch (IOException e) {
                                 logAndThrow(e, FAILED_TO_DOWNLOAD_ARTIFACTS_TO + tempDir);
