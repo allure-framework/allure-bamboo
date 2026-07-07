@@ -25,7 +25,7 @@ Refresh this section when Allure, test runners, Allure results paths, CI, or pro
 - Latest/state directory recovery: `allure agent latest`; `allure agent state-dir`; override with `ALLURE_AGENT_STATE_DIR`
 - Selection/rerun support: `allure agent select (--latest | --from <dir>) --preset review|failed|unsuccessful|all`; rerun via `allure agent --rerun-latest -- <cmd>` or `--rerun-from <dir>` with `--rerun-preset` (test-plan transport `ALLURE_TESTPLAN_PATH`; JUnit 4 adapter honoring is unverified here — see [Output, State, And Reruns](#output-state-and-reruns))
 - Existing-result or dump inspection: `allure agent inspect [<allure-results-dir-or-glob> ...]` and repeated `--dump <archive-or-glob>`
-- Existing-result fallback commands: `allure generate` (uses `allurerc.yaml`, report to `./target/allure-report`) and `allure open`; weaker than inspect — prefer inspect
+- Existing-result fallback commands: `allure generate` (uses `allurerc.mjs`, report to `./target/allure-report`) and `allure open`; weaker than inspect — prefer inspect
 - Capability/helper commands: `capabilities`, `latest`, `query`, `select`, `state-dir` all supported
 
 ## Local Test Surfaces
@@ -34,6 +34,7 @@ Refresh this section when Allure, test runners, Allure results paths, CI, or pro
 - Test roots: `src/test/java/io/qameta/allure/bamboo` (subpackages: root, `util`, `config`)
 - Allure results path: `target/allure-results` (set in `src/test/resources/allure.properties`)
 - Known selector support: Surefire `-Dtest=ClassName`, `-Dtest=ClassName#method`, and patterns like `-Dtest='Allure*Test'`
+- Known environments needed for tests: JDK 17 (CI parity). The default system JDK here can be much newer and breaks the build (PMD dies with `StackOverflowError` on JDK 25); prefix local runs with `JAVA_HOME=$(/usr/libexec/java_home -v 17)` when `./mvnw` fails before Surefire
 - Compatibility smoke scope: `compat/bamboo-specs` harness (Maven `exec:java`); **emits no Allure results** — an agent run over it reports zero logical tests by design. Review global stdout in the agent output plus `compat-artifacts/<version>/summary.md`. Requires a plugin JAR in `target/` (`./mvnw clean package` first) and a Bamboo DC timebomb license via `-Dcompat.productLicense`
 - Manual Bamboo investigation via `atlas-run` is for local debugging only; it is not a substitute for agent-mode evidence from the narrowest automated scope
 
@@ -42,7 +43,8 @@ Refresh this section when Allure, test runners, Allure results paths, CI, or pro
 - Existing Allure adapters/integrations: `allure-junit4` (Surefire listener `io.qameta.allure.junit4.AllureJunit4`) and `allure-assertj`, versions managed by `allure-bom`
 - Runner config files: `pom.xml` (Surefire plugin: listener + `argLine` javaagents), `src/test/resources/allure.properties`
 - Result-path configuration: `allure.results.directory=target/allure-results` in `allure.properties`
-- Report config: `allurerc.yaml` (report output `./target/allure-report`)
+- Global labels: `allure.label.module=allure-bamboo` in `allure.properties` puts a `module` label on every test result (verified via `--expect-label module=allure-bamboo`)
+- Report config: `allurerc.mjs` (name "Allure Bamboo", report output `./target/allure-report`, awesome plugin grouped by the `module` label, optional Allure service/TestOps publishing driven by `ALLURE_SERVICE_TOKEN`/`ALLURE_TOKEN`/`ALLURE_ENDPOINT` env — TestOps self-disables outside CI)
 - Assertion visibility: AssertJ assertions appear as steps through `allure-assertj` (AspectJ weaving already wired in the Surefire `argLine`)
 - Known unsupported or skipped integrations: the compat harness has no Allure adapter (console + `compat-artifacts` summary only)
 
@@ -70,7 +72,7 @@ Project specifics:
 | Profile | Command or profile intent | Expected use | Confidence limits |
 | --- | --- | --- | --- |
 | single class | `allure agent --goal "<claim>" -- ./mvnw -Dtest=AllureExecutableTest test` | Focused validation of one class or a fixed change | Proves only the selected scope |
-| unit suite | `allure agent --goal "<claim>" --expect-prefix io.qameta.allure.bamboo. -- ./mvnw test` | Broad unit validation before conclusions about the plugin | No Bamboo integration coverage |
+| unit suite | `allure agent --goal "<claim>" --expect-label module=allure-bamboo -- ./mvnw test` | Broad unit validation before conclusions about the plugin | No Bamboo integration coverage |
 | compat smoke | `allure agent --goal "<claim>" -- ./mvnw -q -f compat/bamboo-specs/pom.xml -Dcompat.rootDir="$(pwd)" -Dcompat.version=<v> -Dcompat.productLicense='<license>' exec:java` | Real-Bamboo smoke for one version (after `./mvnw clean package`) | Zero logical tests by design; review global stdout + `compat-artifacts/<v>/summary.md`; needs license; slow |
 | full verify | `./mvnw clean verify` | CI-equivalent gate (tests + checkstyle, spotbugs, spotless, jacoco) | Static checks dominate the runtime; for test evidence wrap it in `allure agent` |
 
@@ -90,7 +92,7 @@ Do not present ignored, excluded, swallowed, advisory, or non-gating test execut
 Before each validation run, decide whether expectations reduce a real risk for the intended conclusion. When they do, use the smallest fresh inline options.
 
 - Supported mechanism: inline CLI flags (see Capability Snapshot); `--expectations <file>` (YAML/JSON) only for large or generated contracts
-- **Suite-wide scope: use `--expect-prefix io.qameta.allure.bamboo.`** — the `package` label is per-subpackage (`io.qameta.allure.bamboo`, `...bamboo.util`, `...bamboo.config`), so `--expect-label package=io.qameta.allure.bamboo` silently misses the subpackages
+- **Suite-wide scope: use `--expect-label module=allure-bamboo`** (global label from `allure.properties`, covers all subpackages) or `--expect-prefix io.qameta.allure.bamboo.` — both verified. Do not use `--expect-label package=io.qameta.allure.bamboo`: the `package` label is per-subpackage (`io.qameta.allure.bamboo`, `...bamboo.util`, `...bamboo.config`) and silently misses the subpackages
 - Exact-test scope: `--expect-test <full name>` or `--expect-tests <count>` with a `-Dtest=` selection
 - Excluded-scope controls: `--forbid-label <k=v>` only
 - Evidence expectations: `--expect-steps`, `--expect-step-containing`, `--expect-attachments`, `--expect-attachment` (by name / content-type)
@@ -182,7 +184,7 @@ Do not create persistent agent output or expectation paths. `allure agent` creat
 - Selection/test plan: `allure agent select (--latest | --from <dir>) --preset ... [-o testplan.json]`
 - Inspect existing results/dumps: `allure agent inspect <results-dir-or-glob> ... [--dump <archive-or-glob>]`
 - HTML report: `--report auto|off|awesome|config`; status in `manifest/human-report.json`; auto generates `awesome/index.html` at ≤ 1000 stored visible results
-- Non-agent fallback: `allure generate` / `allure open` with `allurerc.yaml` (report at `./target/allure-report`) — weaker than inspect; use only when agent output is impossible
+- Non-agent fallback: `allure generate` / `allure open` with `allurerc.mjs` (report at `./target/allure-report`) — weaker than inspect; use only when agent output is impossible
 - **Parallel-run rule:** each concurrent run must pass its own caller-managed `--output` directory — the default temp output is unsafe for concurrency because each run clears the previous run's temp output — and output paths and expectation state must never be shared
 - CI artifact retention: Allure dump `allure-results-build` and generated `allure-report` (7 days each) plus jacoco report (Build); `compat-artifacts/<version>` (compat workflow); no agent output is retained — inspect dumps locally instead
 
@@ -190,7 +192,8 @@ Do not create persistent agent output or expectation paths. `allure agent` creat
 
 Per-test metadata belongs inline with the test. Do not centralize descriptions, labels, links, parameters, or intent-defining step names in helper wrappers or lookup tables keyed by test name. `TestSupport` handles mechanics only.
 
-- Suite/package taxonomy: `package` label is per-subpackage (`io.qameta.allure.bamboo`, `.util`, `.config`) — remember `--expect-prefix` for suite-wide scope
+- Module label: `module=allure-bamboo` on every main-suite result, set globally in `src/test/resources/allure.properties` (`allure.label.module=`); the awesome report groups by it. A future second results-emitting module should set its own distinct `module` value the same way
+- Suite/package taxonomy: `package` label is per-subpackage (`io.qameta.allure.bamboo`, `.util`, `.config`) — for suite-wide scope prefer `--expect-label module=allure-bamboo`
 - Feature/story/severity/owner labels: none in use — do not invent taxonomy
 - Issue links: unknown — none documented
 - Metadata to avoid: decorative labels no review step uses

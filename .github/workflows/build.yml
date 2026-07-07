@@ -32,7 +32,7 @@ jobs:
       - name: Maven Build
         run: |
           npx -y allure@3 run \
-            --config ./allurerc.yaml \
+            --config ./allurerc.mjs \
             --dump="${ALLURE_DUMP_NAME}" \
             -- ./mvnw clean verify -q
 
@@ -62,6 +62,11 @@ jobs:
       contents: read
       pull-requests: write
       checks: write
+    env:
+      ALLURE_SERVICE_TOKEN: ${{ secrets.ALLURE_SERVICE_TOKEN }}
+      ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
+      ALLURE_ENDPOINT: ${{ secrets.ALLURE_ENDPOINT }}
+      ALLURE_PROJECT_ID: ${{ secrets.ALLURE_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v7
 
@@ -80,7 +85,7 @@ jobs:
       - name: Generate Allure report
         run: |
           npx -y allure@3 generate \
-            --config ./allurerc.yaml \
+            --config ./allurerc.mjs \
             --dump="allure-results-*.zip" \
             --output=./target/allure-report
 
