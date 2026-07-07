@@ -1,15 +1,27 @@
 version: 2
 updates:
+  - package-ecosystem: "maven"
+    directories:
+      - "/"
+      - "/compat/bamboo-specs"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+    labels:
+      - "pr:dependencies"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
     labels:
-      - "type:dependencies"
-
-  - package-ecosystem: "maven"
-    directory: "/"
-    schedule:
-      interval: "daily"
-    labels:
-      - "type:dependencies"
+      - "pr:dependencies"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
