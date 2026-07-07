@@ -83,7 +83,6 @@ Do not present ignored, excluded, swallowed, advisory, or non-gating test execut
 - Default local test command: `./mvnw test` (no default exclusions known)
 - CI test jobs: GitHub Actions `Build` (`.github/workflows/build.yml`) runs `./mvnw clean verify -q` wrapped in `allure run --dump` on PRs and pushes to `main` — gating; a follow-up `report` job generates the Allure report and posts a PR summary (advisory only, runs even when the build fails)
 - Compatibility smoke (`.github/workflows/nightly-compat.yml`) is **manual** (`workflow_dispatch` only, despite the filename) and needs the `BAMBOO_COMPAT_PRODUCT_LICENSE` secret — do not treat it as continuous coverage
-- AppVeyor (`appveyor.yml`) runs a Windows `mvn clean install` referencing a `qulice` profile that no longer exists in `pom.xml`; treat it as stale/secondary, gating status unknown
 - Test artifacts retained by CI: `Build` uploads the Allure dump `allure-results-build` (zip, 7-day retention), the generated `allure-report` (7-day retention), and the jacoco report; the compat workflow uploads `compat-artifacts/<version>` (summary + logs, no Allure results)
 - Local or CI results/dumps suitable for `allure agent inspect`: local `target/allure-results` from a prior run; the `allure-results-build` dump artifact from any `Build` run within its 7-day retention (`gh run download <run-id> -n allure-results-build`, then `allure agent inspect --dump allure-results-build.zip`)
 
