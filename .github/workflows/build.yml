@@ -9,11 +9,13 @@ on:
       - '*'
   push:
     branches:
-      - 'master'
+      - 'main'
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      ALLURE_DUMP_NAME: allure-results-build
     steps:
       - uses: actions/checkout@v7
 
@@ -23,8 +25,25 @@ jobs:
           java-version: '17'
           cache: 'maven'
 
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24.x'
+
       - name: Maven Build
-        run: ./mvnw clean verify -q
+        run: |
+          npx -y allure@3 run \
+            --config ./allurerc.mjs \
+            --dump="${ALLURE_DUMP_NAME}" \
+            -- ./mvnw clean verify -q
+
+      - name: Upload Allure dump
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.ALLURE_DUMP_NAME }}
+          if-no-files-found: error
+          retention-days: 7
+          path: ./${{ env.ALLURE_DUMP_NAME }}.zip
 
       - name: Upload coverage artifacts
         if: always()
@@ -33,3 +52,55 @@ jobs:
           name: jacoco-report
           path: target/site/jacoco
           if-no-files-found: warn
+
+  report:
+    name: Build report
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: always()
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+    env:
+      ALLURE_SERVICE_TOKEN: ${{ secrets.ALLURE_SERVICE_TOKEN }}
+      ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
+      ALLURE_ENDPOINT: ${{ secrets.ALLURE_ENDPOINT }}
+      ALLURE_PROJECT_ID: ${{ secrets.ALLURE_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24.x'
+
+      - name: Download Allure dumps
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          pattern: allure-results-*
+          path: ./
+          merge-multiple: true
+
+      - name: Generate Allure report
+        run: |
+          npx -y allure@3 generate \
+            --config ./allurerc.mjs \
+            --dump="allure-results-*.zip" \
+            --output=./target/allure-report
+
+      - name: Upload Allure report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: allure-report
+          if-no-files-found: error
+          retention-days: 7
+          path: ./target/allure-report
+
+      - name: Post Allure summary
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false
+        uses: allure-framework/allure-action@v0.8.0
+        with:
+          report-directory: ./target/allure-report
+          github-token: ${{ secrets.GITHUB_TOKEN }}
