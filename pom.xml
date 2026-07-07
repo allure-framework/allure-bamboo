@@ -15,7 +15,7 @@
         <url>https://github.com/allure-framework</url>
     </organization>
     <properties>
-        <allure.version>2.34.0</allure.version>
+        <allure.version>2.35.3</allure.version>
         <aspectj.version>1.9.25.1</aspectj.version>
         <jacoco.version>0.8.15</jacoco.version>
         <spotless.version>3.7.0</spotless.version>
