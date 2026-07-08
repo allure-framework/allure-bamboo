@@ -24,3 +24,11 @@ jobs:
       - uses: softprops/action-gh-release@v3
         with:
           files: ./target/allure-bamboo-${{ env.VERSION }}.jar
+      - name: Publish to Atlassian Marketplace
+        if: ${{ !github.event.release.prerelease }}
+        env:
+          MARKETPLACE_EMAIL: ${{ secrets.MARKETPLACE_EMAIL }}
+          MARKETPLACE_TOKEN: ${{ secrets.MARKETPLACE_TOKEN }}
+          ARTIFACT: ./target/allure-bamboo-${{ env.VERSION }}.jar
+          RELEASE_URL: ${{ github.event.release.html_url }}
+        run: ./scripts/publish-marketplace.sh
