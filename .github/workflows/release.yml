@@ -11,7 +11,7 @@ on:
         description: "The release version in <MAJOR>.<MINOR>.<PATCH> or <MAJOR>.<MINOR>.<PATCH>-<BUILD> format"
         required: true
       nextVersion:
-        description: "The next version in <MAJOR>.<MINOR>.<PATCH> format without the SNAPSHOT suffix"
+        description: "The next version in <MAJOR>.<MINOR> format without the SNAPSHOT suffix"
         required: true
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
 
       - name: "Check next version"
         run: |
-          echo "${{ github.event.inputs.nextVersion }}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'
+          echo "${{ github.event.inputs.nextVersion }}" | grep -Eq '^[0-9]+\.[0-9]+$'
 
       - name: Create GitHub App token
         id: app-token
