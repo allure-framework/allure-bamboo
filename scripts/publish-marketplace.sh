@@ -2,9 +2,17 @@
 set -euo pipefail
 
 # Publishes a built plugin jar as a new public version of the Atlassian
-# Marketplace listing, carrying the listing content over from the latest
-# published version.
-# https://developer.atlassian.com/platform/marketplace/listing-an-app-version-using-rest/
+# Marketplace listing, using the Marketplace REST API v3 (the v2 API sunset
+# on June 30, 2026). Compatibility range, license, payment model, and the
+# listing content all carry over from the latest published version.
+# API reference: https://developer.atlassian.com/platform/marketplace/rest/v4/
+#
+# Flow:
+#   1. upload the jar                        POST /rest/3/artifacts
+#   2. resolve the app software id           GET  /rest/3/app-software/app-key/{key}
+#   3. read the latest version + listing     GET  .../versions, .../versions/{build}/listing
+#   4. create the new version                POST .../versions
+#   5. publish the new version's listing     POST .../versions/{build}/listing
 #
 # Required environment:
 #   MARKETPLACE_EMAIL  Atlassian account email of the vendor contact
@@ -13,11 +21,14 @@ set -euo pipefail
 #   ARTIFACT           path to the plugin jar
 #   RELEASE_URL        GitHub release page linked from the Marketplace release notes
 # Optional:
-#   DRY_RUN            when "true", upload the artifact and print the version
-#                      payload, but do not create the version
+#   DRY_RUN            when "true", upload the artifact and print the version and
+#                      listing payloads, but do not create or publish anything
 
 APP_KEY="io.qameta.allure.allure-bamboo"
-MARKETPLACE_URL="${MARKETPLACE_URL:-https://marketplace.atlassian.com}"
+BASE="${MARKETPLACE_BASE:-https://api.atlassian.com/marketplace}/rest/3"
+# Accepted on every publish — the same Marketplace Partner Agreement the
+# publish dialog in the Marketplace UI asks to confirm.
+AGREEMENT_URL="https://www.atlassian.com/licensing/marketplace/partneragreement"
 
 for name in MARKETPLACE_EMAIL MARKETPLACE_TOKEN VERSION ARTIFACT RELEASE_URL; do
   if [[ -z "${!name:-}" ]]; then
@@ -49,50 +60,93 @@ api() {
 }
 
 echo "Uploading $(basename "$ARTIFACT") ..."
-artifact_href=$(api -H 'Content-Type: application/octet-stream' \
-  --data-binary "@${ARTIFACT}" \
-  "${MARKETPLACE_URL}/rest/2/assets/artifact?file=$(basename "$ARTIFACT")" \
-  | jq -re '._links.self.href')
-echo "Uploaded artifact: ${artifact_href}"
+upload=$(api -F "file=@${ARTIFACT}" "${BASE}/artifacts")
+artifact_id=$(jq -re '._links.self.href | split("/") | last' <<<"$upload")
+jar_version=$(jq -r '.details.version // empty' <<<"$upload")
+echo "Uploaded artifact ${artifact_id} (plugin version: ${jar_version:-unknown})"
 
-# buildNumber is omitted so Marketplace assigns the next one, and
-# compatibilities are omitted so the previous version's range is reused.
-payload=$(curl -fsS "${MARKETPLACE_URL}/rest/2/addons/${APP_KEY}/versions/latest" | jq \
+if [[ -n "$jar_version" && "$jar_version" != "$VERSION" ]]; then
+  echo "error: jar declares version ${jar_version}, expected ${VERSION}" >&2
+  exit 1
+fi
+
+app_software_id=$(api "${BASE}/app-software/app-key/${APP_KEY}" \
+  | jq -re 'map(select(.hosting == "datacenter")) | first | .appSoftwareId')
+echo "App software id: ${app_software_id}"
+
+latest=$(api "${BASE}/app-software/${app_software_id}/versions?limit=50" \
+  | jq -e '.versions | max_by(.buildNumber)')
+prev_build=$(jq -re '.buildNumber' <<<"$latest")
+new_build=$((prev_build + 100))
+echo "Latest version: $(jq -r '.versionNumber' <<<"$latest") (build ${prev_build}); new build: ${new_build}"
+
+version_payload=$(jq -e \
   --arg version "$VERSION" \
-  --arg artifactHref "$artifact_href" \
-  --arg date "$(date -u +%Y-%m-%d)" \
+  --arg artifactId "$artifact_id" \
+  --arg agreementUrl "$AGREEMENT_URL" \
   --arg releaseUrl "$RELEASE_URL" \
+  --argjson buildNumber "$new_build" \
   '{
-    _links: ({artifact: {href: $artifactHref}}
-      + (if ._links.license.href then {license: {href: ._links.license.href}} else {} end)),
-    _embedded: {
-      highlights: [(._embedded.highlights // [])[]
-        | {_links: (._links | with_entries(.value |= {href})), title, body, explanation}],
-      screenshots: [(._embedded.screenshots // [])[]
-        | {_links: (._links | with_entries(.value |= {href})), caption}]
+    buildNumber: $buildNumber,
+    versionNumber: $version,
+    compatibilities: [.compatibilities[] | {parentSoftwareId, minBuildNumber, maxBuildNumber}],
+    supportedPaymentModel: (.supportedPaymentModel // "free"),
+    frameworkDetails: {
+      frameworkId: "plugin",
+      attributes: {artifactId: $artifactId, pluginFrameworkType: "P2"}
     },
-    name: $version,
-    status: "public",
-    paymentModel: .paymentModel,
-    release: {date: $date, beta: false, supported: true},
-    vendorLinks: (.vendorLinks // {}),
-    text: {
-      moreDetails: .text.moreDetails,
+    supported: true,
+    beta: false,
+    acceptedAgreements: [{agreementUrl: $agreementUrl}],
+    changelog: {
       releaseSummary: "See the GitHub release notes for details.",
-      releaseNotes: "<p>See the <a href=\"\($releaseUrl)\">GitHub release notes</a>.</p>"
+      releaseNotes: "See the GitHub release notes: \($releaseUrl)"
     }
-  } | del(.. | select(. == null))')
+  }
+  + (if .licenseType.id then {licenseType: {id: .licenseType.id}} else {} end)
+  | if (.compatibilities | length) == 0
+      or any(.compatibilities[]; .parentSoftwareId == null or .minBuildNumber == null or .maxBuildNumber == null)
+    then error("cannot carry compatibilities over from the latest version") else . end' \
+  <<<"$latest")
+
+prev_listing=$(api "${BASE}/app-software/${app_software_id}/versions/${prev_build}/listing")
+listing_payload=$(jq -e '{
+    state: "PUBLIC",
+    revision: 1,
+    screenshots: (if .screenshots then [.screenshots[] | {imageId, caption}] else null end),
+    highlights: (if .highlights then [.highlights[]
+      | {title, caption, summary, thumbnail, screenshot: (.screenshot | {imageId, caption})}] else null end),
+    moreDetails: .moreDetails,
+    heroImage: .heroImage,
+    youtubeId: .youtubeId,
+    deploymentInstructions: (if .deploymentInstructions then [.deploymentInstructions[]
+      | {body} + (if .screenshot then {screenshot: (.screenshot | {imageId, caption})} else {} end)] else null end),
+    developerLinks: (.developerLinks
+      | if . then {documentation, learnMore, eula, purchase, bonTermsSupported, partnerSpecificTerms} else null end)
+  } | del(.. | select(. == null))' <<<"$prev_listing")
 
 if [[ "${DRY_RUN:-}" == "true" ]]; then
-  echo "DRY_RUN: would create version ${VERSION} with payload:"
-  echo "$payload"
+  echo "DRY_RUN: would create version ${VERSION} (build ${new_build}) with payload:"
+  echo "$version_payload"
+  echo "DRY_RUN: would publish its listing with payload:"
+  echo "$listing_payload"
   exit 0
 fi
 
-echo "Creating version ${VERSION} ..."
-api -H 'Content-Type: application/json' \
-  --data-binary "$payload" \
-  "${MARKETPLACE_URL}/rest/2/addons/${APP_KEY}/versions" \
-  | jq '{name, buildNumber, status}'
+echo "Creating version ${VERSION} (build ${new_build}) ..."
+created=$(api -H 'Content-Type: application/json' \
+  --data-binary "$version_payload" \
+  "${BASE}/app-software/${app_software_id}/versions")
+jq '{versionNumber, buildNumber, state}' <<<"$created"
+
+echo "Publishing the version listing ..."
+if ! listing=$(api -H 'Content-Type: application/json' \
+  --data-binary "$listing_payload" \
+  "${BASE}/app-software/${app_software_id}/versions/${new_build}/listing"); then
+  echo "error: version ${VERSION} (build ${new_build}) was created, but publishing its" >&2
+  echo "listing failed — finish the release in the Marketplace developer console." >&2
+  exit 1
+fi
+jq '{state, approvalStatus, revision}' <<<"$listing"
 
 echo "Published ${APP_KEY} ${VERSION} to Atlassian Marketplace."
