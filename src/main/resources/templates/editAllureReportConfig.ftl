@@ -26,9 +26,9 @@ cancelUri='/admin/editAllureReportConfig.action'
 
     [@ww.checkbox labelKey='custom.allure.config.reports.cleanup.enabled.label' name='enabledReportsCleanup' toggle='false' /]
 
-    [@ww.textfield labelKey='custom.allure.config.download.url.label' name='localStoragePath' required='true'/]
+    [@ww.textfield labelKey='custom.allure.config.download.url.label' name='downloadBaseUrl' required='true'/]
 
-    [@ww.textfield labelKey='custom.allure.config.local.storage.label' name='downloadBaseUrl' required='true'/]
+    [@ww.textfield labelKey='custom.allure.config.local.storage.label' name='localStoragePath' required='true'/]
 [/@ww.form]
 </body>
 </html>

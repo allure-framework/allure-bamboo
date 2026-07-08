@@ -15,10 +15,11 @@
  */
 package io.qameta.allure.bamboo.info;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class AllurePlugins {
-    private List<String> plugins;
+    private List<String> plugins = new ArrayList<>();
 
     public AllurePlugins(final List<String> plugins) {
         this.plugins = plugins;

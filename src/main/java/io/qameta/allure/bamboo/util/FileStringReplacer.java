@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class FileStringReplacer {
@@ -33,7 +34,7 @@ public final class FileStringReplacer {
                                      final String oldString,
                                      final String newString) throws IOException {
         String content = new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8);
-        content = content.replaceAll(oldString, newString);
+        content = content.replaceAll(oldString, Matcher.quoteReplacement(newString));
         Files.write(filePath, content.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -41,7 +42,7 @@ public final class FileStringReplacer {
                                      final @NotNull Pattern pattern,
                                      final String newString) throws IOException {
         String content = new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8);
-        content = pattern.matcher(content).replaceAll(newString);
+        content = pattern.matcher(content).replaceAll(Matcher.quoteReplacement(newString));
         Files.write(filePath, content.getBytes(StandardCharsets.UTF_8));
     }
 
