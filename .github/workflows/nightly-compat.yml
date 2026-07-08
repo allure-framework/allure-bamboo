@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.4.0
         with:
           distribution: temurin
           java-version: '17'
@@ -40,7 +40,7 @@ jobs:
       BAMBOO_PRODUCT_LICENSE: ${{ secrets.BAMBOO_COMPAT_PRODUCT_LICENSE }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5.4.0
         with:
           distribution: temurin
           java-version: '17'
