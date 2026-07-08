@@ -18,7 +18,7 @@
         <allure.version>2.35.3</allure.version>
         <aspectj.version>1.9.25.1</aspectj.version>
         <jacoco.version>0.8.15</jacoco.version>
-        <spotless.version>3.7.0</spotless.version>
+        <spotless.version>3.8.0</spotless.version>
         <amps.version>9.12.5</amps.version>
         <bamboo.version>10.2.21</bamboo.version>
         <bamboo.data.version>${bamboo.version}</bamboo.data.version>
