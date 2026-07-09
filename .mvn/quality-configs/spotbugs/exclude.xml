@@ -30,6 +30,20 @@
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
 
+    <Match>
+        <!-- buildReport intentionally catches every exception so a report-generation failure is
+             recorded as a failed AllureBuildResult instead of aborting the build-completion action. -->
+        <Class name="io.qameta.allure.bamboo.AllureBuildCompleteAction"/>
+        <Method name="buildReport"/>
+        <Bug pattern="REC_CATCH_EXCEPTION"/>
+    </Match>
+    <Match>
+        <!-- /bin/bash is a deliberate, standard absolute path, used only after cmdLine.hasCommand(BASH_CMD). -->
+        <Class name="io.qameta.allure.bamboo.AllureExecutable"/>
+        <Method name="generate"/>
+        <Bug pattern="DMI_HARDCODED_ABSOLUTE_FILENAME"/>
+    </Match>
+
     <!-- Do not check class -->
     <!--<Match>-->
     <!--<Class name="com.foobar.ClassNotToBeAnalyzed" />-->

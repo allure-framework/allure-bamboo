@@ -24,9 +24,7 @@ import com.atlassian.bamboo.plan.cache.ImmutableChain;
 import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.sun.net.httpserver.HttpServer;
 import io.qameta.allure.bamboo.info.allurewidgets.summary.Summary;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -34,8 +32,8 @@ import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoRule;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -61,6 +59,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -103,8 +102,6 @@ public class AllureBuildCompleteActionTest {
     @Mock
     private BuildLogger buildLogger;
 
-    private HttpServer historyServer;
-
     @Before
     public void setUp() {
         when(chain.getBuildDefinition()).thenReturn(buildDefinition);
@@ -117,13 +114,6 @@ public class AllureBuildCompleteActionTest {
         when(chainExecution.getPlanResultKey()).thenReturn(getPlanResultKey(PLAN_KEY, BUILD_NUMBER));
         when(executablesManager.getDefaultAllureExecutable()).thenReturn(Optional.of("exec-1"));
         when(resultsSummaryManager.findLastBuildResultBefore(anyString(), anyInt())).thenReturn(null);
-    }
-
-    @After
-    public void tearDown() {
-        if (historyServer != null) {
-            historyServer.stop(0);
-        }
     }
 
     @Test
@@ -251,15 +241,6 @@ public class AllureBuildCompleteActionTest {
 
     @Test
     public void itShouldCopyHistoryFromThePreviousBuild() throws Exception {
-        historyServer = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-        createHistoryContext("history.json", "[]");
-        createHistoryContext("history-trend.json", "[]");
-        createHistoryContext("categories-trend.json", "[]");
-        createHistoryContext("duration-trend.json", "[]");
-        historyServer.start();
-
-        when(administrationConfiguration.getBaseUrl())
-                .thenReturn(String.format("http://127.0.0.1:%s", historyServer.getAddress().getPort()));
         when(chainResultsSummary.isFailed()).thenReturn(true);
         when(buildDefinition.getCustomConfiguration()).thenReturn(config("exec-1", true, false, null));
         when(settingsManager.getSettings()).thenReturn(globalConfig(false, false));
@@ -275,6 +256,10 @@ public class AllureBuildCompleteActionTest {
         final ResultsSummary previousResult = org.mockito.Mockito.mock(ResultsSummary.class);
         when(previousResult.getBuildNumber()).thenReturn(4);
         when(resultsSummaryManager.findLastBuildResultBefore(PLAN_KEY, BUILD_NUMBER)).thenReturn(previousResult);
+        // History is now read straight from the artifact store, not fetched over HTTP from the servlet.
+        when(artifactsManager.getArtifactInputStream(eq(PLAN_KEY), eq("4"), anyString()))
+                .thenAnswer(invocation -> Optional.of(
+                        new ByteArrayInputStream("[]".getBytes(StandardCharsets.UTF_8))));
         when(allureExecutable.generate(any(Collection.class), any(Path.class))).thenAnswer(invocation -> {
             @SuppressWarnings("unchecked")
             final Collection<Path> sourceDirs = invocation.getArgument(0);
@@ -292,18 +277,6 @@ public class AllureBuildCompleteActionTest {
 
         final AllureBuildResult buildResult = fromCustomData(chainResultsSummary.getCustomBuildData());
         assertThat(buildResult.isSuccess()).isTrue();
-    }
-
-    private void createHistoryContext(final String fileName,
-                                      final String body) {
-        historyServer.createContext("/plugins/servlet/allure/report/" + PLAN_KEY + "/4/history/" + fileName,
-                exchange -> {
-                    final byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
-                    exchange.getResponseHeaders().add("Content-Type", "application/json");
-                    exchange.sendResponseHeaders(200, bytes.length);
-                    exchange.getResponseBody().write(bytes);
-                    exchange.close();
-                });
     }
 
     private Map<String, String> config(final String executable,

@@ -47,6 +47,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoRule;
 
 import java.io.File;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -147,6 +148,45 @@ public class AllureArtifactsManagerTest {
     }
 
     @Test
+    public void itShouldOpenLocalArtifactContentDirectly() throws Exception {
+        final Path historyFile = localStorage.resolve("allure-reports").resolve(PLAN_KEY).resolve(BUILD_NUMBER)
+                .resolve("history").resolve("history.json");
+        final ResultsSummary resultsSummary = resultsSummaryWithHandler(BambooRemoteArtifactHandler.class.getName());
+        Files.createDirectories(historyFile.getParent());
+        Files.writeString(historyFile, "[{\"name\":\"trend\"}]", StandardCharsets.UTF_8);
+        final BambooRemoteArtifactHandler handler = org.mockito.Mockito.mock(BambooRemoteArtifactHandler.class);
+        doReturn(List.of(handler))
+                .when(pluginAccessor)
+                .getModules(org.mockito.ArgumentMatchers.any(java.util.function.Predicate.class));
+        when(resultsSummaryManager.getResultsSummary(getPlanResultKey(PLAN_KEY, Integer.parseInt(BUILD_NUMBER))))
+                .thenReturn(resultsSummary);
+
+        final Optional<InputStream> content =
+                manager.getArtifactInputStream(PLAN_KEY, BUILD_NUMBER, "history/history.json");
+
+        assertThat(content).isPresent();
+        try (InputStream in = content.get()) {
+            assertThat(new String(in.readAllBytes(), StandardCharsets.UTF_8)).contains("trend");
+        }
+    }
+
+    @Test
+    public void itShouldReturnEmptyStreamWhenArtifactIsMissingOnDisk() throws Exception {
+        final ResultsSummary resultsSummary = resultsSummaryWithHandler(BambooRemoteArtifactHandler.class.getName());
+        final BambooRemoteArtifactHandler handler = org.mockito.Mockito.mock(BambooRemoteArtifactHandler.class);
+        doReturn(List.of(handler))
+                .when(pluginAccessor)
+                .getModules(org.mockito.ArgumentMatchers.any(java.util.function.Predicate.class));
+        when(resultsSummaryManager.getResultsSummary(getPlanResultKey(PLAN_KEY, Integer.parseInt(BUILD_NUMBER))))
+                .thenReturn(resultsSummary);
+
+        final Optional<InputStream> content =
+                manager.getArtifactInputStream(PLAN_KEY, BUILD_NUMBER, "history/history.json");
+
+        assertThat(content).isEmpty();
+    }
+
+    @Test
     public void itShouldRejectUnsafeLocalArtifactPaths() throws Exception {
         step("prepare a remote report summary with a local file lookup", () -> {
             final ResultsSummary resultsSummary =
@@ -166,6 +206,75 @@ public class AllureArtifactsManagerTest {
             assertThat(error).isNotNull();
             attachText("Rejected artifact path", ".. -> " + error.getMessage());
         });
+    }
+
+    @Test
+    public void itShouldRejectMultiSegmentTraversalEscapingReportRoot() throws Exception {
+        step("prepare a local (agent-handler) report summary", () -> {
+            final ResultsSummary resultsSummary =
+                    resultsSummaryWithHandler(BambooRemoteArtifactHandler.class.getName());
+            final BambooRemoteArtifactHandler handler = org.mockito.Mockito.mock(BambooRemoteArtifactHandler.class);
+            doReturn(List.of(handler))
+                    .when(pluginAccessor)
+                    .getModules(org.mockito.ArgumentMatchers.any(java.util.function.Predicate.class));
+            when(resultsSummaryManager.getResultsSummary(getPlanResultKey(PLAN_KEY, Integer.parseInt(BUILD_NUMBER))))
+                    .thenReturn(resultsSummary);
+        });
+
+        step("reject a path whose final segment looks safe but which escapes the build directory", () -> {
+            final String traversal = "../../../../etc/passwd";
+            final AllurePluginException error = catchThrowableOfType(
+                    () -> manager.getArtifactUrl(PLAN_KEY, BUILD_NUMBER, traversal),
+                    AllurePluginException.class);
+            attachText("Traversal attempt",
+                    traversal + " -> " + (error == null ? "NOT REJECTED" : error.getMessage()));
+            assertThat(error).isNotNull();
+        });
+    }
+
+    @Test
+    public void itShouldRejectTraversalForRemoteHandlerArtifacts() throws Exception {
+        final ArtifactHandler handler = org.mockito.Mockito.mock(ArtifactHandler.class);
+        final ArtifactLinkDataProvider dataProvider = org.mockito.Mockito.mock(ArtifactLinkDataProvider.class);
+        final ResultsSummary resultsSummary = resultsSummaryWithHandler(ArtifactHandler.class.getName());
+        doReturn(List.of(handler))
+                .when(pluginAccessor)
+                .getModules(org.mockito.ArgumentMatchers.any(java.util.function.Predicate.class));
+        when(resultsSummaryManager.getResultsSummary(getPlanResultKey(PLAN_KEY, Integer.parseInt(BUILD_NUMBER))))
+                .thenReturn(resultsSummary);
+        when(handler.getArtifactLinkDataProvider(any(MutableArtifact.class), any())).thenReturn(dataProvider);
+
+        final AllurePluginException error = catchThrowableOfType(
+                () -> manager.getArtifactUrl(PLAN_KEY, BUILD_NUMBER, "../../../etc/passwd"),
+                AllurePluginException.class);
+
+        assertThat(error).isNotNull();
+    }
+
+    @Test
+    public void itShouldRejectSymlinkEscapesFromLocalReports() throws Exception {
+        final Path reportDir = localStorage.resolve("allure-reports").resolve(PLAN_KEY).resolve(BUILD_NUMBER);
+        Files.createDirectories(reportDir);
+        final Path outside = temporaryFolder.newFile("outside-secret.txt").toPath();
+        Files.writeString(outside, "secret", StandardCharsets.UTF_8);
+        try {
+            Files.createSymbolicLink(reportDir.resolve("escape.html"), outside);
+        } catch (Exception e) {
+            org.junit.Assume.assumeNoException("Symlinks are not supported on this platform", e);
+        }
+        final ResultsSummary resultsSummary = resultsSummaryWithHandler(BambooRemoteArtifactHandler.class.getName());
+        final BambooRemoteArtifactHandler handler = org.mockito.Mockito.mock(BambooRemoteArtifactHandler.class);
+        doReturn(List.of(handler))
+                .when(pluginAccessor)
+                .getModules(org.mockito.ArgumentMatchers.any(java.util.function.Predicate.class));
+        when(resultsSummaryManager.getResultsSummary(getPlanResultKey(PLAN_KEY, Integer.parseInt(BUILD_NUMBER))))
+                .thenReturn(resultsSummary);
+
+        final AllurePluginException error = catchThrowableOfType(
+                () -> manager.getArtifactUrl(PLAN_KEY, BUILD_NUMBER, "escape.html"),
+                AllurePluginException.class);
+
+        assertThat(error).isNotNull();
     }
 
     @Test

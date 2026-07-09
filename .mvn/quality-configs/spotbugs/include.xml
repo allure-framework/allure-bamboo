@@ -2,6 +2,6 @@
 <!-- http://spotbugs.readthedocs.io/en/latest/filter.html -->
 <FindBugsFilter>
     <Match>
-        <Package name="~io\.qameta\.allure\bamboo.*"/>
+        <Package name="~io\.qameta\.allure\.bamboo.*"/>
     </Match>
 </FindBugsFilter>

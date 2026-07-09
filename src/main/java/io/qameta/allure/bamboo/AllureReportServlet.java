@@ -19,6 +19,10 @@ import com.atlassian.annotations.security.UnrestrictedAccess;
 import com.atlassian.bamboo.plan.PlanResultKey;
 import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
+import com.atlassian.bamboo.security.BambooPermissionManager;
+import com.atlassian.bamboo.security.acegi.acls.BambooPermission;
+import com.atlassian.sal.api.auth.LoginUriProvider;
+import com.atlassian.sal.api.user.UserManager;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -32,14 +36,17 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import static com.atlassian.bamboo.plan.PlanKeys.getPlanKey;
 import static com.atlassian.bamboo.plan.PlanKeys.getPlanResultKey;
 import static io.qameta.allure.bamboo.AllureBuildResult.fromCustomData;
 import static java.lang.Integer.parseInt;
@@ -51,19 +58,40 @@ public class AllureReportServlet extends HttpServlet {
 
     private static final Pattern URL_PATTERN = Pattern
             .compile(".*/plugins/servlet/allure/report/([^/]{2,})/([^/]+)/?(.*)");
+    // Absolute path (leading slash/backslash or Windows drive) or a parent-directory ".." segment.
+    private static final Pattern UNSAFE_PATH = Pattern
+            .compile("^[/\\\\]|^[a-zA-Z]:|(^|[/\\\\])\\.\\.([/\\\\]|$)");
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureReportServlet.class);
     private static final String CONTENT_DISPOSITION = "Content-Disposition";
     private static final String CONTENT_TYPE = "Content-Type";
     private static final String FAILED_TO_SEND_FILE_OF_ALLURE_REPORT = "Failed to send file {} of Allure Report ";
     private static final String X_FRAME_OPTIONS = "X-Frame-Options";
+    private static final String PROTOCOL_FILE = "file";
+    private static final String PROTOCOL_HTTP = "http";
+    private static final String PROTOCOL_HTTPS = "https";
+    private static final String X_CONTENT_TYPE_OPTIONS = "X-Content-Type-Options";
+    private static final String NOSNIFF = "nosniff";
+    private static final String CONTENT_SECURITY_POLICY = "Content-Security-Policy";
+    private static final String INDEX_HTML = "index.html";
+    private static final String SANDBOX_CSP =
+            "sandbox allow-scripts; base-uri 'none'; form-action 'none'; object-src 'none'";
 
     private final transient AllureArtifactsManager artifactsManager;
-    private final ResultsSummaryManager resultsSummaryManager;
+    private final transient ResultsSummaryManager resultsSummaryManager;
+    private final transient BambooPermissionManager permissionManager;
+    private final transient LoginUriProvider loginUriProvider;
+    private final transient UserManager userManager;
 
     public AllureReportServlet(final AllureArtifactsManager artifactsManager,
-                               final ResultsSummaryManager resultsSummaryManager) {
+                               final ResultsSummaryManager resultsSummaryManager,
+                               final BambooPermissionManager permissionManager,
+                               final LoginUriProvider loginUriProvider,
+                               final UserManager userManager) {
         this.artifactsManager = artifactsManager;
         this.resultsSummaryManager = resultsSummaryManager;
+        this.permissionManager = permissionManager;
+        this.loginUriProvider = loginUriProvider;
+        this.userManager = userManager;
     }
 
     static Pattern getUrlPattern() {
@@ -77,10 +105,13 @@ public class AllureReportServlet extends HttpServlet {
             final String protocol = url.getProtocol().toLowerCase();
             final String host = url.getHost().toLowerCase();
 
+            // Local report files have no host; their path is contained to the report dir when the URL is built.
+            if (PROTOCOL_FILE.equals(protocol)) {
+                return host.isEmpty();
+            }
+            // Remote artifacts are only ever served from the Bamboo host itself.
             final String baseHost = artifactsManager.getBaseHost();
-
-            return List.of("file", "http", "https").contains(protocol)
-                    && List.of("", "localhost", baseHost).contains(host);
+            return (PROTOCOL_HTTP.equals(protocol) || PROTOCOL_HTTPS.equals(protocol)) && host.equals(baseHost);
         } catch (Exception e) {
             LOGGER.error("Invalid URL: {}", urlString, e);
             return false;
@@ -143,11 +174,29 @@ public class AllureReportServlet extends HttpServlet {
                     .anyMatch(mimeType::contains) ? ";charset=utf-8" : "";
             response.setHeader(CONTENT_TYPE, mimeType + charsetPostfix);
             response.setHeader(CONTENT_DISPOSITION, "inline; filename=\"" + sanitizedFileName + "\"");
+            response.setHeader(X_CONTENT_TYPE_OPTIONS, NOSNIFF);
+            if (isSandboxedDocument(fileName)) {
+                response.setHeader(CONTENT_SECURITY_POLICY, SANDBOX_CSP);
+            }
 
         } catch (MalformedURLException e) {
             // should never happen
             throw new AllurePluginException("Unexpected error", e);
         }
+    }
+
+    /**
+     * Non-entrypoint active documents (HTML/SVG attachments) are served with a sandbox CSP so their
+     * scripts cannot run with the Bamboo origin. Report entrypoints ({@code index.html}, including
+     * {@code &lt;subpath&gt;/index.html}) stay relaxed so the report itself keeps working.
+     */
+    private boolean isSandboxedDocument(final String fileName) {
+        final String lower = fileName.toLowerCase(Locale.ROOT);
+        if (INDEX_HTML.equals(lower)) {
+            return false;
+        }
+        return lower.endsWith(".html") || lower.endsWith(".htm")
+                || lower.endsWith(".xhtml") || lower.endsWith(".svg");
     }
 
     private Optional<String> getArtifactUrl(final HttpServletRequest request,
@@ -161,6 +210,14 @@ public class AllureReportServlet extends HttpServlet {
                 final String planKey = matcher.group(1);
                 final String buildNumber = matcher.group(2);
                 final String filePath = matcher.group(3);
+                if (isRejectedPath(filePath)) {
+                    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    return Optional.empty();
+                }
+                if (!hasReadPermission(planKey)) {
+                    denyAccess(request, response);
+                    return Optional.empty();
+                }
                 if (wasUploadSuccess(response, planKey, parseInt(buildNumber))) {
                     return artifactsManager.getArtifactUrl(planKey, buildNumber, filePath);
                 }
@@ -171,6 +228,50 @@ public class AllureReportServlet extends HttpServlet {
             LOGGER.error("There is a problem to parse request uri: {}", request.getRequestURI(), e);
         }
         return Optional.empty();
+    }
+
+    private boolean hasReadPermission(final String planKey) {
+        return permissionManager.hasPlanPermission(BambooPermission.READ, getPlanKey(planKey));
+    }
+
+    /**
+     * Rejects report paths that are absolute or traverse out of the report, checking both the raw
+     * and the percent-decoded form so this holds even if a future Bamboo starts decoding the URI.
+     * Malformed percent-encoding is also rejected.
+     */
+    private boolean isRejectedPath(final String rawPath) {
+        final String decoded;
+        try {
+            decoded = URLDecoder.decode(rawPath, StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException e) {
+            LOGGER.warn("Rejecting malformed URL-encoded report path: {}", rawPath);
+            return true;
+        }
+        return UNSAFE_PATH.matcher(rawPath).find() || UNSAFE_PATH.matcher(decoded).find();
+    }
+
+    private void denyAccess(final HttpServletRequest request,
+                            final HttpServletResponse response) {
+        // A logged-in user who lacks permission gets 403; an anonymous user is sent to log in first.
+        if (StringUtils.isNotBlank(userManager.getRemoteUsername())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+        try {
+            response.sendRedirect(loginUriProvider.getLoginUri(currentUri(request)).toASCIIString());
+        } catch (IOException e) {
+            LOGGER.error("Failed to redirect anonymous user to login for {}", request.getRequestURI(), e);
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        }
+    }
+
+    private URI currentUri(final HttpServletRequest request) {
+        final StringBuffer url = request.getRequestURL();
+        final String query = request.getQueryString();
+        if (StringUtils.isNotBlank(query)) {
+            url.append('?').append(query);
+        }
+        return URI.create(url.toString());
     }
 
     private boolean wasUploadSuccess(final HttpServletResponse response,

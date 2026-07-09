@@ -22,6 +22,7 @@ import com.atlassian.bamboo.comment.CommentService;
 import com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService;
 import com.atlassian.bamboo.logger.ErrorAccessor;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
+import com.atlassian.bamboo.security.BambooPermissionManager;
 import com.atlassian.bamboo.template.TemplateRenderer;
 import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySetManager;
@@ -91,6 +92,13 @@ public class AllurePluginJavaConfig {
     @Bean
     public ResultsSummaryManager resultsSummaryManager() {
         return importOsgiService(ResultsSummaryManager.class);
+    }
+
+    // <component-import key="bambooPermissionManager"
+    //                   interface="com.atlassian.bamboo.security.BambooPermissionManager"/>
+    @Bean
+    public BambooPermissionManager bambooPermissionManager() {
+        return importOsgiService(BambooPermissionManager.class);
     }
 
     // <component-import key="errorAccessor" interface="com.atlassian.bamboo.logger.ErrorAccessor"/>
