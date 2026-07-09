@@ -18,13 +18,9 @@ package io.qameta.allure.bamboo.config;
 import com.atlassian.bamboo.build.BuildDefinitionManager;
 import com.atlassian.bamboo.build.artifact.ArtifactLinkManager;
 import com.atlassian.bamboo.build.artifact.handlers.ArtifactHandlersService;
-import com.atlassian.bamboo.comment.CommentService;
-import com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService;
-import com.atlassian.bamboo.logger.ErrorAccessor;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
 import com.atlassian.bamboo.security.BambooPermissionManager;
 import com.atlassian.bamboo.template.TemplateRenderer;
-import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySetManager;
 import com.atlassian.plugin.PluginAccessor;
 import com.atlassian.plugins.osgi.javaconfig.ExportOptions;
@@ -35,7 +31,6 @@ import com.atlassian.sal.api.auth.LoginUriProvider;
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
 import com.atlassian.sal.api.upgrade.PluginUpgradeTask;
 import com.atlassian.sal.api.user.UserManager;
-import com.atlassian.struts.TextProvider;
 import io.qameta.allure.bamboo.AllureArtifactsManager;
 import io.qameta.allure.bamboo.AllureCommandLineSupport;
 import io.qameta.allure.bamboo.AllureDownloader;
@@ -67,12 +62,6 @@ public class AllurePluginJavaConfig {
         return importOsgiService(ApplicationProperties.class);
     }
 
-    // <component-import key="textProvider" interface="com.atlassian.struts.TextProvider"/>
-    @Bean
-    public TextProvider textProvider() {
-        return importOsgiService(TextProvider.class);
-    }
-
     // <component-import key="artifactLinkManager"
     //                   interface="com.atlassian.bamboo.build.artifact.ArtifactLinkManager"/>
     @Bean
@@ -101,25 +90,6 @@ public class AllurePluginJavaConfig {
         return importOsgiService(BambooPermissionManager.class);
     }
 
-    // <component-import key="errorAccessor" interface="com.atlassian.bamboo.logger.ErrorAccessor"/>
-    @Bean
-    public ErrorAccessor errorAccessor() {
-        return importOsgiService(ErrorAccessor.class);
-    }
-
-    // <component-import key="commentsService" interface="com.atlassian.bamboo.comment.CommentService"/>
-    @Bean
-    public CommentService commentsService() {
-        return importOsgiService(CommentService.class);
-    }
-
-    // <component-import key="deploymentProjectService"
-    //                   interface="com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService"/>
-    @Bean
-    public DeploymentProjectService deploymentProjectService() {
-        return importOsgiService(DeploymentProjectService.class);
-    }
-
     // <component-import key="buildDefinitionManager"
     //                   interface="com.atlassian.bamboo.build.BuildDefinitionManager"/>
     @Bean
@@ -143,11 +113,6 @@ public class AllurePluginJavaConfig {
     @Bean
     public UserManager userManager() {
         return importOsgiService(UserManager.class);
-    }
-
-    @Bean
-    public BambooAuthenticationContext bambooAuthenticationContext() {
-        return importOsgiService(BambooAuthenticationContext.class);
     }
 
     // <component-import key="pluginSettingsFactory"

@@ -51,7 +51,6 @@ import static io.qameta.allure.bamboo.TestSupport.step;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -64,6 +63,8 @@ public class AllureReportServletTest {
 
     private static final String PLAN_KEY = "STPCI-STPITCONFLUENCE60";
     private static final int BUILD_NUMBER = 15;
+    private static final String SANDBOX_CSP =
+            "sandbox allow-scripts; base-uri 'none'; form-action 'none'; object-src 'none'; frame-ancestors 'self'";
 
     @Rule
     public MockitoRule mockitoRule = rule();
@@ -133,7 +134,7 @@ public class AllureReportServletTest {
 
         assertThat(outputStream.toString(StandardCharsets.UTF_8)).contains("<html>ok</html>");
         verify(response).setStatus(HttpServletResponse.SC_OK);
-        verify(response).setHeader("X-Frame-Options", "ALLOWALL");
+        verify(response).setHeader("X-Frame-Options", "SAMEORIGIN");
         verify(response).setHeader("Content-Type", "text/html;charset=utf-8");
         verify(response).setHeader("Content-Disposition", "inline; filename=\"index.html\"");
     }
@@ -152,8 +153,7 @@ public class AllureReportServletTest {
         servlet.doGet(request, response);
 
         verify(response).setHeader("X-Content-Type-Options", "nosniff");
-        verify(response).setHeader("Content-Security-Policy",
-                "sandbox allow-scripts; base-uri 'none'; form-action 'none'; object-src 'none'");
+        verify(response).setHeader("Content-Security-Policy", SANDBOX_CSP);
     }
 
     @Test
@@ -170,7 +170,55 @@ public class AllureReportServletTest {
         servlet.doGet(request, response);
 
         verify(response).setHeader("X-Content-Type-Options", "nosniff");
-        verify(response, never()).setHeader(eq("Content-Security-Policy"), anyString());
+        verify(response).setHeader("Content-Security-Policy", "frame-ancestors 'self'");
+    }
+
+    @Test
+    public void itShouldSandboxSubdirectoryIndexHtml() throws Exception {
+        final java.nio.file.Path attachment = temporaryFolder.newFile("index.html").toPath();
+        final ResultsSummary resultsSummary = successfulResultSummary();
+        Files.writeString(attachment, "<script>alert(1)</script>", StandardCharsets.UTF_8);
+        when(request.getRequestURI()).thenReturn(reportUri("data/attachments/index.html"));
+        when(resultsSummaryManager.getResultsSummary(getPlanResultKey(PLAN_KEY, BUILD_NUMBER)))
+                .thenReturn(resultsSummary);
+        when(artifactsManager.getArtifactUrl(PLAN_KEY, Integer.toString(BUILD_NUMBER), "data/attachments/index.html"))
+                .thenReturn(Optional.of(attachment.toUri().toURL().toString()));
+
+        servlet.doGet(request, response);
+
+        verify(response).setHeader("Content-Security-Policy", SANDBOX_CSP);
+    }
+
+    @Test
+    public void itShouldSandboxIndexHtmlServedForNestedDirectoryRequest() throws Exception {
+        final java.nio.file.Path attachment = temporaryFolder.newFile("index.html").toPath();
+        final ResultsSummary resultsSummary = successfulResultSummary();
+        Files.writeString(attachment, "<script>alert(1)</script>", StandardCharsets.UTF_8);
+        when(request.getRequestURI()).thenReturn(reportUri("data/attachments"));
+        when(resultsSummaryManager.getResultsSummary(getPlanResultKey(PLAN_KEY, BUILD_NUMBER)))
+                .thenReturn(resultsSummary);
+        when(artifactsManager.getArtifactUrl(PLAN_KEY, Integer.toString(BUILD_NUMBER), "data/attachments"))
+                .thenReturn(Optional.of(attachment.toUri().toURL().toString()));
+
+        servlet.doGet(request, response);
+
+        verify(response).setHeader("Content-Security-Policy", SANDBOX_CSP);
+    }
+
+    @Test
+    public void itShouldSandboxSingleDirectoryIndexHtmlSinceOnlyRootIsAnEntrypoint() throws Exception {
+        final java.nio.file.Path entrypoint = temporaryFolder.newFile("index.html").toPath();
+        final ResultsSummary resultsSummary = successfulResultSummary();
+        Files.writeString(entrypoint, "<html>report</html>", StandardCharsets.UTF_8);
+        when(request.getRequestURI()).thenReturn(reportUri("awesome/index.html"));
+        when(resultsSummaryManager.getResultsSummary(getPlanResultKey(PLAN_KEY, BUILD_NUMBER)))
+                .thenReturn(resultsSummary);
+        when(artifactsManager.getArtifactUrl(PLAN_KEY, Integer.toString(BUILD_NUMBER), "awesome/index.html"))
+                .thenReturn(Optional.of(entrypoint.toUri().toURL().toString()));
+
+        servlet.doGet(request, response);
+
+        verify(response).setHeader("Content-Security-Policy", SANDBOX_CSP);
     }
 
     @Test

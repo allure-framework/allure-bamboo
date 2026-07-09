@@ -41,14 +41,12 @@ public class AllureGlobalConfig implements Serializable {
     private final boolean enabledReportsCleanup;
     private final String localStoragePath;
     private final String downloadBaseUrl;
-    private final String downloadCliBaseUrl;
 
     public AllureGlobalConfig() {
         this(TRUE.toString(),
                 FALSE.toString(),
                 DEFAULT_DOWNLOAD_BASE_URL,
                 DEFAULT_LOCAL_STORAGE_PATH,
-                DEFAULT_CLI_BASE_URL,
                 TRUE.toString(),
                 FALSE.toString());
     }
@@ -57,7 +55,6 @@ public class AllureGlobalConfig implements Serializable {
                               final String enabledByDefault,
                               final String downloadBaseUrl,
                               final String localStoragePath,
-                              final String cmdLineUrl,
                               final String customLogoEnable,
                               final String enabledReportsCleanup) {
         this.downloadEnabled = StringUtils.isBlank(downloadEnabled)
@@ -66,8 +63,6 @@ public class AllureGlobalConfig implements Serializable {
                 ? FALSE : parseBoolean(enabledByDefault);
         this.downloadBaseUrl = StringUtils.isBlank(downloadBaseUrl)
                 ? DEFAULT_DOWNLOAD_BASE_URL : downloadBaseUrl;
-        this.downloadCliBaseUrl = StringUtils.isBlank(cmdLineUrl)
-                ? DEFAULT_CLI_BASE_URL : cmdLineUrl;
         this.localStoragePath = StringUtils.isBlank(localStoragePath)
                 ? DEFAULT_LOCAL_STORAGE_PATH : localStoragePath;
         this.customLogoEnabled = StringUtils.isBlank(customLogoEnable)
@@ -86,7 +81,6 @@ public class AllureGlobalConfig implements Serializable {
         this.enabledByDefault = enabledByDefault;
         this.downloadBaseUrl = StringUtils.isBlank(downloadBaseUrl)
                 ? DEFAULT_DOWNLOAD_BASE_URL : downloadBaseUrl;
-        this.downloadCliBaseUrl = DEFAULT_CLI_BASE_URL;
         this.localStoragePath = StringUtils.isBlank(localStoragePath)
                 ? DEFAULT_LOCAL_STORAGE_PATH : localStoragePath;
         this.customLogoEnabled = customLogoEnable;
@@ -114,7 +108,7 @@ public class AllureGlobalConfig implements Serializable {
     }
 
     String getDownloadCliBaseUrl() {
-        return downloadCliBaseUrl;
+        return DEFAULT_CLI_BASE_URL;
     }
 
     public String getLocalStoragePath() {

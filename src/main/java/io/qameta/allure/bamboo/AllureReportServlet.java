@@ -52,6 +52,7 @@ import static io.qameta.allure.bamboo.AllureBuildResult.fromCustomData;
 import static java.lang.Integer.parseInt;
 
 @UnrestrictedAccess
+@SuppressWarnings("PMD.GodClass")
 public class AllureReportServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
@@ -73,8 +74,11 @@ public class AllureReportServlet extends HttpServlet {
     private static final String NOSNIFF = "nosniff";
     private static final String CONTENT_SECURITY_POLICY = "Content-Security-Policy";
     private static final String INDEX_HTML = "index.html";
+    private static final String SAMEORIGIN = "SAMEORIGIN";
+    // Only the Bamboo UI (same origin) may frame report responses; blocks external clickjacking.
+    private static final String FRAME_ANCESTORS_CSP = "frame-ancestors 'self'";
     private static final String SANDBOX_CSP =
-            "sandbox allow-scripts; base-uri 'none'; form-action 'none'; object-src 'none'";
+            "sandbox allow-scripts; base-uri 'none'; form-action 'none'; object-src 'none'; frame-ancestors 'self'";
 
     private final transient AllureArtifactsManager artifactsManager;
     private final transient ResultsSummaryManager resultsSummaryManager;
@@ -127,7 +131,7 @@ public class AllureReportServlet extends HttpServlet {
                 return;
             }
             try (InputStream inputStream = URI.create(file).toURL().openStream()) {
-                setResponseHeaders(response, file);
+                setResponseHeaders(response, file, reportRelativePath(request));
                 IOUtils.copy(inputStream, response.getOutputStream());
             } catch (IOException e) {
                 LOGGER.error(FAILED_TO_SEND_FILE_OF_ALLURE_REPORT, file);
@@ -145,7 +149,7 @@ public class AllureReportServlet extends HttpServlet {
                 return;
             }
             try (InputStream inputStream = URI.create(file).toURL().openStream()) {
-                setResponseHeaders(response, file);
+                setResponseHeaders(response, file, reportRelativePath(request));
             } catch (IOException e) {
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 LOGGER.error(FAILED_TO_SEND_FILE_OF_ALLURE_REPORT, file);
@@ -155,7 +159,8 @@ public class AllureReportServlet extends HttpServlet {
 
     @SuppressWarnings("PMD.ExceptionAsFlowControl")
     private void setResponseHeaders(final HttpServletResponse response,
-                                    final String fileUrl) throws IOException {
+                                    final String fileUrl,
+                                    final String reportRelativePath) throws IOException {
 
         try {
             
@@ -175,9 +180,8 @@ public class AllureReportServlet extends HttpServlet {
             response.setHeader(CONTENT_TYPE, mimeType + charsetPostfix);
             response.setHeader(CONTENT_DISPOSITION, "inline; filename=\"" + sanitizedFileName + "\"");
             response.setHeader(X_CONTENT_TYPE_OPTIONS, NOSNIFF);
-            if (isSandboxedDocument(fileName)) {
-                response.setHeader(CONTENT_SECURITY_POLICY, SANDBOX_CSP);
-            }
+            response.setHeader(CONTENT_SECURITY_POLICY,
+                    isSandboxedDocument(fileName, reportRelativePath) ? SANDBOX_CSP : FRAME_ANCESTORS_CSP);
 
         } catch (MalformedURLException e) {
             // should never happen
@@ -187,16 +191,33 @@ public class AllureReportServlet extends HttpServlet {
 
     /**
      * Non-entrypoint active documents (HTML/SVG attachments) are served with a sandbox CSP so their
-     * scripts cannot run with the Bamboo origin. Report entrypoints ({@code index.html}, including
-     * {@code &lt;subpath&gt;/index.html}) stay relaxed so the report itself keeps working.
+     * scripts cannot run with the Bamboo origin. Only the report root {@code index.html} stays relaxed
+     * so the report itself keeps working; every other active document — including a nested
+     * {@code index.html} such as an attachment served from {@code data/attachments/index.html} — is
+     * sandboxed. The served file name is always the basename, so the report-relative request path is
+     * needed to tell the root entrypoint from a nested one.
      */
-    private boolean isSandboxedDocument(final String fileName) {
-        final String lower = fileName.toLowerCase(Locale.ROOT);
-        if (INDEX_HTML.equals(lower)) {
-            return false;
-        }
-        return lower.endsWith(".html") || lower.endsWith(".htm")
-                || lower.endsWith(".xhtml") || lower.endsWith(".svg");
+    private boolean isSandboxedDocument(final String servedFileName,
+                                        final String reportRelativePath) {
+        final String name = servedFileName.toLowerCase(Locale.ROOT);
+        final boolean activeDocument = name.endsWith(".html") || name.endsWith(".htm")
+                || name.endsWith(".xhtml") || name.endsWith(".svg");
+        return activeDocument && !(INDEX_HTML.equals(name) && isRootEntrypoint(reportRelativePath));
+    }
+
+    /**
+     * Whether the report-relative request path resolves to the report root {@code index.html} — an
+     * empty path (root directory request) or {@code index.html} itself. Any subdirectory is not.
+     */
+    private static boolean isRootEntrypoint(final String reportRelativePath) {
+        final String rel = (reportRelativePath == null ? "" : reportRelativePath)
+                .replaceFirst("^/+", "").replaceFirst("/+$", "").toLowerCase(Locale.ROOT);
+        return rel.isEmpty() || INDEX_HTML.equals(rel);
+    }
+
+    private static String reportRelativePath(final HttpServletRequest request) {
+        final Matcher matcher = URL_PATTERN.matcher(request.getRequestURI());
+        return matcher.matches() ? matcher.group(3) : "";
     }
 
     private Optional<String> getArtifactUrl(final HttpServletRequest request,
@@ -205,7 +226,7 @@ public class AllureReportServlet extends HttpServlet {
         try {
             if (matcher.matches()) {
                 if (StringUtils.isBlank(response.getHeader(X_FRAME_OPTIONS))) {
-                    response.setHeader(X_FRAME_OPTIONS, "ALLOWALL");
+                    response.setHeader(X_FRAME_OPTIONS, SAMEORIGIN);
                 }
                 final String planKey = matcher.group(1);
                 final String buildNumber = matcher.group(2);
