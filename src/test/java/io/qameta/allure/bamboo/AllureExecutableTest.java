@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoRule;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -28,6 +29,7 @@ import java.nio.file.Paths;
 import static io.qameta.allure.bamboo.TestSupport.attachText;
 import static io.qameta.allure.bamboo.TestSupport.step;
 import static java.util.Collections.singleton;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.junit.MockitoJUnit.rule;
@@ -45,6 +47,7 @@ public class AllureExecutableTest {
     private AllureCommandLineSupport cmdLine;
 
     private AllureExecutable executable;
+    private AllureExecutable customLogoExecutable;
     private Path fromDir;
     private Path toDir;
 
@@ -99,5 +102,41 @@ public class AllureExecutableTest {
         verify(cmdLine)
                 .runCommand(path.toString(), GENERATE, OPTIONS, toDir.toString(), fromDir.toString());
 
+    }
+
+    @Test
+    public void itShouldNotWriteUnsafeCustomLogoUrlIntoCss() throws Exception {
+        final Path css = prepareCustomLogoLayout();
+
+        customLogoExecutable.setCustomLogo("https://evil.example/logo.svg'); } body { display: none } /*");
+
+        final String content = Files.readString(css);
+        attachText("Custom logo stylesheet after an unsafe URL", content);
+        assertThat(content).contains("url('default')");
+        assertThat(content).doesNotContain("display: none");
+    }
+
+    @Test
+    public void itShouldWriteSafeCustomLogoUrlIntoCss() throws Exception {
+        final Path css = prepareCustomLogoLayout();
+
+        customLogoExecutable.setCustomLogo("https://cdn.example.com/logo.svg");
+
+        final String content = Files.readString(css);
+        attachText("Custom logo stylesheet after a safe URL", content);
+        assertThat(content).contains("url(https://cdn.example.com/logo.svg)");
+    }
+
+    private Path prepareCustomLogoLayout() throws IOException {
+        final Path root = Files.createTempDirectory("allure-dist");
+        final Path cmdPath = Files.createDirectories(root.resolve("bin")).resolve("allure");
+        Files.createFile(cmdPath);
+        Files.writeString(Files.createDirectories(root.resolve("config")).resolve("allure.yml"), "plugins: []\n");
+        final Path staticDir = Files.createDirectories(
+                root.resolve("plugins").resolve("custom-logo-plugin").resolve("static"));
+        final Path css = staticDir.resolve("styles.css");
+        Files.writeString(css, ".side-nav__brand { background: url('default'); left: 10px !important; }\n");
+        customLogoExecutable = new AllureExecutable(cmdPath, cmdLine);
+        return css;
     }
 }

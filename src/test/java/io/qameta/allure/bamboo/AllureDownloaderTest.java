@@ -63,7 +63,6 @@ public class AllureDownloaderTest {
                 "false",
                 baseUrl,
                 homeDir,
-                baseUrl,
                 "false",
                 "false");
         when(settingsManager.getSettings()).thenReturn(settings);

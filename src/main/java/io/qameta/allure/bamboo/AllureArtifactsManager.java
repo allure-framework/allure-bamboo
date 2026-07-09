@@ -345,6 +345,9 @@ public class AllureArtifactsManager {
             final ArtifactDefinitionContextImpl artifact = getAllureArtifactDef();
             artifact.setLocation("");
             final FileSet sourceFileSet;
+            // Bamboo's createFileSet signature requires an org.apache.log4j.Logger (backed by the
+            // patched reload4j at runtime); it cannot take an SLF4J logger, so this direct use is
+            // intentional and confined to this one Bamboo-API call.
             sourceFileSet = ArtifactHandlingUtils.createFileSet(reportDir, artifact, true,
                     org.apache.log4j.Logger.getLogger(getClass()));
             sourceFileSet.setDir(reportDir);

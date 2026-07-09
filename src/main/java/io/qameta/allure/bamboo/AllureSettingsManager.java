@@ -19,7 +19,6 @@ import com.atlassian.sal.api.pluginsettings.PluginSettings;
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
 
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_CUSTOM_LOGO_ENABLED;
-import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_DOWNLOAD_CLI_URL;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_DOWNLOAD_ENABLED;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_DOWNLOAD_URL;
 import static io.qameta.allure.bamboo.AllureConstants.ALLURE_CONFIG_ENABLED_BY_DEFAULT;
@@ -39,7 +38,6 @@ public class AllureSettingsManager {
         final String customLogoEnabled = (String) settings.get(ALLURE_CONFIG_CUSTOM_LOGO_ENABLED);
         final String enableByDefault = (String) settings.get(ALLURE_CONFIG_ENABLED_BY_DEFAULT);
         final String downloadBaseUrl = (String) settings.get(ALLURE_CONFIG_DOWNLOAD_URL);
-        final String downloadCliBaseUrl = (String) settings.get(ALLURE_CONFIG_DOWNLOAD_CLI_URL);
         final String localStorage = (String) settings.get(ALLURE_CONFIG_LOCAL_STORAGE);
         final String enabledReportsCleanup = (String) settings.get(ALLURE_CONFIG_REPORTS_CLEANUP_ENABLED);
 
@@ -48,7 +46,6 @@ public class AllureSettingsManager {
                 enableByDefault,
                 downloadBaseUrl,
                 localStorage,
-                downloadCliBaseUrl,
                 customLogoEnabled,
                 enabledReportsCleanup);
     }

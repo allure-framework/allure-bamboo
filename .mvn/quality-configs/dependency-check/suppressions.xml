@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <!--
+      Justified false-positive suppressions for the OWASP dependency-check gate
+      (./mvnw verify -Pdependency-check). Each <suppress> must explain why the CVE does not apply
+      to how this plugin uses the dependency. Example:
+
+      <suppress>
+          <notes>False positive: the vulnerable feature is never invoked by the plugin.</notes>
+          <packageUrl regex="true">^pkg:maven/group/artifact@.*$</packageUrl>
+          <cve>CVE-0000-00000</cve>
+      </suppress>
+    -->
+</suppressions>

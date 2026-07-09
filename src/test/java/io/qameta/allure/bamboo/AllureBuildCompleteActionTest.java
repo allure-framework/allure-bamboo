@@ -125,7 +125,6 @@ public class AllureBuildCompleteActionTest {
                 "false",
                 "https://downloads.example/",
                 temporaryFolder.getRoot().getAbsolutePath(),
-                "https://repo.example/",
                 "false",
                 "false"));
 
@@ -301,7 +300,6 @@ public class AllureBuildCompleteActionTest {
                 "false",
                 "https://downloads.example/",
                 temporaryFolder.getRoot().getAbsolutePath(),
-                "https://repo.example/",
                 Boolean.toString(customLogoEnabled),
                 Boolean.toString(cleanupEnabled));
     }

@@ -74,7 +74,6 @@ public class AllureBuildConfiguratorTest {
                 "true",
                 "https://downloads.example/",
                 "/tmp/allure",
-                "https://repo.example/",
                 "false",
                 "false"));
         when(executablesManager.getDefaultAllureExecutable()).thenReturn(Optional.of("Allure 2.30.0"));

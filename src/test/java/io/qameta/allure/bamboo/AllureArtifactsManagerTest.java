@@ -111,7 +111,6 @@ public class AllureArtifactsManagerTest {
                 "false",
                 "https://downloads.example/",
                 localStorage.toString(),
-                "https://repo.example/",
                 "false",
                 "false"));
         when(buildDefinitionManager.getBuildDefinition(getPlanKey(PLAN_KEY))).thenReturn(buildDefinition);

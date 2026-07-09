@@ -20,12 +20,14 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.qameta.allure.bamboo.info.AllurePlugins;
 import io.qameta.allure.bamboo.util.FileStringReplacer;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -38,6 +40,8 @@ class AllureExecutable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureExecutable.class);
     private static final String BASH_CMD = "/bin/bash";
+    // Characters that would let a logo URL break out of the CSS url(...) context.
+    private static final Pattern UNSAFE_LOGO_URL_CHARS = Pattern.compile("[\\s'\"()\\\\;{}]");
     private final Path cmdPath;
     private final AllureCommandLineSupport cmdLine;
 
@@ -69,6 +73,10 @@ class AllureExecutable {
     }
 
     public void setCustomLogo(final String logoUrl) {
+        if (!isSafeLogoUrl(logoUrl)) {
+            LOGGER.warn("Ignoring unsafe custom logo URL (expected a plain http/https URL): {}", logoUrl);
+            return;
+        }
         final String pluginName = "custom-logo-plugin";
         final String allureConfigFileName = "allure.yml";
         final String cssFileName = "styles.css";
@@ -115,6 +123,23 @@ class AllureExecutable {
         } catch (Exception e) {
             LOGGER.error("Cannot set custom logo", e);
             throw new AllurePluginException("Unexpected error", e);
+        }
+    }
+
+    /**
+     * A logo URL is written verbatim into the report CSS as {@code url(<logoUrl>)}, so it must be a
+     * plain http/https URL with no characters that could break out of the {@code url(...)} context
+     * and inject arbitrary CSS.
+     */
+    private static boolean isSafeLogoUrl(final String logoUrl) {
+        if (StringUtils.isBlank(logoUrl) || UNSAFE_LOGO_URL_CHARS.matcher(logoUrl).find()) {
+            return false;
+        }
+        try {
+            final String scheme = URI.create(logoUrl).getScheme();
+            return "http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme);
+        } catch (Exception e) {
+            return false;
         }
     }
 

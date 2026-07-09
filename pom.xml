@@ -51,7 +51,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
-                <version>2.22.0</version>
+                <version>2.22.1</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -510,5 +510,43 @@
             </releases>
         </pluginRepository>
     </pluginRepositories>
+
+    <profiles>
+        <!-- OWASP dependency-check CVE gate. Run on demand / in CI with `./mvnw verify -Pdependency-check`
+             (pass -DnvdApiKey=... or set the NVD_API_KEY env for a fast NVD refresh). Kept out of the
+             default build so normal builds stay fast; Dependabot handles routine dependency-update PRs. -->
+        <profile>
+            <id>dependency-check</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.owasp</groupId>
+                        <artifactId>dependency-check-maven</artifactId>
+                        <version>12.2.2</version>
+                        <configuration>
+                            <!-- Fail the build on any dependency with a high/critical (CVSS >= 7) vulnerability. -->
+                            <failBuildOnCVSS>7</failBuildOnCVSS>
+                            <!-- Audit only what the plugin ships: Bamboo/Spring (provided) run in the host and
+                                 test-only dependencies are not packaged into the plugin JAR. -->
+                            <skipProvidedScope>true</skipProvidedScope>
+                            <skipTestScope>true</skipTestScope>
+                            <suppressionFiles>
+                                <suppressionFile>.mvn/quality-configs/dependency-check/suppressions.xml</suppressionFile>
+                            </suppressionFiles>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>dependency-check</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

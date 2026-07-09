@@ -42,7 +42,6 @@ public class ConfigureAllureReportActionTest {
                 "true",
                 "https://downloads.example/",
                 "/var/allure",
-                "https://repo.example/",
                 "true",
                 "true");
         when(settingsManager.getSettings()).thenReturn(config);
