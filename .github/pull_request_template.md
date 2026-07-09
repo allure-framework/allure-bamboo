@@ -12,12 +12,15 @@ An example of good pull request names:
 -->
 
 ### Context
+
 <!---
 Describe the problem or feature in addition to a link to the issues
 -->
 
 #### Checklist
+
 - [ ] [Sign Allure CLA][cla]
 - [ ] Provide unit tests
+- [ ] Build passed
 
-[cla]: https://cla-assistant.io/accept/allure-framework/allure2
+[cla]: https://cla-assistant.io/accept/allure-framework/allure-bamboo
