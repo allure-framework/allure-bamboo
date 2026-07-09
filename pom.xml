@@ -19,6 +19,8 @@
         <aspectj.version>1.9.25.1</aspectj.version>
         <jacoco.version>0.8.15</jacoco.version>
         <spotless.version>3.8.0</spotless.version>
+        <checkstyle.version>12.3.1</checkstyle.version>
+        <pmd.version>7.25.0</pmd.version>
         <amps.version>9.12.5</amps.version>
         <bamboo.version>10.2.21</bamboo.version>
         <bamboo.data.version>${bamboo.version}</bamboo.data.version>
@@ -272,40 +274,33 @@
                 <configuration>
                     <encoding>UTF-8</encoding>
                     <lineEndings>UNIX</lineEndings>
-                    <!-- optional: limit format enforcement to just the files changed by this feature branch -->
                     <formats>
-                        <!-- you can define as many formats as you want, each is independent -->
                         <format>
-                            <!-- define the files to apply to -->
                             <includes>
                                 <include>*.md</include>
                                 <include>.gitignore</include>
-                                <include>README.md</include>
-                                <include>"config/**/*.xml"</include>
-                                <include>"src/**/*.xml"</include>
-                                <include>"src/**/*.properties"</include>
+                                <include>src/**/*.xml</include>
+                                <include>src/**/*.properties</include>
                             </includes>
-                            <!-- define the steps to apply to those files -->
                             <trimTrailingWhitespace/>
                             <endWithNewline/>
-                            <indent>
-                                <tabs>true</tabs>
-                                <spacesPerTab>4</spacesPerTab>
-                            </indent>
                         </format>
                     </formats>
-                    <!-- define a language-specific format -->
                     <java>
                         <includes>
                             <include>src/**/*.java</include>
                         </includes>
-                        <!--                        <removeUnusedImports/> Some bug exists with it-->
-                        <importOrder>  <!-- or a custom ordering -->
+                        <removeUnusedImports/>
+                        <importOrder>
                             <order>,jakarta,javax,java,\#</order>
                         </importOrder>
                         <licenseHeader>
-                            <file>.mvn/quality-configs/spotless/allure.java.license</file>
+                            <file>.mvn/quality-configs/spotless/header.java</file>
+                            <delimiter>(package|import|open|module|//startfile)</delimiter>
                         </licenseHeader>
+                        <eclipse>
+                            <file>.mvn/quality-configs/spotless/eclipse-jdt.prefs</file>
+                        </eclipse>
                         <endWithNewline/>
                         <replaceRegex>
                             <name>one blank line after package line</name>
@@ -348,8 +343,16 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>3.6.0</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>${checkstyle.version}</version>
+                    </dependency>
+                </dependencies>
                 <configuration>
                     <configLocation>.mvn/quality-configs/checkstyle/checkstyle.xml</configLocation>
+                    <propertyExpansion>config_loc=${project.basedir}/.mvn/quality-configs/checkstyle</propertyExpansion>
                     <includeTestSourceDirectory>true</includeTestSourceDirectory>
                     <logViolationsToConsole>true</logViolationsToConsole>
                     <consoleOutput>true</consoleOutput>
@@ -370,6 +373,28 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
                 <version>3.26.0</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>net.sourceforge.pmd</groupId>
+                        <artifactId>pmd-core</artifactId>
+                        <version>${pmd.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>net.sourceforge.pmd</groupId>
+                        <artifactId>pmd-java</artifactId>
+                        <version>${pmd.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>net.sourceforge.pmd</groupId>
+                        <artifactId>pmd-javascript</artifactId>
+                        <version>${pmd.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>net.sourceforge.pmd</groupId>
+                        <artifactId>pmd-jsp</artifactId>
+                        <version>${pmd.version}</version>
+                    </dependency>
+                </dependencies>
                 <configuration>
                     <printFailingErrors>true</printFailingErrors>
                     <rulesets>

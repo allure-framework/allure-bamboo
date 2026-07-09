@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -52,7 +52,6 @@ import static io.qameta.allure.bamboo.AllureBuildResult.fromCustomData;
 import static java.lang.Integer.parseInt;
 
 @UnrestrictedAccess
-@SuppressWarnings("PMD.GodClass")
 public class AllureReportServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
@@ -77,8 +76,7 @@ public class AllureReportServlet extends HttpServlet {
     private static final String SAMEORIGIN = "SAMEORIGIN";
     // Only the Bamboo UI (same origin) may frame report responses; blocks external clickjacking.
     private static final String FRAME_ANCESTORS_CSP = "frame-ancestors 'self'";
-    private static final String SANDBOX_CSP =
-            "sandbox allow-scripts; base-uri 'none'; form-action 'none'; object-src 'none'; frame-ancestors 'self'";
+    private static final String SANDBOX_CSP = "sandbox allow-scripts; base-uri 'none'; form-action 'none'; object-src 'none'; frame-ancestors 'self'";
 
     private final transient AllureArtifactsManager artifactsManager;
     private final transient ResultsSummaryManager resultsSummaryManager;
@@ -121,7 +119,7 @@ public class AllureReportServlet extends HttpServlet {
             return false;
         }
     }
-                
+
     @Override
     public void doGet(final HttpServletRequest request,
                       final HttpServletResponse response) {
@@ -157,13 +155,13 @@ public class AllureReportServlet extends HttpServlet {
         });
     }
 
-    @SuppressWarnings("PMD.ExceptionAsFlowControl")
     private void setResponseHeaders(final HttpServletResponse response,
                                     final String fileUrl,
-                                    final String reportRelativePath) throws IOException {
+                                    final String reportRelativePath)
+            throws IOException {
 
         try {
-            
+
             response.setStatus(HttpServletResponse.SC_OK);
             final URI file = URI.create(fileUrl);
             final Path filePath = Path.of(file.getPath());
@@ -180,8 +178,10 @@ public class AllureReportServlet extends HttpServlet {
             response.setHeader(CONTENT_TYPE, mimeType + charsetPostfix);
             response.setHeader(CONTENT_DISPOSITION, "inline; filename=\"" + sanitizedFileName + "\"");
             response.setHeader(X_CONTENT_TYPE_OPTIONS, NOSNIFF);
-            response.setHeader(CONTENT_SECURITY_POLICY,
-                    isSandboxedDocument(fileName, reportRelativePath) ? SANDBOX_CSP : FRAME_ANCESTORS_CSP);
+            response.setHeader(
+                    CONTENT_SECURITY_POLICY,
+                    isSandboxedDocument(fileName, reportRelativePath) ? SANDBOX_CSP : FRAME_ANCESTORS_CSP
+            );
 
         } catch (MalformedURLException e) {
             // should never happen
@@ -311,13 +311,12 @@ public class AllureReportServlet extends HttpServlet {
         return false;
     }
 
-
     private void uploadResultWasNotSuccess(final HttpServletResponse response,
                                            final AllureBuildResult uploadResult) {
         final String errorMessage = StringUtils.isEmpty(uploadResult.getFailureDetails())
                 ? "Unknown error has occurred during Allure Build. Please refer the server logs for details."
                 : "Something went wrong with Allure Report generation. Here are some details: \n"
-                + uploadResult.getFailureDetails();
+                        + uploadResult.getFailureDetails();
         try {
             response.setHeader(CONTENT_TYPE, "text/plain");
             response.setHeader("Content-Length", String.valueOf(errorMessage.length()));

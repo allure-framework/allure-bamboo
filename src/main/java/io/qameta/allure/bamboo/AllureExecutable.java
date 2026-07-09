@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ class AllureExecutable {
         }
     }
 
-    public void setCustomLogo(final String logoUrl) {
+    void setCustomLogo(final String logoUrl) {
         if (!isSafeLogoUrl(logoUrl)) {
             LOGGER.warn("Ignoring unsafe custom logo URL (expected a plain http/https URL): {}", logoUrl);
             return;
@@ -85,7 +85,7 @@ class AllureExecutable {
         final Path configFolder = rootPath.resolve("config");
         final Path logoPluginFolder = rootPath.resolve("plugins").resolve(pluginName).resolve("static");
 
-        /// Editing Yaml to add plugin
+        // Editing Yaml to add plugin
         final ObjectMapper objectMapper = new YAMLMapper();
         try {
             final File configFile = configFolder.resolve(allureConfigFileName).toFile();
@@ -95,28 +95,40 @@ class AllureExecutable {
                 objectMapper.writeValue(configFile, ap);
             }
             //Setting new Logo
-            FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
-                    Pattern.compile("url\\('.+'\\)",
-                            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+            FileStringReplacer.replaceInFile(
+                    logoPluginFolder.resolve(cssFileName),
+                    Pattern.compile(
+                            "url\\('.+'\\)",
+                            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS
+                    ),
                     "url(" + logoUrl + ")"
             );
 
             // aligning logo to center
-            FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
-                    Pattern.compile("(?<=\\s )left",
-                            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+            FileStringReplacer.replaceInFile(
+                    logoPluginFolder.resolve(cssFileName),
+                    Pattern.compile(
+                            "(?<=\\s )left",
+                            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS
+                    ),
                     "center"
             );
             // fit logo to area
-            FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
-                    Pattern.compile("(?<=\\s )!important;",
-                            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+            FileStringReplacer.replaceInFile(
+                    logoPluginFolder.resolve(cssFileName),
+                    Pattern.compile(
+                            "(?<=\\s )!important;",
+                            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS
+                    ),
                     "!important; background-size: contain !important;"
             );
             // removing margin
-            FileStringReplacer.replaceInFile(logoPluginFolder.resolve(cssFileName),
-                    Pattern.compile("10px",
-                            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS),
+            FileStringReplacer.replaceInFile(
+                    logoPluginFolder.resolve(cssFileName),
+                    Pattern.compile(
+                            "10px",
+                            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS
+                    ),
                     "0px"
             );
 
@@ -143,17 +155,18 @@ class AllureExecutable {
         }
     }
 
-    public AllureExecutable getTempCopy(final Path copyPath) throws IOException {
+    AllureExecutable getTempCopy(final Path copyPath) throws IOException {
         final String binary = this.cmdPath.getFileName().toString();
         final String binFolder = this.cmdPath.getParent().getFileName().toString();
         final Path rootPath = this.cmdPath.getParent().getParent();
         final String rootFolderName = rootPath.getFileName().toString();
         FileUtils.copyDirectoryToDirectory(rootPath.toFile(), copyPath.toFile());
 
-        return new AllureExecutable(copyPath
-                .resolve(rootFolderName)
-                .resolve(binFolder)
-                .resolve(binary),
+        return new AllureExecutable(
+                copyPath
+                        .resolve(rootFolderName)
+                        .resolve(binFolder)
+                        .resolve(binary),
                 this.cmdLine
         );
     }

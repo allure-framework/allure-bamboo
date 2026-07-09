@@ -6,6 +6,12 @@
     <Match>
         <Source name="~.*\.groovy"/>
     </Match>
+    <Match>
+        <Source name="~.*[/\\]generated-sources[/\\].*"/>
+    </Match>
+    <Match>
+        <Source name="~.*[/\\]generated[/\\].*"/>
+    </Match>
 
     <!-- Disable check -->
     <Match>
@@ -20,14 +26,21 @@
         <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
     </Match>
     <Match>
-        <!-- Disabled because of bug in JDK11 with try-with-resources code -->
+        <!-- Disabled due to bug in Java 11 with try-with-resources -->
         <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>
     </Match>
+
     <Match>
         <Bug pattern="EI_EXPOSE_REP"/>
     </Match>
     <Match>
         <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Bug pattern="EI_EXPOSE_STATIC_REP2"/>
+    </Match>
+    <Match>
+        <Bug pattern="MS_EXPOSE_REP"/>
     </Match>
 
     <Match>
@@ -44,8 +57,4 @@
         <Bug pattern="DMI_HARDCODED_ABSOLUTE_FILENAME"/>
     </Match>
 
-    <!-- Do not check class -->
-    <!--<Match>-->
-    <!--<Class name="com.foobar.ClassNotToBeAnalyzed" />-->
-    <!--</Match>-->
 </FindBugsFilter>

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -54,17 +54,23 @@ public final class AllureExecutableProvider {
                     LOGGER.info("Found allure executable by name '{}': '{}'", executableName, allureHomeDir);
                     final Path cmdPath = Paths.get(allureHomeDir, BIN, getAllureExecutableName());
                     final AllureExecutable executable = new AllureExecutable(cmdPath, cmdLine);
-                    LOGGER.info("Checking the existence of the command path for executable '{}': '{}'",
-                            executableName, cmdPath);
+                    LOGGER.info(
+                            "Checking the existence of the command path for executable '{}': '{}'",
+                            executableName, cmdPath
+                    );
                     final boolean commandExists = cmdLine.hasCommand(cmdPath.toString());
-                    LOGGER.info("System has command for executable '{}': {}, downloadEnabled={}",
-                            executableName, commandExists, isDownloadEnabled);
+                    LOGGER.info(
+                            "System has command for executable '{}': {}, downloadEnabled={}",
+                            executableName, commandExists, isDownloadEnabled
+                    );
                     if (commandExists) {
                         return executable;
                     } else if (isDownloadEnabled) {
                         final Matcher nameMatcher = EXEC_NAME_PATTERN.matcher(executableName);
-                        return allureDownloader.downloadAndExtractAllureTo(allureHomeDir,
-                                        nameMatcher.matches() ? nameMatcher.group(1) : DEFAULT_VERSION)
+                        return allureDownloader.downloadAndExtractAllureTo(
+                                allureHomeDir,
+                                nameMatcher.matches() ? nameMatcher.group(1) : DEFAULT_VERSION
+                        )
                                 .map(path -> executable).orElse(null);
                     }
                     return null;

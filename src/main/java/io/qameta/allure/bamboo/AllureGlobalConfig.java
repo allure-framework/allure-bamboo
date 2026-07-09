@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,12 +29,9 @@ public class AllureGlobalConfig implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private static final String DEFAULT_DOWNLOAD_BASE_URL
-            = "https://github.com/allure-framework/allure2/releases/download/";
-    private static final String DEFAULT_CLI_BASE_URL
-            = "https://repo.maven.apache.org/maven2/io/qameta/allure/";
-    public static final String DEFAULT_LOCAL_STORAGE_PATH
-            = new File(getJavaIoTmpDir(), "allure-reports").getPath();
+    private static final String DEFAULT_DOWNLOAD_BASE_URL = "https://github.com/allure-framework/allure2/releases/download/";
+    private static final String DEFAULT_CLI_BASE_URL = "https://repo.maven.apache.org/maven2/io/qameta/allure/";
+    public static final String DEFAULT_LOCAL_STORAGE_PATH = new File(getJavaIoTmpDir(), "allure-reports").getPath();
     private final boolean downloadEnabled;
     private final boolean customLogoEnabled;
     private final boolean enabledByDefault;
@@ -43,12 +40,14 @@ public class AllureGlobalConfig implements Serializable {
     private final String downloadBaseUrl;
 
     public AllureGlobalConfig() {
-        this(TRUE.toString(),
+        this(
+                TRUE.toString(),
                 FALSE.toString(),
                 DEFAULT_DOWNLOAD_BASE_URL,
                 DEFAULT_LOCAL_STORAGE_PATH,
                 TRUE.toString(),
-                FALSE.toString());
+                FALSE.toString()
+        );
     }
 
     public AllureGlobalConfig(final String downloadEnabled,
@@ -58,17 +57,23 @@ public class AllureGlobalConfig implements Serializable {
                               final String customLogoEnable,
                               final String enabledReportsCleanup) {
         this.downloadEnabled = StringUtils.isBlank(downloadEnabled)
-                ? TRUE : parseBoolean(downloadEnabled);
+                ? TRUE
+                : parseBoolean(downloadEnabled);
         this.enabledByDefault = StringUtils.isBlank(enabledByDefault)
-                ? FALSE : parseBoolean(enabledByDefault);
+                ? FALSE
+                : parseBoolean(enabledByDefault);
         this.downloadBaseUrl = StringUtils.isBlank(downloadBaseUrl)
-                ? DEFAULT_DOWNLOAD_BASE_URL : downloadBaseUrl;
+                ? DEFAULT_DOWNLOAD_BASE_URL
+                : downloadBaseUrl;
         this.localStoragePath = StringUtils.isBlank(localStoragePath)
-                ? DEFAULT_LOCAL_STORAGE_PATH : localStoragePath;
+                ? DEFAULT_LOCAL_STORAGE_PATH
+                : localStoragePath;
         this.customLogoEnabled = StringUtils.isBlank(customLogoEnable)
-                ? TRUE : parseBoolean(customLogoEnable);
+                ? TRUE
+                : parseBoolean(customLogoEnable);
         this.enabledReportsCleanup = StringUtils.isBlank(enabledReportsCleanup)
-                ? FALSE : parseBoolean(enabledReportsCleanup);
+                ? FALSE
+                : parseBoolean(enabledReportsCleanup);
     }
 
     public AllureGlobalConfig(final boolean downloadEnabled,
@@ -80,9 +85,11 @@ public class AllureGlobalConfig implements Serializable {
         this.downloadEnabled = downloadEnabled;
         this.enabledByDefault = enabledByDefault;
         this.downloadBaseUrl = StringUtils.isBlank(downloadBaseUrl)
-                ? DEFAULT_DOWNLOAD_BASE_URL : downloadBaseUrl;
+                ? DEFAULT_DOWNLOAD_BASE_URL
+                : downloadBaseUrl;
         this.localStoragePath = StringUtils.isBlank(localStoragePath)
-                ? DEFAULT_LOCAL_STORAGE_PATH : localStoragePath;
+                ? DEFAULT_LOCAL_STORAGE_PATH
+                : localStoragePath;
         this.customLogoEnabled = customLogoEnable;
         this.enabledReportsCleanup = enabledReportsCleanup;
     }

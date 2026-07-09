@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,8 +30,7 @@ import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
 public class AllureCommandLineSupport {
 
-    private static final Pattern RESULT_TC_COUNT_REGEX
-            = Pattern.compile(".+Found (\\d+) test cases.+", Pattern.DOTALL);
+    private static final Pattern RESULT_TC_COUNT_REGEX = Pattern.compile(".+Found (\\d+) test cases.+", Pattern.DOTALL);
     private static final int GENERATE_TIMEOUT_MS = (int) MINUTES.toMillis(10);
 
     String runCommand(final String cmd, final String... args) {

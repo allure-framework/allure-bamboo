@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -121,12 +121,16 @@ public class AllureBuildCompleteActionTest {
         final Map<String, String> config = new HashMap<>();
         config.put(ALLURE_CONFIG_ENABLED, "false");
         when(buildDefinition.getCustomConfiguration()).thenReturn(config);
-        when(settingsManager.getSettings()).thenReturn(new AllureGlobalConfig("true",
-                "false",
-                "https://downloads.example/",
-                temporaryFolder.getRoot().getAbsolutePath(),
-                "false",
-                "false"));
+        when(settingsManager.getSettings()).thenReturn(
+                new AllureGlobalConfig(
+                        "true",
+                        "false",
+                        "https://downloads.example/",
+                        temporaryFolder.getRoot().getAbsolutePath(),
+                        "false",
+                        "false"
+                )
+        );
 
         newAction().execute(chain, chainResultsSummary, chainExecution);
 
@@ -142,8 +146,10 @@ public class AllureBuildCompleteActionTest {
             attachText("Build configuration", buildDefinition.getCustomConfiguration().toString());
         });
 
-        step("execute the build completion action",
-                () -> newAction().execute(chain, chainResultsSummary, chainExecution));
+        step(
+                "execute the build completion action",
+                () -> newAction().execute(chain, chainResultsSummary, chainExecution)
+        );
 
         step("verify report generation is skipped for a successful build", () -> {
             verify(artifactsManager, never()).downloadAllArtifactsTo(any(), any(File.class), anyString());
@@ -178,8 +184,10 @@ public class AllureBuildCompleteActionTest {
                     .thenReturn(emptyList());
         });
 
-        step("execute the build completion action",
-                () -> newAction().execute(chain, chainResultsSummary, chainExecution));
+        step(
+                "execute the build completion action",
+                () -> newAction().execute(chain, chainResultsSummary, chainExecution)
+        );
 
         step("verify the action records a missing-artifacts failure without generating a report", () -> {
             final AllureBuildResult buildResult = fromCustomData(chainResultsSummary.getCustomBuildData());
@@ -211,8 +219,12 @@ public class AllureBuildCompleteActionTest {
                 attachDirectoryTree("Generated report before upload", reportDir);
                 return new AllureGenerateResult("ok", true);
             });
-            when(artifactsManager.uploadReportArtifacts(any(ImmutableChain.class),
-                    any(ChainResultsSummary.class), any(File.class))).thenAnswer(invocation -> {
+            when(
+                    artifactsManager.uploadReportArtifacts(
+                            any(ImmutableChain.class),
+                            any(ChainResultsSummary.class), any(File.class)
+                    )
+            ).thenAnswer(invocation -> {
                 final Path reportDir = ((File) invocation.getArgument(2)).toPath();
                 final Summary summary = new JsonMapper()
                         .readValue(reportDir.resolve("widgets").resolve("summary.json").toFile(), Summary.class);
@@ -226,8 +238,10 @@ public class AllureBuildCompleteActionTest {
             });
         });
 
-        step("execute the build completion action",
-                () -> newAction().execute(chain, chainResultsSummary, chainExecution));
+        step(
+                "execute the build completion action",
+                () -> newAction().execute(chain, chainResultsSummary, chainExecution)
+        );
 
         step("verify the successful result stores the handler and triggers cleanup", () -> {
             final AllureBuildResult buildResult = fromCustomData(chainResultsSummary.getCustomBuildData());
@@ -257,8 +271,11 @@ public class AllureBuildCompleteActionTest {
         when(resultsSummaryManager.findLastBuildResultBefore(PLAN_KEY, BUILD_NUMBER)).thenReturn(previousResult);
         // History is now read straight from the artifact store, not fetched over HTTP from the servlet.
         when(artifactsManager.getArtifactInputStream(eq(PLAN_KEY), eq("4"), anyString()))
-                .thenAnswer(invocation -> Optional.of(
-                        new ByteArrayInputStream("[]".getBytes(StandardCharsets.UTF_8))));
+                .thenAnswer(
+                        invocation -> Optional.of(
+                                new ByteArrayInputStream("[]".getBytes(StandardCharsets.UTF_8))
+                        )
+                );
         when(allureExecutable.generate(any(Collection.class), any(Path.class))).thenAnswer(invocation -> {
             @SuppressWarnings("unchecked")
             final Collection<Path> sourceDirs = invocation.getArgument(0);
@@ -268,8 +285,12 @@ public class AllureBuildCompleteActionTest {
             TestSupport.writeMinimalReport(invocation.getArgument(1));
             return new AllureGenerateResult("ok", true);
         });
-        when(artifactsManager.uploadReportArtifacts(any(ImmutableChain.class),
-                any(ChainResultsSummary.class), any(File.class)))
+        when(
+                artifactsManager.uploadReportArtifacts(
+                        any(ImmutableChain.class),
+                        any(ChainResultsSummary.class), any(File.class)
+                )
+        )
                 .thenReturn(Optional.of(allureBuildResult(true, null).withHandlerClass("handler")));
 
         newAction().execute(chain, chainResultsSummary, chainExecution);
@@ -296,20 +317,24 @@ public class AllureBuildCompleteActionTest {
 
     private AllureGlobalConfig globalConfig(final boolean customLogoEnabled,
                                             final boolean cleanupEnabled) {
-        return new AllureGlobalConfig("true",
+        return new AllureGlobalConfig(
+                "true",
                 "false",
                 "https://downloads.example/",
                 temporaryFolder.getRoot().getAbsolutePath(),
                 Boolean.toString(customLogoEnabled),
-                Boolean.toString(cleanupEnabled));
+                Boolean.toString(cleanupEnabled)
+        );
     }
 
     private AllureBuildCompleteAction newAction() {
-        return new AllureBuildCompleteAction(executableProvider,
+        return new AllureBuildCompleteAction(
+                executableProvider,
                 settingsManager,
                 artifactsManager,
                 executablesManager,
                 resultsSummaryManager,
-                administrationConfiguration);
+                administrationConfiguration
+        );
     }
 }

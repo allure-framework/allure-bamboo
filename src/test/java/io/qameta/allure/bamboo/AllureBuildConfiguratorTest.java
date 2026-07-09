@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -50,13 +50,16 @@ public class AllureBuildConfiguratorTest {
     @Test
     public void itShouldValidateMissingExecutableWhenAllureIsEnabled() throws Exception {
         final AllureBuildConfigurator configurator = new AllureBuildConfigurator(
-                executablesManager, settingsManager, templateRenderer);
+                executablesManager, settingsManager, templateRenderer
+        );
         final BuildConfiguration configuration = new BuildConfiguration();
         configuration.setProperty(ALLURE_CONFIG_ENABLED, true);
         configuration.setProperty(ALLURE_CONFIG_EXECUTABLE, "");
 
-        final ErrorCollection errors = step("validate an enabled configuration without an executable",
-                () -> configurator.validate(configuration));
+        final ErrorCollection errors = step(
+                "validate an enabled configuration without an executable",
+                () -> configurator.validate(configuration)
+        );
 
         step("verify validation reports the missing executable", () -> {
             attachText("Validation errors", errors.getErrors().toString());
@@ -68,24 +71,33 @@ public class AllureBuildConfiguratorTest {
     @Test
     public void itShouldPopulateDefaultsFromSettingsAndCapabilities() throws Exception {
         final AllureBuildConfigurator configurator = new AllureBuildConfigurator(
-                executablesManager, settingsManager, templateRenderer);
+                executablesManager, settingsManager, templateRenderer
+        );
         final BuildConfiguration configuration = new BuildConfiguration();
-        when(settingsManager.getSettings()).thenReturn(new AllureGlobalConfig("true",
-                "true",
-                "https://downloads.example/",
-                "/tmp/allure",
-                "false",
-                "false"));
+        when(settingsManager.getSettings()).thenReturn(
+                new AllureGlobalConfig(
+                        "true",
+                        "true",
+                        "https://downloads.example/",
+                        "/tmp/allure",
+                        "false",
+                        "false"
+                )
+        );
         when(executablesManager.getDefaultAllureExecutable()).thenReturn(Optional.of("Allure 2.30.0"));
 
-        step("populate the build configuration from settings and capabilities",
-                () -> configurator.prepareConfigObject(configuration));
+        step(
+                "populate the build configuration from settings and capabilities",
+                () -> configurator.prepareConfigObject(configuration)
+        );
 
         step("verify the default flags and executable name were applied", () -> {
-            attachText("Prepared configuration",
+            attachText(
+                    "Prepared configuration",
                     "enabled=" + configuration.getBoolean(ALLURE_CONFIG_ENABLED)
                             + "\nfailedOnly=" + configuration.getBoolean(ALLURE_CONFIG_FAILED_ONLY)
-                            + "\nexecutable=" + configuration.getString(ALLURE_CONFIG_EXECUTABLE));
+                            + "\nexecutable=" + configuration.getString(ALLURE_CONFIG_EXECUTABLE)
+            );
             assertThat(configuration.getBoolean(ALLURE_CONFIG_ENABLED)).isTrue();
             assertThat(configuration.getBoolean(ALLURE_CONFIG_FAILED_ONLY)).isTrue();
             assertThat(configuration.getString(ALLURE_CONFIG_EXECUTABLE)).isEqualTo("Allure 2.30.0");

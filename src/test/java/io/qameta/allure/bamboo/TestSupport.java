@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -38,10 +38,12 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-@SuppressWarnings({
-        "checkstyle:ClassDataAbstractionCoupling",
-        "checkstyle:MultipleStringLiterals"
-})
+@SuppressWarnings(
+    {
+            "checkstyle:ClassDataAbstractionCoupling",
+            "checkstyle:MultipleStringLiterals"
+    }
+)
 public final class TestSupport {
 
     private TestSupport() {
@@ -66,31 +68,41 @@ public final class TestSupport {
         final Map<String, String> entries = new LinkedHashMap<>();
         entries.put("allure-" + version + "/bin/allure", "#!/bin/sh\necho allure\n");
         entries.put("allure-" + version + "/config/allure.yml", "plugins: []\n");
-        entries.put("allure-" + version + "/plugins/custom-logo-plugin/static/styles.css",
-                ".side-nav__brand { background: url(default); left: 10px !important; }\n");
+        entries.put(
+                "allure-" + version + "/plugins/custom-logo-plugin/static/styles.css",
+                ".side-nav__brand { background: url(default); left: 10px !important; }\n"
+        );
         return createZip(entries);
     }
 
     static void writeMinimalReport(final Path reportDir) throws IOException {
         Files.createDirectories(reportDir.resolve("widgets"));
-        new JsonMapper().writeValue(reportDir.resolve("widgets").resolve("summary.json").toFile(),
-                new Summary("Original",
+        new JsonMapper().writeValue(
+                reportDir.resolve("widgets").resolve("summary.json").toFile(),
+                new Summary(
+                        "Original",
                         Collections.emptyList(),
                         new Statistic(0, 0, 0, 1, 0, 1),
-                        new Time(1L, 2L, 1, 1, 1, 1)));
+                        new Time(1L, 2L, 1, 1, 1, 1)
+                )
+        );
         Files.writeString(reportDir.resolve("app.js"), "window.tpl='>Allure</span>';\n", StandardCharsets.UTF_8);
-        Files.writeString(reportDir.resolve("index.html"),
+        Files.writeString(
+                reportDir.resolve("index.html"),
                 "<html><head><title>Original</title></head><body>report</body></html>\n",
-                StandardCharsets.UTF_8);
+                StandardCharsets.UTF_8
+        );
     }
 
     public static void step(final String name,
-                            final ThrowingRunnable action) throws Exception {
+                            final ThrowingRunnable action)
+            throws Exception {
         Allure.step(name, action::run);
     }
 
     public static <T> T step(final String name,
-                             final ThrowingSupplier<T> action) throws Exception {
+                             final ThrowingSupplier<T> action)
+            throws Exception {
         final Object[] value = new Object[1];
         Allure.step(name, () -> value[0] = action.get());
         @SuppressWarnings("unchecked")
@@ -104,7 +116,8 @@ public final class TestSupport {
     }
 
     static void attachDirectoryTree(final String name,
-                                    final Path root) throws IOException {
+                                    final Path root)
+            throws IOException {
         try (Stream<Path> paths = Files.walk(root)) {
             final String listing = paths
                     .map(path -> root.equals(path) ? "." : root.relativize(path).toString())
@@ -135,7 +148,8 @@ public final class TestSupport {
 
     private static void addDirectories(final ZipOutputStream zipOutputStream,
                                        final Set<String> createdDirectories,
-                                       final String entryName) throws IOException {
+                                       final String entryName)
+            throws IOException {
         int separatorIndex = entryName.indexOf('/');
         while (separatorIndex > 0) {
             final String directoryName = entryName.substring(0, separatorIndex + 1);

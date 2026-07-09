@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -47,8 +47,7 @@ public class FileStringReplacerTest {
             return file;
         });
 
-        step("replace the token with a value containing regex metacharacters", () ->
-                FileStringReplacer.replaceInFile(cssFile, Pattern.compile("url\\('.+'\\)"), replacement));
+        step("replace the token with a value containing regex metacharacters", () -> FileStringReplacer.replaceInFile(cssFile, Pattern.compile("url\\('.+'\\)"), replacement));
 
         step("verify the metacharacters were written verbatim, not interpreted", () -> {
             final String content = new String(Files.readAllBytes(cssFile), StandardCharsets.UTF_8);

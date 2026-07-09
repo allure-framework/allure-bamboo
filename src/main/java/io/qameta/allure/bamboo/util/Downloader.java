@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -31,16 +31,19 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public final class Downloader {
 
     private static final int CONN_TIMEOUT_MS = (int) SECONDS.toMillis(
-            getInteger("allure.download.conn.timeout.sec", 20));
+            getInteger("allure.download.conn.timeout.sec", 20)
+    );
     private static final int DOWNLOAD_TIMEOUT_MS = (int) SECONDS.toMillis(
-            getInteger("allure.download.timeout.sec", 120));
+            getInteger("allure.download.timeout.sec", 120)
+    );
 
     private Downloader() {
         // do not instantiate
     }
 
     public static Optional<Path> download(final URL url,
-                                          final Path target) throws IOException {
+                                          final Path target)
+            throws IOException {
         final URLConnection connection = url.openConnection();
         connection.setConnectTimeout(CONN_TIMEOUT_MS);
         connection.setReadTimeout(DOWNLOAD_TIMEOUT_MS);

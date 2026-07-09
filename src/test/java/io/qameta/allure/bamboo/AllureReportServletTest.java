@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -63,8 +63,7 @@ public class AllureReportServletTest {
 
     private static final String PLAN_KEY = "STPCI-STPITCONFLUENCE60";
     private static final int BUILD_NUMBER = 15;
-    private static final String SANDBOX_CSP =
-            "sandbox allow-scripts; base-uri 'none'; form-action 'none'; object-src 'none'; frame-ancestors 'self'";
+    private static final String SANDBOX_CSP = "sandbox allow-scripts; base-uri 'none'; form-action 'none'; object-src 'none'; frame-ancestors 'self'";
 
     @Rule
     public MockitoRule mockitoRule = rule();
@@ -95,8 +94,10 @@ public class AllureReportServletTest {
 
     @Before
     public void setUp() throws Exception {
-        servlet = new AllureReportServlet(artifactsManager, resultsSummaryManager, permissionManager,
-                loginUriProvider, userManager) {
+        servlet = new AllureReportServlet(
+                artifactsManager, resultsSummaryManager, permissionManager,
+                loginUriProvider, userManager
+        ) {
             @Override
             public ServletContext getServletContext() {
                 return servletContext;
@@ -331,8 +332,7 @@ public class AllureReportServletTest {
 
         step("issue a HEAD request for the missing report artifact", () -> servlet.doHead(request, response));
 
-        step("verify the servlet returns not found for the missing artifact", () ->
-                verify(response).setStatus(HttpServletResponse.SC_NOT_FOUND));
+        step("verify the servlet returns not found for the missing artifact", () -> verify(response).setStatus(HttpServletResponse.SC_NOT_FOUND));
     }
 
     private String reportUri(final String fileName) {
