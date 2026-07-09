@@ -60,7 +60,7 @@ import javax.annotation.Nullable;
 import javax.ws.rs.core.UriBuilder;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.DirectoryStream;
@@ -111,6 +111,7 @@ public class AllureArtifactsManager {
     private static final int SINGLE_NUMBER_OF_LIST_ELEMENTS = 1;
     private static final String CS_2 = "..";
     private static final String SEPARATOR = "/";
+    private static final String PATH_ESCAPE_ERROR = "Requested path escapes the report directory: ";
 
     private final PluginAccessor pluginAccessor;
     private final ArtifactHandlersService artifactHandlersService;
@@ -196,19 +197,51 @@ public class AllureArtifactsManager {
                                       final String buildNumber,
                                       final String filePath) {
         try {
-            final File file = getLocalStorageReportPath(planKeyString, buildNumber).resolve(filePath).toFile();
-            final String filename = file.getName();
-            if (filename.contains(CS_2) || filename.contains(SEPARATOR) || filename.contains("\\")) {
-                throw new AllurePluginException("Invalid filename: " + filename);
+            final Path reportRoot = getLocalStorageReportPath(planKeyString, buildNumber).normalize();
+            final Path resolved = reportRoot.resolve(filePath).normalize();
+            if (!resolved.startsWith(reportRoot)) {
+                throw new AllurePluginException(PATH_ESCAPE_ERROR + filePath);
+            }
+            // Defend against symlinks inside the report dir that point outside it: compare real paths.
+            if (Files.exists(resolved) && !resolved.toRealPath().startsWith(reportRoot.toRealPath())) {
+                throw new AllurePluginException(PATH_ESCAPE_ERROR + filePath);
             }
 
+            final File file = resolved.toFile();
             final String fullPath = file.isDirectory()
                     ? new File(file, INDEX_HTML).getAbsolutePath()
                     : file.getAbsolutePath();
             return new File(fullPath).toURI().toURL().toString();
-        } catch (MalformedURLException e) {
-            // should never happen
+        } catch (IOException e) {
+            // MalformedURLException or a failure resolving the real path.
             throw new AllurePluginException("Unexpected error", e);
+        }
+    }
+
+    /**
+     * Opens the content of a single report artifact directly from its backing storage, resolving it
+     * through the same artifact-handler logic as {@link #getArtifactUrl} but without routing the
+     * request through the (unauthenticated) report servlet.
+     *
+     * @param planKeyString key for plan
+     * @param buildNumber   build number
+     * @param filePath      path of the artifact within the report
+     * @return an open input stream if the artifact could be resolved and opened, empty otherwise
+     */
+    Optional<InputStream> getArtifactInputStream(final String planKeyString,
+                                                 final String buildNumber,
+                                                 final String filePath) {
+        return getArtifactUrl(planKeyString, buildNumber, filePath)
+                .flatMap(url -> openArtifactStream(url, filePath));
+    }
+
+    private Optional<InputStream> openArtifactStream(final String artifactUrl,
+                                                     final String filePath) {
+        try {
+            return Optional.of(URI.create(artifactUrl).toURL().openStream());
+        } catch (Exception e) {
+            LOGGER.warn("Failed to open artifact {} from {}", filePath, artifactUrl, e);
+            return Optional.empty();
         }
     }
 
@@ -420,6 +453,9 @@ public class AllureArtifactsManager {
     private String getArtifactFile(final String filePath,
                                    final ArtifactLinkDataProvider linkProvider) {
         final String fixedFilePath = filePath.replaceFirst("^/", "");
+        if (isUnsafeRelativePath(fixedFilePath)) {
+            throw new AllurePluginException(PATH_ESCAPE_ERROR + filePath);
+        }
         if (linkProvider instanceof FileSystemArtifactLinkDataProvider) {
             return requireNonNull(linkProvider.getRootUrl())
                     .replaceFirst("BASE_URL", getBaseUrl().build().toString())
@@ -442,6 +478,14 @@ public class AllureArtifactsManager {
             }
         }
         return null;
+    }
+
+    private static boolean isUnsafeRelativePath(final String path) {
+        if (isBlank(path)) {
+            return false;
+        }
+        final Path normalized = Paths.get(path).normalize();
+        return normalized.isAbsolute() || normalized.startsWith(CS_2);
     }
 
     private String getBambooArtifactUrl(final ArtifactFileData data) {

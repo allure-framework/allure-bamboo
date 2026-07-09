@@ -29,7 +29,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.qameta.allure.bamboo.info.AddExecutorInfo;
 import io.qameta.allure.bamboo.info.allurewidgets.summary.Summary;
-import io.qameta.allure.bamboo.util.Downloader;
 import io.qameta.allure.bamboo.util.FileStringReplacer;
 import io.qameta.allure.bamboo.util.ZipUtil;
 import org.apache.commons.io.FileUtils;
@@ -41,8 +40,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -289,17 +286,16 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
 
     private boolean historyArtifactExists(final String planKey,
                                           final int buildId) {
-        final String artifactUrl = getHistoryArtifactUrl(HISTORY_JSON, planKey, buildId);
-        final ObjectMapper mapper = new JsonMapper();
-
-        try {
-            final Path historyTmpFile = Files.createTempFile(HISTORY, ".json");
-            Downloader.download(new URL(artifactUrl), historyTmpFile);
-            mapper.readValue(historyTmpFile.toFile(), Object.class);
-            FileUtils.deleteQuietly(historyTmpFile.toFile());
+        try (InputStream in = artifactsManager
+                .getArtifactInputStream(planKey, String.valueOf(buildId), historyArtifactPath(HISTORY_JSON))
+                .orElse(null)) {
+            if (in == null) {
+                return false;
+            }
+            new JsonMapper().readValue(in, Object.class);
             return true;
         } catch (Exception e) {
-            LOGGER.info("Cannot connect to artifact or the artifact is not valid {}.", artifactUrl, e);
+            LOGGER.info("History artifact is not available or not valid for {}-{}", planKey, buildId, e);
             return false;
         }
     }
@@ -308,28 +304,21 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
                                              final String fileName,
                                              final String planKey,
                                              final int buildId) {
-        try (InputStream inputStream = getArtifactContent(fileName, planKey, buildId)) {
+        try (InputStream inputStream = artifactsManager
+                .getArtifactInputStream(planKey, String.valueOf(buildId), historyArtifactPath(fileName))
+                .orElse(null)) {
+            if (inputStream == null) {
+                return;
+            }
             Files.createDirectories(historyFolder);
             Files.copy(inputStream, historyFolder.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            LOGGER.error("Could not copy file {}", fileName);
+            LOGGER.error("Could not copy history file {}", fileName, e);
         }
     }
 
-    private InputStream getArtifactContent(final String fileName,
-                                           final String planKey,
-                                           final int buildId) throws IOException {
-        final URL artifactUrl = new URL(getHistoryArtifactUrl(fileName, planKey, buildId));
-        final URLConnection uc = artifactUrl.openConnection();
-        return uc.getInputStream();
-    }
-
-    @NotNull
-    private String getHistoryArtifactUrl(final String fileName,
-                                         final String planKey,
-                                         final int buildId) {
-        return format("%s/plugins/servlet/allure/report/%s/%s/history/%s",
-                getBambooBaseUrl(), planKey, buildId, fileName);
+    private static String historyArtifactPath(final String fileName) {
+        return HISTORY + "/" + fileName;
     }
 
     private void addExecutorInfo(final @NotNull List<File> artifactsTempDirs,

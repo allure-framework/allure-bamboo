@@ -404,8 +404,10 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <id>validate</id>
-                        <phase>validate</phase>
+                        <id>spotbugs-check</id>
+                        <!-- Must run after compile: SpotBugs analyzes bytecode, so binding it to
+                             validate (before compile) silently analyzed nothing. -->
+                        <phase>process-classes</phase>
                         <goals>
                             <goal>check</goal>
                         </goals>
