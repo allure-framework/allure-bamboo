@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -32,7 +32,8 @@ import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 public class AllureBuildConfigurator extends BaseConfigurablePlugin
-        implements MiscellaneousPlanConfigurationPlugin {
+        implements
+            MiscellaneousPlanConfigurationPlugin {
 
     private final BambooExecutablesManager executablesManager;
     private final AllureSettingsManager settingsManager;
@@ -66,8 +67,8 @@ public class AllureBuildConfigurator extends BaseConfigurablePlugin
     public void prepareConfigObject(final @NotNull BuildConfiguration buildConfiguration) {
         super.prepareConfigObject(buildConfiguration);
         if (buildConfiguration.getProperty(ALLURE_CONFIG_ENABLED) == null) {
-            ofNullable(settingsManager).map(AllureSettingsManager::getSettings).ifPresent(settings ->
-                    buildConfiguration.setProperty(ALLURE_CONFIG_ENABLED, settings.isEnabledByDefault()));
+            ofNullable(settingsManager).map(AllureSettingsManager::getSettings)
+                    .ifPresent(settings -> buildConfiguration.setProperty(ALLURE_CONFIG_ENABLED, settings.isEnabledByDefault()));
         }
         if (buildConfiguration.getProperty(ALLURE_CONFIG_FAILED_ONLY) == null) {
             buildConfiguration.setProperty(ALLURE_CONFIG_FAILED_ONLY, TRUE);

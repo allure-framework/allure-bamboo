@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -31,9 +31,11 @@ public class AllureReportTask implements TaskType {
     @Override
     public TaskResult execute(final @NotNull TaskContext taskContext) {
         final BuildLogger buildLogger = taskContext.getBuildLogger();
-        buildLogger.addBuildLogEntry("Allure Report Task: This allure report task is now a sham."
-                + " It does nothing, so please use"
-                + " the suggested way of configuration as listed in the Allure docs! ");
+        buildLogger.addBuildLogEntry(
+                "Allure Report Task: This allure report task is now a sham."
+                        + " It does nothing, so please use"
+                        + " the suggested way of configuration as listed in the Allure docs! "
+        );
         return TaskResultBuilder.newBuilder(taskContext).success().build();
     }
 }

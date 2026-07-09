@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -47,14 +47,14 @@ import org.springframework.context.annotation.Import;
 import static com.atlassian.plugins.osgi.javaconfig.OsgiServices.exportOsgiService;
 import static com.atlassian.plugins.osgi.javaconfig.OsgiServices.importOsgiService;
 
-@SuppressWarnings({"PMD.TooManyMethods", "PMD.CouplingBetweenObjects"})
 @Configuration
-@Import({
-        ModuleFactoryBean.class,
-        PluginAccessorBean.class
-})
+@Import(
+    {
+            ModuleFactoryBean.class,
+            PluginAccessorBean.class
+    }
+)
 public class AllurePluginJavaConfig {
-
 
     // <component-import key="applicationProperties" interface="com.atlassian.sal.api.ApplicationProperties"/>
     @Bean
@@ -209,7 +209,7 @@ public class AllurePluginJavaConfig {
     // Exports MyPluginComponent as an OSGi service
     @Bean
     public FactoryBean<ServiceRegistration> registerMyDelegatingService(
-            final PluginUpgradeTask allureInstallTask) {
+                                                                        final PluginUpgradeTask allureInstallTask) {
         return exportOsgiService(allureInstallTask, ExportOptions.as(PluginUpgradeTask.class));
     }
 }

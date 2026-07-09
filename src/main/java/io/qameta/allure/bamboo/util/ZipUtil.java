@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -45,7 +45,8 @@ public final class ZipUtil {
     }
 
     public static void unzip(final @NotNull Path zipFilePath,
-                             final String outputDir) throws IOException, ArchiveException {
+                             final String outputDir)
+            throws IOException, ArchiveException {
 
         final ArchiveStreamFactory asf = new ArchiveStreamFactory();
 
@@ -77,7 +78,8 @@ public final class ZipUtil {
     }
 
     public static void zipReportFolder(final @NotNull Path srcFolder,
-                                       final @NotNull Path targetDir) throws IOException {
+                                       final @NotNull Path targetDir)
+            throws IOException {
         try {
             final Path zipReportTmpDir = Files.createTempDirectory("tmp_allure_report");
             final Path zipReport = zipReportTmpDir.resolve("report.zip");

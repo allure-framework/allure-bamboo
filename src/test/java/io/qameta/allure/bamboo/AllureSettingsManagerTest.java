@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -74,12 +74,14 @@ public class AllureSettingsManagerTest {
     public void itShouldPersistSettingsBackToPluginStorage() {
         final Map<String, Object> storage = storage();
         final AllureSettingsManager manager = new AllureSettingsManager(settingsFactory);
-        final AllureGlobalConfig config = new AllureGlobalConfig(false,
+        final AllureGlobalConfig config = new AllureGlobalConfig(
+                false,
                 true,
                 "https://downloads.example/",
                 "/srv/allure",
                 true,
-                true);
+                true
+        );
 
         manager.saveSettings(config);
 

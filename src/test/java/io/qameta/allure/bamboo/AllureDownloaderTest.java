@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -59,20 +59,21 @@ public class AllureDownloaderTest {
         });
         server.start();
         final String baseUrl = String.format("http://127.0.0.1:%s/download/", server.getAddress().getPort());
-        final AllureGlobalConfig settings = new AllureGlobalConfig("true",
+        final AllureGlobalConfig settings = new AllureGlobalConfig(
+                "true",
                 "false",
                 baseUrl,
                 homeDir,
                 "false",
-                "false");
+                "false"
+        );
         when(settingsManager.getSettings()).thenReturn(settings);
         downloader = new AllureDownloader(settingsManager);
     }
 
     @Test
     public void itShouldDownloadAndExtractAllureRelease() throws Exception {
-        step("download and extract the requested Allure distribution", () ->
-                downloader.downloadAndExtractAllureTo(homeDir, "2.17.2"));
+        step("download and extract the requested Allure distribution", () -> downloader.downloadAndExtractAllureTo(homeDir, "2.17.2"));
         step("verify the extracted home contains the expected CLI layout", () -> {
             attachDirectoryTree("Extracted Allure home", Paths.get(homeDir));
             assertThat(Paths.get(homeDir, "bin", "allure")).exists();

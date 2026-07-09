@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -53,15 +53,17 @@ public final class AllureBuildConfig implements Serializable {
                               final String logoUrl,
                               final String maxStoredReportsCount) {
         this.onlyForFailed = StringUtils.isBlank(onlyForFailed)
-                ? TRUE : Boolean.parseBoolean(onlyForFailed);
+                ? TRUE
+                : Boolean.parseBoolean(onlyForFailed);
         this.enabled = StringUtils.isBlank(enabled)
-                ? FALSE : Boolean.parseBoolean(enabled);
+                ? FALSE
+                : Boolean.parseBoolean(enabled);
         this.executable = executable;
         this.artifactName = artifactName;
         this.logoUrl = StringUtils.isBlank(logoUrl) ? DEFAULT_CUSTOM_LOGO_URL : logoUrl;
-        this.maxStoredReportsCount =
-                StringUtils.isBlank(maxStoredReportsCount) || !StringUtils.isNumeric(maxStoredReportsCount)
-                ? -1 : NumberUtils.toInt(maxStoredReportsCount);
+        this.maxStoredReportsCount = StringUtils.isBlank(maxStoredReportsCount) || !StringUtils.isNumeric(maxStoredReportsCount)
+                ? -1
+                : NumberUtils.toInt(maxStoredReportsCount);
     }
 
     static AllureBuildConfig fromContext(final Map<String, String> context) {

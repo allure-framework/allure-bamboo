@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -66,8 +66,10 @@ public class BambooExecutablesManager {
                 .filter(capKey -> {
                     final String[] strings = capKey.split("\\.", 4);
                     final boolean matches = strings.length == 4 && executableName.equals(strings[3]);
-                    LOGGER.debug("Checking key '{}' to matches executable name '{}'={}...",
-                            capKey, executableName, matches);
+                    LOGGER.debug(
+                            "Checking key '{}' to matches executable name '{}'={}...",
+                            capKey, executableName, matches
+                    );
                     return matches;
                 })
                 .findFirst()

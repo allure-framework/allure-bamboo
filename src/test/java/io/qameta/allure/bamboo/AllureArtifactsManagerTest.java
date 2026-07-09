@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -107,23 +107,29 @@ public class AllureArtifactsManagerTest {
     @Before
     public void setUp() throws Exception {
         localStorage = temporaryFolder.newFolder("allure-storage").toPath();
-        when(settingsManager.getSettings()).thenReturn(new AllureGlobalConfig("true",
-                "false",
-                "https://downloads.example/",
-                localStorage.toString(),
-                "false",
-                "false"));
+        when(settingsManager.getSettings()).thenReturn(
+                new AllureGlobalConfig(
+                        "true",
+                        "false",
+                        "https://downloads.example/",
+                        localStorage.toString(),
+                        "false",
+                        "false"
+                )
+        );
         when(buildDefinitionManager.getBuildDefinition(getPlanKey(PLAN_KEY))).thenReturn(buildDefinition);
         when(buildDefinition.getCustomConfiguration()).thenReturn(new HashMap<>());
         when(artifactHandlersService.getRuntimeConfiguration()).thenReturn(new HashMap<>());
         when(applicationProperties.getBaseUrl(UrlMode.ABSOLUTE)).thenReturn("https://bamboo.example");
-        manager = new AllureArtifactsManager(pluginAccessor,
+        manager = new AllureArtifactsManager(
+                pluginAccessor,
                 artifactHandlersService,
                 buildDefinitionManager,
                 resultsSummaryManager,
                 artifactLinkManager,
                 applicationProperties,
-                settingsManager);
+                settingsManager
+        );
     }
 
     @Test
@@ -160,8 +166,7 @@ public class AllureArtifactsManagerTest {
         when(resultsSummaryManager.getResultsSummary(getPlanResultKey(PLAN_KEY, Integer.parseInt(BUILD_NUMBER))))
                 .thenReturn(resultsSummary);
 
-        final Optional<InputStream> content =
-                manager.getArtifactInputStream(PLAN_KEY, BUILD_NUMBER, "history/history.json");
+        final Optional<InputStream> content = manager.getArtifactInputStream(PLAN_KEY, BUILD_NUMBER, "history/history.json");
 
         assertThat(content).isPresent();
         try (InputStream in = content.get()) {
@@ -179,8 +184,7 @@ public class AllureArtifactsManagerTest {
         when(resultsSummaryManager.getResultsSummary(getPlanResultKey(PLAN_KEY, Integer.parseInt(BUILD_NUMBER))))
                 .thenReturn(resultsSummary);
 
-        final Optional<InputStream> content =
-                manager.getArtifactInputStream(PLAN_KEY, BUILD_NUMBER, "history/history.json");
+        final Optional<InputStream> content = manager.getArtifactInputStream(PLAN_KEY, BUILD_NUMBER, "history/history.json");
 
         assertThat(content).isEmpty();
     }
@@ -188,8 +192,7 @@ public class AllureArtifactsManagerTest {
     @Test
     public void itShouldRejectUnsafeLocalArtifactPaths() throws Exception {
         step("prepare a remote report summary with a local file lookup", () -> {
-            final ResultsSummary resultsSummary =
-                    resultsSummaryWithHandler(BambooRemoteArtifactHandler.class.getName());
+            final ResultsSummary resultsSummary = resultsSummaryWithHandler(BambooRemoteArtifactHandler.class.getName());
             final BambooRemoteArtifactHandler handler = org.mockito.Mockito.mock(BambooRemoteArtifactHandler.class);
             doReturn(List.of(handler))
                     .when(pluginAccessor)
@@ -201,7 +204,8 @@ public class AllureArtifactsManagerTest {
         step("reject a path that escapes the report root", () -> {
             final AllurePluginException error = catchThrowableOfType(
                     () -> manager.getArtifactUrl(PLAN_KEY, BUILD_NUMBER, ".."),
-                    AllurePluginException.class);
+                    AllurePluginException.class
+            );
             assertThat(error).isNotNull();
             attachText("Rejected artifact path", ".. -> " + error.getMessage());
         });
@@ -210,8 +214,7 @@ public class AllureArtifactsManagerTest {
     @Test
     public void itShouldRejectMultiSegmentTraversalEscapingReportRoot() throws Exception {
         step("prepare a local (agent-handler) report summary", () -> {
-            final ResultsSummary resultsSummary =
-                    resultsSummaryWithHandler(BambooRemoteArtifactHandler.class.getName());
+            final ResultsSummary resultsSummary = resultsSummaryWithHandler(BambooRemoteArtifactHandler.class.getName());
             final BambooRemoteArtifactHandler handler = org.mockito.Mockito.mock(BambooRemoteArtifactHandler.class);
             doReturn(List.of(handler))
                     .when(pluginAccessor)
@@ -224,9 +227,12 @@ public class AllureArtifactsManagerTest {
             final String traversal = "../../../../etc/passwd";
             final AllurePluginException error = catchThrowableOfType(
                     () -> manager.getArtifactUrl(PLAN_KEY, BUILD_NUMBER, traversal),
-                    AllurePluginException.class);
-            attachText("Traversal attempt",
-                    traversal + " -> " + (error == null ? "NOT REJECTED" : error.getMessage()));
+                    AllurePluginException.class
+            );
+            attachText(
+                    "Traversal attempt",
+                    traversal + " -> " + (error == null ? "NOT REJECTED" : error.getMessage())
+            );
             assertThat(error).isNotNull();
         });
     }
@@ -245,7 +251,8 @@ public class AllureArtifactsManagerTest {
 
         final AllurePluginException error = catchThrowableOfType(
                 () -> manager.getArtifactUrl(PLAN_KEY, BUILD_NUMBER, "../../../etc/passwd"),
-                AllurePluginException.class);
+                AllurePluginException.class
+        );
 
         assertThat(error).isNotNull();
     }
@@ -271,7 +278,8 @@ public class AllureArtifactsManagerTest {
 
         final AllurePluginException error = catchThrowableOfType(
                 () -> manager.getArtifactUrl(PLAN_KEY, BUILD_NUMBER, "escape.html"),
-                AllurePluginException.class);
+                AllurePluginException.class
+        );
 
         assertThat(error).isNotNull();
     }
@@ -324,11 +332,12 @@ public class AllureArtifactsManagerTest {
         when(provider.getFile()).thenReturn(sourceDir);
 
         final Collection<Path> downloaded = manager.downloadAllArtifactsTo(
-                chainResultsSummary, temporaryFolder.newFolder("downloaded"), null);
+                chainResultsSummary, temporaryFolder.newFolder("downloaded"), null
+        );
 
         final Path downloadedDir = downloaded.iterator().next();
         try (java.util.stream.Stream<Path> resultFiles = Files.walk(downloadedDir);
-             java.util.stream.Stream<Path> historyFiles = Files.walk(downloadedDir)) {
+                java.util.stream.Stream<Path> historyFiles = Files.walk(downloadedDir)) {
             assertThat(resultFiles.anyMatch(path -> path.getFileName().toString().equals("result.json"))).isTrue();
             assertThat(historyFiles.anyMatch(path -> path.getFileName().toString().equals("history.json"))).isTrue();
         }
@@ -363,9 +372,12 @@ public class AllureArtifactsManagerTest {
             attachText("Remote artifact URL", sourceFile.toUri().toString());
         });
 
-        final Collection<Path> downloaded = step("download the remote artifact through the trampoline link",
+        final Collection<Path> downloaded = step(
+                "download the remote artifact through the trampoline link",
                 () -> manager.downloadAllArtifactsTo(
-                        chainResultsSummary, temporaryFolder.newFolder("remote-download"), null));
+                        chainResultsSummary, temporaryFolder.newFolder("remote-download"), null
+                )
+        );
 
         final Path downloadedDir = downloaded.iterator().next();
         step("verify the flattened download contains the expected result file", () -> {
@@ -391,8 +403,10 @@ public class AllureArtifactsManagerTest {
             when(handler.canHandleArtifact(any(), any())).thenReturn(true);
         });
 
-        final Optional<AllureBuildResult> result = step("upload the report into local plugin storage",
-                () -> manager.uploadReportArtifacts(chain, summary, reportDir));
+        final Optional<AllureBuildResult> result = step(
+                "upload the report into local plugin storage",
+                () -> manager.uploadReportArtifacts(chain, summary, reportDir)
+        );
 
         final Path storedReport = localStorage.resolve("allure-reports").resolve(PLAN_KEY).resolve(BUILD_NUMBER)
                 .resolve("index.html");
@@ -408,8 +422,7 @@ public class AllureArtifactsManagerTest {
         final ArtifactHandler handler = org.mockito.Mockito.mock(ArtifactHandler.class);
         final ArtifactHandlerPublishingResult publishingResult = org.mockito.Mockito
                 .mock(ArtifactHandlerPublishingResult.class);
-        final ArtifactHandlerModuleDescriptor moduleDescriptor =
-                org.mockito.Mockito.mock(ArtifactHandlerModuleDescriptor.class);
+        final ArtifactHandlerModuleDescriptor moduleDescriptor = org.mockito.Mockito.mock(ArtifactHandlerModuleDescriptor.class);
         final ImmutableChain chain = org.mockito.Mockito.mock(ImmutableChain.class);
         final ChainResultsSummary summary = org.mockito.Mockito.mock(ChainResultsSummary.class);
         final File reportDir = temporaryFolder.newFolder("report-remote");
@@ -421,7 +434,8 @@ public class AllureArtifactsManagerTest {
                     .getModules(org.mockito.ArgumentMatchers.any(java.util.function.Predicate.class));
             when(chain.getBuildDefinition()).thenReturn(buildDefinition);
             when(chain.getBuildLogger()).thenReturn(
-                    org.mockito.Mockito.mock(com.atlassian.bamboo.build.logger.BuildLogger.class));
+                    org.mockito.Mockito.mock(com.atlassian.bamboo.build.logger.BuildLogger.class)
+            );
             when(summary.getPlanResultKey()).thenReturn(getPlanResultKey(PLAN_KEY, Integer.parseInt(BUILD_NUMBER)));
             when(handler.canHandleArtifact(any(), any())).thenReturn(true);
             when(handler.publish(any(), any(), any(), any())).thenReturn(publishingResult);
@@ -430,12 +444,16 @@ public class AllureArtifactsManagerTest {
             when(publishingResult.isSuccessful()).thenReturn(true);
         });
 
-        final Optional<AllureBuildResult> result = step("publish the report via the remote handler",
-                () -> manager.uploadReportArtifacts(chain, summary, reportDir));
+        final Optional<AllureBuildResult> result = step(
+                "publish the report via the remote handler",
+                () -> manager.uploadReportArtifacts(chain, summary, reportDir)
+        );
 
         step("verify the published result carries the handler identity", () -> {
-            attachText("Remote publish outcome",
-                    "handlerKey=handler-key\nhandlerClass=" + handler.getClass().getName());
+            attachText(
+                    "Remote publish outcome",
+                    "handlerKey=handler-key\nhandlerClass=" + handler.getClass().getName()
+            );
             assertThat(result).hasValueSatisfying(buildResult -> {
                 assertThat(buildResult.isSuccess()).isTrue();
                 assertThat(buildResult.getArtifactHandlerClass()).isEqualTo(handler.getClass().getName());
@@ -461,8 +479,10 @@ public class AllureArtifactsManagerTest {
             attachDirectoryTree("Reports before cleanup", reportsDir);
         });
 
-        step("remove only reports older than the last two numeric build directories",
-                () -> manager.cleanupOldReportArtifacts(chain, 2));
+        step(
+                "remove only reports older than the last two numeric build directories",
+                () -> manager.cleanupOldReportArtifacts(chain, 2)
+        );
 
         step("verify the latest numeric reports and named directories remain", () -> {
             attachDirectoryTree("Reports after cleanup", reportsDir);
@@ -489,15 +509,18 @@ public class AllureArtifactsManagerTest {
             attachText("Plan artifact handler config", planConfig.toString());
         });
 
-        final Map<String, String> config = step("merge the handler configuration and drop unsupported keys",
-                () -> getArtifactHandlerConfig(buildDefinition));
+        final Map<String, String> config = step(
+                "merge the handler configuration and drop unsupported keys",
+                () -> getArtifactHandlerConfig(buildDefinition)
+        );
 
         step("verify plan values win and shared-only flags are filtered out", () -> {
             attachText("Merged artifact handler config", config.toString());
             assertThat(config.keySet()).containsExactlyInAnyOrder(
                     "custom.artifactHandlers.main.url",
                     "custom.artifactHandlers.other.path",
-                    "custom.artifactHandlers.useCustomArtifactHandlers");
+                    "custom.artifactHandlers.useCustomArtifactHandlers"
+            );
             assertThat(config.get("custom.artifactHandlers.main.url")).isEqualTo("https://plan.example");
             assertThat(config.get("custom.artifactHandlers.other.path")).isEqualTo("/tmp/path");
             assertThat(config).doesNotContainKey("custom.artifactHandlers.main.enabledForShared");

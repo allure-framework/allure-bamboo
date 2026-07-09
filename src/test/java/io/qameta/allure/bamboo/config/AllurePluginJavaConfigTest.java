@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -69,19 +69,32 @@ public class AllurePluginJavaConfigTest {
     @Test
     public void itShouldConstructTheCoreBeans() throws Exception {
         when(pluginSettingsFactory.createGlobalSettings()).thenReturn(pluginSettings);
-        final AllurePluginJavaConfig config = step("create the plugin Java configuration",
-                AllurePluginJavaConfig::new);
-        final AllureCommandLineSupport commandLineSupport = step("create the command line support bean",
-                config::allureCommandLineSupport);
-        final AllureSettingsManager settingsManager = step("create the global settings manager",
-                () -> config.allureSettings(pluginSettingsFactory));
-        final AllureDownloader downloader = step("create the Allure downloader bean",
-                () -> config.allureDownloader(settingsManager));
-        final BambooExecutablesManager executablesManager = step("create the Bamboo executables manager",
-                () -> config.bambooExecutableManager(capabilitySetManager));
-        final AllureExecutableProvider executableProvider = step("create the executable provider",
-                () -> config.allureExecutableProvider(executablesManager, downloader, commandLineSupport));
-        final AllureArtifactsManager artifactsManager = step("create the artifacts manager",
+        final AllurePluginJavaConfig config = step(
+                "create the plugin Java configuration",
+                AllurePluginJavaConfig::new
+        );
+        final AllureCommandLineSupport commandLineSupport = step(
+                "create the command line support bean",
+                config::allureCommandLineSupport
+        );
+        final AllureSettingsManager settingsManager = step(
+                "create the global settings manager",
+                () -> config.allureSettings(pluginSettingsFactory)
+        );
+        final AllureDownloader downloader = step(
+                "create the Allure downloader bean",
+                () -> config.allureDownloader(settingsManager)
+        );
+        final BambooExecutablesManager executablesManager = step(
+                "create the Bamboo executables manager",
+                () -> config.bambooExecutableManager(capabilitySetManager)
+        );
+        final AllureExecutableProvider executableProvider = step(
+                "create the executable provider",
+                () -> config.allureExecutableProvider(executablesManager, downloader, commandLineSupport)
+        );
+        final AllureArtifactsManager artifactsManager = step(
+                "create the artifacts manager",
                 () -> config.allureArtifactsUploader(
                         pluginAccessor,
                         artifactHandlersService,
@@ -89,20 +102,28 @@ public class AllurePluginJavaConfigTest {
                         resultsSummaryManager,
                         artifactLinkManager,
                         applicationProperties,
-                        settingsManager));
-        final AllurePluginInstallTask installTask = step("create the plugin install task",
-                () -> (AllurePluginInstallTask) config.allureInstallTask(executablesManager));
+                        settingsManager
+                )
+        );
+        final AllurePluginInstallTask installTask = step(
+                "create the plugin install task",
+                () -> (AllurePluginInstallTask) config.allureInstallTask(executablesManager)
+        );
 
         step("verify each configuration entry returns the expected implementation", () -> {
-            attachText("Constructed bean types",
-                    String.join("\n",
+            attachText(
+                    "Constructed bean types",
+                    String.join(
+                            "\n",
                             commandLineSupport.getClass().getName(),
                             settingsManager.getClass().getName(),
                             downloader.getClass().getName(),
                             executablesManager.getClass().getName(),
                             executableProvider.getClass().getName(),
                             artifactsManager.getClass().getName(),
-                            installTask.getClass().getName()));
+                            installTask.getClass().getName()
+                    )
+            );
             assertThat(commandLineSupport).isNotNull();
             assertThat(settingsManager).isInstanceOf(AllureSettingsManager.class);
             assertThat(downloader).isInstanceOf(AllureDownloader.class);

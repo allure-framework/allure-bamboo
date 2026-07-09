@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -32,7 +32,8 @@ public final class FileStringReplacer {
 
     public static void replaceInFile(final Path filePath,
                                      final String oldString,
-                                     final String newString) throws IOException {
+                                     final String newString)
+            throws IOException {
         String content = new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8);
         content = content.replaceAll(oldString, Matcher.quoteReplacement(newString));
         Files.write(filePath, content.getBytes(StandardCharsets.UTF_8));
@@ -40,7 +41,8 @@ public final class FileStringReplacer {
 
     public static void replaceInFile(final Path filePath,
                                      final @NotNull Pattern pattern,
-                                     final String newString) throws IOException {
+                                     final String newString)
+            throws IOException {
         String content = new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8);
         content = pattern.matcher(content).replaceAll(Matcher.quoteReplacement(newString));
         Files.write(filePath, content.getBytes(StandardCharsets.UTF_8));

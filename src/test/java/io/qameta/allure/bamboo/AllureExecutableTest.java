@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -66,17 +66,24 @@ public class AllureExecutableTest {
                     .thenReturn(true);
             when(cmdLine.isUnix())
                     .thenReturn(true);
-            attachText("Executable invocation context",
-                    "binary=" + path + "\nsourceDir=" + fromDir + "\ntargetDir=" + toDir);
+            attachText(
+                    "Executable invocation context",
+                    "binary=" + path + "\nsourceDir=" + fromDir + "\ntargetDir=" + toDir
+            );
         });
 
-        step("generate the report through the bash launcher",
-                () -> executable.generate(singleton(fromDir), toDir));
+        step(
+                "generate the report through the bash launcher",
+                () -> executable.generate(singleton(fromDir), toDir)
+        );
 
-        step("verify the command line support receives the bash invocation", () ->
-                verify(cmdLine)
-                        .runCommand(BIN_BASH, path.toString(), GENERATE, OPTIONS, toDir.toString(),
-                                fromDir.toString()));
+        step(
+                "verify the command line support receives the bash invocation", () -> verify(cmdLine)
+                        .runCommand(
+                                BIN_BASH, path.toString(), GENERATE, OPTIONS, toDir.toString(),
+                                fromDir.toString()
+                        )
+        );
     }
 
     @Test
@@ -133,7 +140,8 @@ public class AllureExecutableTest {
         Files.createFile(cmdPath);
         Files.writeString(Files.createDirectories(root.resolve("config")).resolve("allure.yml"), "plugins: []\n");
         final Path staticDir = Files.createDirectories(
-                root.resolve("plugins").resolve("custom-logo-plugin").resolve("static"));
+                root.resolve("plugins").resolve("custom-logo-plugin").resolve("static")
+        );
         final Path css = staticDir.resolve("styles.css");
         Files.writeString(css, ".side-nav__brand { background: url('default'); left: 10px !important; }\n");
         customLogoExecutable = new AllureExecutable(cmdPath, cmdLine);

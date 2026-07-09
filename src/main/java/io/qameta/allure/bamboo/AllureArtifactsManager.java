@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016-2024 Qameta Software Inc
+ *  Copyright 2016-2026 Qameta Software Inc
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -96,12 +96,13 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.codehaus.plexus.util.FileUtils.copyDirectory;
 import static org.codehaus.plexus.util.FileUtils.copyURLToFile;
 
-@SuppressWarnings({
-        "ClassDataAbstractionCoupling",
-        "PMD.AvoidInstantiatingObjectsInLoops",
-        "PMD.GodClass",
-        "PMD.CouplingBetweenObjects"
-})
+@SuppressWarnings(
+    {
+            "ClassDataAbstractionCoupling",
+            "PMD.AvoidInstantiatingObjectsInLoops",
+            "PMD.GodClass"
+    }
+)
 public class AllureArtifactsManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AllureArtifactsManager.class);
@@ -158,11 +159,16 @@ public class AllureArtifactsManager {
         final Map<String, String> artifactConfig = getArtifactHandlersConfig(buildDefinition);
         final PlanResultKey planResultKey = getPlanResultKey(planKeyString, parseInt(buildNumber));
         return Optional.ofNullable(resultsSummaryManager.getResultsSummary(planResultKey))
-                .flatMap(rs -> getArtifactHandlerByClassName(
-                        fromCustomData(rs.getCustomBuildData()).getArtifactHandlerClass())
-                        .map(handler -> getArtifactUrl(planKeyString, buildNumber,
-                                filePath, artifactConfig, planResultKey, handler)
+                .flatMap(
+                        rs -> getArtifactHandlerByClassName(
+                                fromCustomData(rs.getCustomBuildData()).getArtifactHandlerClass()
                         )
+                                .map(
+                                        handler -> getArtifactUrl(
+                                                planKeyString, buildNumber,
+                                                filePath, artifactConfig, planResultKey, handler
+                                        )
+                                )
                 );
     }
 
@@ -178,10 +184,11 @@ public class AllureArtifactsManager {
         final ArtifactDefinitionContextImpl artifactDef = getAllureArtifactDef();
 
         return Optional.ofNullable(
-                        artifactHandler.getArtifactLinkDataProvider(
-                                mutableArtifact(planResultKey, artifactDef.getName()),
-                                configProvider(artifactConfig)
-                        ))
+                artifactHandler.getArtifactLinkDataProvider(
+                        mutableArtifact(planResultKey, artifactDef.getName()),
+                        configProvider(artifactConfig)
+                )
+        )
                 .map(lp -> getArtifactUrl(filePath, lp))
                 .orElse(null);
     }
@@ -191,7 +198,6 @@ public class AllureArtifactsManager {
         return getArtifactFile(filePath, linkProvider);
     }
 
-    @SuppressWarnings("PMD.ExceptionAsFlowControl")
     @Nullable
     private String getLocalStorageURL(final String planKeyString,
                                       final String buildNumber,
@@ -255,24 +261,28 @@ public class AllureArtifactsManager {
     @SuppressWarnings("PMD.CognitiveComplexity")
     Collection<Path> downloadAllArtifactsTo(final @NotNull ChainResultsSummary chainResultsSummary,
                                             final File baseDir,
-                                            final @Nullable String artifactName) throws IOException {
+                                            @Nullable final String artifactName)
+            throws IOException {
         final List<Path> resultsPaths = new ArrayList<>();
         for (ChainStageResult stageResult : chainResultsSummary.getStageResults()) {
             for (BuildResultsSummary resultsSummary : stageResult.getBuildResults()) {
-                LOGGER.info("Found {} artifacts totally for the build {}-{}",
+                LOGGER.info(
+                        "Found {} artifacts totally for the build {}-{}",
                         Optional.of(resultsSummary.getProducedArtifactLinks()).map(Collection::size).orElse(0),
-                        chainResultsSummary.getPlanKey(), chainResultsSummary.getBuildNumber());
+                        chainResultsSummary.getPlanKey(), chainResultsSummary.getBuildNumber()
+                );
                 for (ArtifactLink link : resultsSummary.getProducedArtifactLinks()) {
                     final MutableArtifact artifact = link.getArtifact();
                     if (isBlank(artifactName) || artifact.getLabel().equals(artifactName)) {
-                        LOGGER.info("artifact {} matches the configured artifact name {} for the build {}-{}",
+                        LOGGER.info(
+                                "artifact {} matches the configured artifact name {} for the build {}-{}",
                                 artifact.getLabel(), artifactName,
-                                chainResultsSummary.getPlanKey(), chainResultsSummary.getBuildNumber());
+                                chainResultsSummary.getPlanKey(), chainResultsSummary.getBuildNumber()
+                        );
                         final File stageDir = new File(baseDir, UUID.randomUUID().toString());
                         FileUtils.forceMkdir(stageDir);
                         resultsPaths.add(stageDir.toPath());
-                        final ArtifactLinkDataProvider dataProvider
-                                = artifactLinkManager.getArtifactLinkDataProvider(artifact);
+                        final ArtifactLinkDataProvider dataProvider = artifactLinkManager.getArtifactLinkDataProvider(artifact);
                         if (dataProvider instanceof FileSystemArtifactLinkDataProvider) {
                             downloadAllArtifactsTo((FileSystemArtifactLinkDataProvider) dataProvider, stageDir);
                         } else {
@@ -291,17 +301,17 @@ public class AllureArtifactsManager {
         Optional.ofNullable(dataProvider.getFile().listFiles())
                 .map(Arrays::asList)
                 .ifPresent(list -> list.forEach(file -> {
-                            try {
-                                if (file.isFile()) {
-                                    Files.copy(file.toPath(), Paths.get(tempDir.getPath(), file.getName()));
-                                } else if (!StringUtils.equals(file.getName(), ".")
-                                        && !StringUtils.equals(file.getName(), CS_2)) {
-                                    copyDirectory(file, new File(tempDir, file.getName()));
-                                }
-                            } catch (IOException e) {
-                                logAndThrow(e, FAILED_TO_DOWNLOAD_ARTIFACTS_TO + tempDir);
-                            }
+                    try {
+                        if (file.isFile()) {
+                            Files.copy(file.toPath(), Paths.get(tempDir.getPath(), file.getName()));
+                        } else if (!StringUtils.equals(file.getName(), ".")
+                                && !StringUtils.equals(file.getName(), CS_2)) {
+                            copyDirectory(file, new File(tempDir, file.getName()));
                         }
+                    } catch (IOException e) {
+                        logAndThrow(e, FAILED_TO_DOWNLOAD_ARTIFACTS_TO + tempDir);
+                    }
+                }
                 ));
     }
 
@@ -315,10 +325,12 @@ public class AllureArtifactsManager {
                     final TrampolineArtifactFileData trampolineData = (TrampolineArtifactFileData) data;
                     final ArtifactFileData delegateData = trampolineData.getDelegate();
 
-                    if (delegateData.getFileType().equals(ArtifactFileData.FileType.REGULAR_FILE)) {
+                    if (delegateData.getFileType() == ArtifactFileData.FileType.REGULAR_FILE) {
                         final String fileName = Paths.get(delegateData.getName()).toFile().getName();
-                        copyURLToFile(new URL(requireNonNull(delegateData.getUrl())),
-                                Paths.get(tempDir.getPath(), fileName).toFile());
+                        copyURLToFile(
+                                new URL(requireNonNull(delegateData.getUrl())),
+                                Paths.get(tempDir.getPath(), fileName).toFile()
+                        );
                     } else {
                         downloadAllArtifactsTo(dataProvider, tempDir, trampolineData.getTag());
                     }
@@ -337,7 +349,6 @@ public class AllureArtifactsManager {
      * @param reportDir directory of a report
      * @return empty if not applicable, result otherwise
      */
-    @SuppressWarnings({"PMD.NcssCount"})
     Optional<AllureBuildResult> uploadReportArtifacts(final @NotNull ImmutableChain chain,
                                                       final @NotNull ChainResultsSummary summary,
                                                       final File reportDir) {
@@ -348,8 +359,10 @@ public class AllureArtifactsManager {
             // Bamboo's createFileSet signature requires an org.apache.log4j.Logger (backed by the
             // patched reload4j at runtime); it cannot take an SLF4J logger, so this direct use is
             // intentional and confined to this one Bamboo-API call.
-            sourceFileSet = ArtifactHandlingUtils.createFileSet(reportDir, artifact, true,
-                    org.apache.log4j.Logger.getLogger(getClass()));
+            sourceFileSet = ArtifactHandlingUtils.createFileSet(
+                    reportDir, artifact, true,
+                    org.apache.log4j.Logger.getLogger(getClass())
+            );
             sourceFileSet.setDir(reportDir);
             sourceFileSet.setIncludes(artifact.getCopyPattern());
             final Map<String, String> artifactConfig = getArtifactHandlersConfig(chain.getBuildDefinition());
@@ -366,11 +379,12 @@ public class AllureArtifactsManager {
                         FileUtils.deleteQuietly(destDir);
                     }
                     FileUtils.moveDirectory(reportDir, destDir);
-                    return Optional.of(allureBuildResult(true, null)
-                            .withHandlerClass(artifactHandler.getClass().getName()));
+                    return Optional.of(
+                            allureBuildResult(true, null)
+                                    .withHandlerClass(artifactHandler.getClass().getName())
+                    );
                 }
-                final ArtifactPublishingConfig artifactPublishingConfig
-                        = new ArtifactPublishingConfig(sourceFileSet, artifactConfig);
+                final ArtifactPublishingConfig artifactPublishingConfig = new ArtifactPublishingConfig(sourceFileSet, artifactConfig);
                 final String errorMessage = "Unable to publish artifact via " + artifactHandler;
                 final ArtifactHandlerPublishingResult publishingResult = BambooPluginUtils.callUnsafeCode(
                         new BambooPluginUtils.NoThrowCallable<ArtifactHandlerPublishingResult>(errorMessage) {
@@ -385,16 +399,22 @@ public class AllureArtifactsManager {
                                             chain.getBuildLogger()
                                     );
                                 } catch (final Exception e) {
-                                    LOGGER.error("Failed to publish Allure Report using handler "
-                                            + artifactHandler.getClass().getName(), e);
+                                    LOGGER.error(
+                                            "Failed to publish Allure Report using handler "
+                                                    + artifactHandler.getClass().getName(),
+                                            e
+                                    );
                                     return ArtifactHandlerPublishingResultImpl.failure();
                                 }
                             }
-                        });
+                        }
+                );
                 if (publishingResult != null) {
                     publishingResult.setArtifactHandlerKey(artifactHandler.getModuleDescriptor().getCompleteKey());
-                    return Optional.of(allureBuildResult(publishingResult.isSuccessful(), null)
-                            .withHandlerClass(artifactHandler.getClass().getName()));
+                    return Optional.of(
+                            allureBuildResult(publishingResult.isSuccessful(), null)
+                                    .withHandlerClass(artifactHandler.getClass().getName())
+                    );
                 }
             }
         } catch (Exception e) {
@@ -470,7 +490,7 @@ public class AllureArtifactsManager {
                 if (data instanceof TrampolineArtifactFileData) {
                     final TrampolineArtifactFileData trampolineData = (TrampolineArtifactFileData) data;
                     data = trampolineData.getDelegate();
-                    if (data.getFileType().equals(ArtifactFileData.FileType.REGULAR_FILE)) {
+                    if (data.getFileType() == ArtifactFileData.FileType.REGULAR_FILE) {
                         return data.getUrl();
                     }
                 } else {
@@ -492,8 +512,11 @@ public class AllureArtifactsManager {
     }
 
     private String getBambooArtifactUrl(final ArtifactFileData data) {
-        return Optional.ofNullable(data.getUrl()).map(url -> (url.startsWith(SEPARATOR))
-                        ? getBaseUrl().path(url).build().toString() : url)
+        return Optional.ofNullable(data.getUrl()).map(
+                url -> (url.startsWith(SEPARATOR))
+                        ? getBaseUrl().path(url).build().toString()
+                        : url
+        )
                 .orElse(null);
     }
 
@@ -504,7 +527,8 @@ public class AllureArtifactsManager {
     @NotNull
     private ArtifactDefinitionContextImpl getAllureArtifactDef() {
         final ArtifactDefinitionContextImpl artifact = new ArtifactDefinitionContextImpl(
-                "allure-report", false, SecureToken.create());
+                "allure-report", false, SecureToken.create()
+        );
         artifact.setCopyPattern("**/**");
         return artifact;
     }
@@ -514,12 +538,9 @@ public class AllureArtifactsManager {
         final Map<String, String> config = artifactHandlersService.getRuntimeConfiguration();
         final Map<String, String> planCustomConfiguration = buildDefinition.getCustomConfiguration();
         if (ArtifactHandlingUtils.isCustomArtifactHandlingConfigured(planCustomConfiguration)) {
-            final Collector<Map.Entry<String, String>, ?, Map<String, String>> toMap
-                    = toMap(Map.Entry::getKey, Map.Entry::getValue);
-            final Predicate<Map.Entry<String, String>> isArtifactHandler
-                    = e -> e.getKey().startsWith(ARTIFACT_HANDLERS_CONFIG_PREFIX);
-            final Predicate<Map.Entry<String, String>> isNotHandlerSwitch
-                    = e -> SHARED_NON_SHARED_ONOFF_OPTION_NAME.values().stream().noneMatch(o -> e.getKey().endsWith(o));
+            final Collector<Map.Entry<String, String>, ?, Map<String, String>> toMap = toMap(Map.Entry::getKey, Map.Entry::getValue);
+            final Predicate<Map.Entry<String, String>> isArtifactHandler = e -> e.getKey().startsWith(ARTIFACT_HANDLERS_CONFIG_PREFIX);
+            final Predicate<Map.Entry<String, String>> isNotHandlerSwitch = e -> SHARED_NON_SHARED_ONOFF_OPTION_NAME.values().stream().noneMatch(o -> e.getKey().endsWith(o));
             config.putAll(planCustomConfiguration.entrySet().stream().filter(isArtifactHandler).collect(toMap));
             return config.entrySet().stream().filter(isArtifactHandler).filter(isNotHandlerSwitch).collect(toMap);
         }
@@ -532,13 +553,10 @@ public class AllureArtifactsManager {
         return new MutableArtifactImpl(name, planResultKey, null, false, 0L);
     }
 
-
     private List<ArtifactHandler> getArtifactHandlers() {
-        final Predicate<ModuleDescriptor<ArtifactHandler>> predicate =
-                new ModuleOfClassPredicate<>(ArtifactHandler.class).and(new EnabledModulePredicate());
+        final Predicate<ModuleDescriptor<ArtifactHandler>> predicate = new ModuleOfClassPredicate<>(ArtifactHandler.class).and(new EnabledModulePredicate());
         return new ArrayList<>(pluginAccessor.getModules(predicate));
     }
-
 
     private boolean isAgentArtifactHandler(final ArtifactHandler artifactHandler) {
         return artifactHandler instanceof BambooRemoteArtifactHandler
@@ -550,17 +568,17 @@ public class AllureArtifactsManager {
         final AtomicReference<Predicate<ModuleDescriptor<T>>> predicate = new AtomicReference<>();
         return Optional.ofNullable(className)
                 .map(clazz -> {
-                            final Class<T> aClass;
-                            try {
-                                aClass = (Class<T>) Class.forName(clazz);
-                                predicate.set(new ModuleOfClassPredicate<>(aClass).and(new EnabledModulePredicate()));
+                    final Class<T> aClass;
+                    try {
+                        aClass = (Class<T>) Class.forName(clazz);
+                        predicate.set(new ModuleOfClassPredicate<>(aClass).and(new EnabledModulePredicate()));
 
-                                return pluginAccessor.getModules(predicate.get()).stream().findAny().orElse(null);
-                            } catch (ClassNotFoundException e) {
-                                LOGGER.error("Failed to find artifact handler for class name " + className, e);
-                            }
-                            return null;
-                        }
+                        return pluginAccessor.getModules(predicate.get()).stream().findAny().orElse(null);
+                    } catch (ClassNotFoundException e) {
+                        LOGGER.error("Failed to find artifact handler for class name " + className, e);
+                    }
+                    return null;
+                }
                 );
     }
 }
