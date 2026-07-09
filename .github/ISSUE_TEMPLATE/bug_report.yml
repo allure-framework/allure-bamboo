@@ -1,0 +1,51 @@
+name: Bug report
+description: Report broken or incorrect behavior.
+type: bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Allure Bamboo. Please include enough detail for us to reproduce the problem.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug and the behavior you observed.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: How can we reproduce it?
+      description: Include Bamboo configuration, steps, logs, or a minimal example when possible.
+      placeholder: |
+        1. Configure ...
+        2. Run ...
+        3. Open ...
+        4. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: Describe the behavior you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Share versions and platform details relevant to the issue.
+      value: |
+        - Allure Bamboo version:
+        - Bamboo version:
+        - Java version:
+        - Browser:
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add stack traces, screenshots, generated reports, or links that help explain the issue.
