@@ -410,8 +410,11 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <id>validate</id>
-                        <phase>validate</phase>
+                        <id>pmd-check</id>
+                        <!-- Must run after compile: type-resolution rules (e.g. ExceptionAsFlowControl
+                             on project exception classes) give different results when target/classes
+                             is absent, so running at validate passes warm and fails on clean builds. -->
+                        <phase>process-classes</phase>
                         <goals>
                             <goal>check</goal>
                         </goals>
