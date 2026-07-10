@@ -21,8 +21,8 @@ import io.qameta.allure.bamboo.info.allurewidgets.summary.Statistic;
 import io.qameta.allure.bamboo.info.allurewidgets.summary.Summary;
 import io.qameta.allure.bamboo.info.allurewidgets.summary.Time;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.WriteListener;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
           cache: 'maven'
       - run: echo "VERSION=${GITHUB_REF:10}" >> $GITHUB_ENV
       - run: ./mvnw clean package -q

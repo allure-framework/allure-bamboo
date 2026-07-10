@@ -53,11 +53,11 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tools.ant.types.FileSet;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -87,10 +87,10 @@ import static com.atlassian.bamboo.plugin.descriptor.ArtifactHandlerModuleDescri
 import static io.qameta.allure.bamboo.AllureBuildResult.allureBuildResult;
 import static io.qameta.allure.bamboo.AllureBuildResult.fromCustomData;
 import static io.qameta.allure.bamboo.util.ExceptionUtil.stackTraceToString;
+import static jakarta.ws.rs.core.UriBuilder.fromPath;
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
-import static javax.ws.rs.core.UriBuilder.fromPath;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.codehaus.plexus.util.FileUtils.copyDirectory;
@@ -387,7 +387,7 @@ public class AllureArtifactsManager {
                 final ArtifactPublishingConfig artifactPublishingConfig = new ArtifactPublishingConfig(sourceFileSet, artifactConfig);
                 final String errorMessage = "Unable to publish artifact via " + artifactHandler;
                 final ArtifactHandlerPublishingResult publishingResult = BambooPluginUtils.callUnsafeCode(
-                        new BambooPluginUtils.NoThrowCallable<ArtifactHandlerPublishingResult>(errorMessage) {
+                        new BambooPluginUtils.NoThrowCallable<>(errorMessage) {
                             @NotNull
                             @Override
                             public ArtifactHandlerPublishingResult call() {
@@ -471,7 +471,6 @@ public class AllureArtifactsManager {
         throw new AllurePluginException(message, e);
     }
 
-    @SuppressWarnings("PMD.CognitiveComplexity")
     @Nullable
     private String getArtifactFile(final String filePath,
                                    final ArtifactLinkDataProvider linkProvider) {
@@ -486,21 +485,23 @@ public class AllureArtifactsManager {
         } else {
             final Iterable<ArtifactFileData> datas = linkProvider.listObjects(fixedFilePath);
             if (CollectionUtils.size(datas) == SINGLE_NUMBER_OF_LIST_ELEMENTS) {
-                ArtifactFileData data = datas.iterator().next();
-                if (data instanceof TrampolineArtifactFileData) {
-                    final TrampolineArtifactFileData trampolineData = (TrampolineArtifactFileData) data;
-                    data = trampolineData.getDelegate();
-                    if (data.getFileType() == ArtifactFileData.FileType.REGULAR_FILE) {
-                        return data.getUrl();
-                    }
-                } else {
-                    return getBambooArtifactUrl(data);
-                }
+                return getSingleArtifactUrl(datas.iterator().next());
             } else if (CollectionUtils.size(datas) > SINGLE_NUMBER_OF_LIST_ELEMENTS) {
                 return getArtifactFile(INDEX_HTML, linkProvider);
             }
         }
         return null;
+    }
+
+    @Nullable
+    private String getSingleArtifactUrl(final ArtifactFileData data) {
+        if (data instanceof TrampolineArtifactFileData) {
+            final ArtifactFileData delegate = ((TrampolineArtifactFileData) data).getDelegate();
+            return delegate.getFileType() == ArtifactFileData.FileType.REGULAR_FILE
+                    ? delegate.getUrl()
+                    : null;
+        }
+        return getBambooArtifactUrl(data);
     }
 
     private static boolean isUnsafeRelativePath(final String path) {
@@ -550,7 +551,7 @@ public class AllureArtifactsManager {
     @NotNull
     private MutableArtifact mutableArtifact(final PlanResultKey planResultKey,
                                             final String name) {
-        return new MutableArtifactImpl(name, planResultKey, null, false, 0L);
+        return new MutableArtifactImpl(name, planResultKey, null, false, 0L, null);
     }
 
     private List<ArtifactHandler> getArtifactHandlers() {

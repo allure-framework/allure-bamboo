@@ -30,11 +30,11 @@ Refresh this section when Allure, test runners, Allure results paths, CI, or pro
 
 ## Local Test Surfaces
 
-- Test frameworks and runners: JUnit 4 via Maven Surefire (`./mvnw test`), Java 17; Mockito and AspectJ weaver attached as `-javaagent`s in the Surefire `argLine`
+- Test frameworks and runners: JUnit 4 via Maven Surefire (`./mvnw test`), Java 21; Mockito and AspectJ weaver attached as `-javaagent`s in the Surefire `argLine`
 - Test roots: `src/test/java/io/qameta/allure/bamboo` (subpackages: root, `util`, `config`)
 - Allure results path: `target/allure-results` (set in `src/test/resources/allure.properties`)
 - Known selector support: Surefire `-Dtest=ClassName`, `-Dtest=ClassName#method`, and patterns like `-Dtest='Allure*Test'`
-- Known environments needed for tests: JDK 17 (CI parity). The default system JDK here can be much newer and breaks the build (PMD dies with `StackOverflowError` on JDK 25); prefix local runs with `JAVA_HOME=$(/usr/libexec/java_home -v 17)` when `./mvnw` fails before Surefire
+- Known environments needed for tests: JDK 21 (CI parity). The default system JDK here can be much newer and breaks the build (PMD dies with `StackOverflowError` on JDK 25); prefix local runs with `JAVA_HOME=$(/usr/libexec/java_home -v 21)` when `./mvnw` fails before Surefire
 - Compatibility smoke scope: `compat/bamboo-specs` harness (Maven `exec:java`); **emits no Allure results** — an agent run over it reports zero logical tests by design. Review global stdout in the agent output plus `compat-artifacts/<version>/summary.md`. Requires a plugin JAR in `target/` (`./mvnw clean package` first) and a Bamboo DC timebomb license via `-Dcompat.productLicense`
 - Manual Bamboo investigation via `atlas-run` is for local debugging only; it is not a substitute for agent-mode evidence from the narrowest automated scope
 

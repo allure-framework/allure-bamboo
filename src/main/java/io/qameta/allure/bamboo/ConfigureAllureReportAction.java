@@ -16,8 +16,8 @@
 package io.qameta.allure.bamboo;
 
 import com.atlassian.bamboo.configuration.GlobalAdminAction;
-import com.atlassian.struts.Preparable;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.struts2.Preparable;
 
 public class ConfigureAllureReportAction extends GlobalAdminAction implements Preparable {
 

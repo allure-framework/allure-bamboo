@@ -29,8 +29,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
+import static jakarta.ws.rs.core.UriBuilder.fromPath;
 import static java.nio.file.Files.createTempFile;
-import static javax.ws.rs.core.UriBuilder.fromPath;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.apache.commons.io.FileUtils.moveDirectory;
 

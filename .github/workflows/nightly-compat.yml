@@ -10,7 +10,7 @@ on:
       bamboo_version:
         description: Bamboo version to test
         required: true
-        default: '10.2.5'
+        default: '12.1.9'
         type: string
 
 jobs:
@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
           cache: maven
       - name: Build plugin artifact
         run: ./mvnw -q clean package
@@ -43,7 +43,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
           cache: maven
       - name: Resolve Bamboo version
         id: resolve-version

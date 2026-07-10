@@ -24,6 +24,17 @@
 
 ---
 
+## Compatibility
+
+| Plugin version | Bamboo Data Center | Java |
+|----------------|--------------------|------|
+| 2.x            | 12.1 and newer     | 21   |
+| 1.x            | older versions     | 17   |
+
+Bamboo 12 migrated to Jakarta EE 10 and Struts 7, which is a breaking change for plugins,
+so the 2.x line supports Bamboo 12.1+ only. For older Bamboo versions use the
+latest [1.x release][releases].
+
 ## Installation
 
 Install the plugin from the [Atlassian Marketplace][marketplace].
@@ -36,7 +47,7 @@ Follow the [Bamboo integration guide][docs] in the official Allure Report docume
 
 ## Development
 
-Building the plugin requires JDK 17.
+Building the plugin requires JDK 21.
 
 Build the plugin JAR (`target/allure-bamboo-<version>.jar`):
 
