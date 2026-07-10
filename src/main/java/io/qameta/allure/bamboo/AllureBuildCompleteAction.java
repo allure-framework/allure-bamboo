@@ -230,16 +230,19 @@ public class AllureBuildCompleteAction extends BaseConfigurablePlugin implements
         summary.setReportName(format("Build %s - %s", buildNumber, buildName));
         mapper.writeValue(widgetsJsonPath.toFile(), summary);
 
-        // Deleting title from Logo
+        // Deleting title from Logo. Allure 2.44+ bundles the UI under assets/ without app.js
+        // or the logo markup, so the legacy patch applies only when the file is present.
         final Path appJsPath = allureReportDir.resolve("app.js");
-        FileStringReplacer.replaceInFile(
-                appJsPath,
-                Pattern.compile(
-                        ">Allure</span>",
-                        Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS
-                ),
-                ">&nbsp;</span>"
-        );
+        if (Files.exists(appJsPath)) {
+            FileStringReplacer.replaceInFile(
+                    appJsPath,
+                    Pattern.compile(
+                            ">Allure</span>",
+                            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.COMMENTS
+                    ),
+                    ">&nbsp;</span>"
+            );
+        }
 
         // Changing page title
         final Path indexHtmlPath = allureReportDir.resolve("index.html");

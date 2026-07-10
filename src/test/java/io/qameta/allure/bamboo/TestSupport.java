@@ -21,8 +21,8 @@ import io.qameta.allure.bamboo.info.allurewidgets.summary.Statistic;
 import io.qameta.allure.bamboo.info.allurewidgets.summary.Summary;
 import io.qameta.allure.bamboo.info.allurewidgets.summary.Time;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.WriteListener;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -87,6 +87,32 @@ public final class TestSupport {
                 )
         );
         Files.writeString(reportDir.resolve("app.js"), "window.tpl='>Allure</span>';\n", StandardCharsets.UTF_8);
+        Files.writeString(
+                reportDir.resolve("index.html"),
+                "<html><head><title>Original</title></head><body>report</body></html>\n",
+                StandardCharsets.UTF_8
+        );
+    }
+
+    static void writeMinimalModernReport(final Path reportDir) throws IOException {
+        // Mirrors the Allure 2.44+ report layout: the UI is a hashed bundle under assets/
+        // and there is no app.js at the report root.
+        Files.createDirectories(reportDir.resolve("widgets"));
+        new JsonMapper().writeValue(
+                reportDir.resolve("widgets").resolve("summary.json").toFile(),
+                new Summary(
+                        "Original",
+                        Collections.emptyList(),
+                        new Statistic(0, 0, 0, 1, 0, 1),
+                        new Time(1L, 2L, 1, 1, 1, 1)
+                )
+        );
+        Files.createDirectories(reportDir.resolve("assets"));
+        Files.writeString(
+                reportDir.resolve("assets").resolve("index-TNctPo69.js"),
+                "window.allureReport=1;\n",
+                StandardCharsets.UTF_8
+        );
         Files.writeString(
                 reportDir.resolve("index.html"),
                 "<html><head><title>Original</title></head><body>report</body></html>\n",

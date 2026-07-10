@@ -15,11 +15,16 @@
  */
 package io.qameta.allure.bamboo;
 
+import org.apache.struts2.interceptor.parameter.StrutsParameter;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoRule;
+
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
@@ -90,6 +95,23 @@ public class ConfigureAllureReportActionTest {
         assertThat(captor.getValue().isDownloadEnabled()).isFalse();
         assertThat(captor.getValue().getDownloadBaseUrl()).isEqualTo("https://downloads.example/");
         assertThat(captor.getValue().getLocalStoragePath()).isEqualTo("/tmp/allure");
+    }
+
+    @Test
+    public void itShouldAnnotateEveryFormSetterForStrutsParameterInjection() {
+        // Struts 7 (Bamboo 12) injects request parameters only into setters annotated with
+        // @StrutsParameter; a bare setter silently receives nothing and the form save breaks.
+        final List<Method> formSetters = Arrays.stream(ConfigureAllureReportAction.class.getDeclaredMethods())
+                .filter(method -> method.getName().startsWith("set"))
+                .toList();
+
+        assertThat(formSetters).isNotEmpty();
+        assertThat(formSetters)
+                .allSatisfy(
+                        setter -> assertThat(setter.getAnnotation(StrutsParameter.class))
+                                .as("form setter %s must be annotated with @StrutsParameter", setter.getName())
+                                .isNotNull()
+                );
     }
 
     private static final class TestConfigureAllureReportAction extends ConfigureAllureReportAction {

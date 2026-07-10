@@ -21,10 +21,10 @@ import io.qameta.allure.bamboo.info.AllurePlugins;
 import io.qameta.allure.bamboo.util.FileStringReplacer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -52,7 +52,7 @@ class AllureExecutable {
     }
 
     @SuppressWarnings("PMD.LooseCoupling")
-    @Nonnull
+    @NotNull
     AllureGenerateResult generate(final Collection<Path> sourceDirs,
                                   final Path targetDir) {
         try {

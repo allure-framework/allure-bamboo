@@ -17,7 +17,7 @@ You can run the harness locally once a plugin JAR exists in `target/`:
 ./mvnw clean package
 ./mvnw -q -f compat/bamboo-specs/pom.xml \
   -Dcompat.rootDir="$(pwd)" \
-  -Dcompat.version=10.2.5 \
+  -Dcompat.version=12.1.9 \
   -Dcompat.productLicense='...' \
   exec:java
 ```

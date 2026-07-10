@@ -8,7 +8,7 @@ import com.atlassian.bamboo.specs.api.builders.plan.configuration.AllOtherPlugin
 import com.atlassian.bamboo.specs.api.builders.project.Project;
 import com.atlassian.bamboo.specs.builders.task.ScriptTask;
 import com.atlassian.bamboo.specs.util.BambooServer;
-import com.atlassian.bamboo.specs.util.SimpleUserPasswordCredentials;
+import com.atlassian.bamboo.specs.util.SimpleTokenCredentials;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -29,12 +29,10 @@ public final class SmokePlanSpecs {
         // utility class
     }
 
-    @SuppressWarnings("deprecation")
     public static void main(final String[] args) {
         publish(
                 getRequiredEnv("BAMBOO_URL"),
-                getRequiredEnv("BAMBOO_USERNAME"),
-                getRequiredEnv("BAMBOO_PASSWORD")
+                getRequiredEnv("BAMBOO_TOKEN")
         );
     }
 
@@ -42,13 +40,11 @@ public final class SmokePlanSpecs {
         return PROJECT_KEY + "-" + PLAN_KEY;
     }
 
-    @SuppressWarnings("deprecation")
     public static void publish(final String bambooUrl,
-                               final String bambooUsername,
-                               final String bambooPassword) {
+                               final String accessToken) {
         final BambooServer bambooServer = new BambooServer(
                 bambooUrl,
-                new SimpleUserPasswordCredentials(bambooUsername, bambooPassword)
+                new SimpleTokenCredentials(accessToken)
         );
         bambooServer.publish(createPlan());
     }

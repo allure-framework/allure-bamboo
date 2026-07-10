@@ -253,6 +253,58 @@ public class AllureBuildCompleteActionTest {
     }
 
     @Test
+    public void itShouldFinalizeReportsWithoutAppJs() throws Exception {
+        step("configure report generation for the Allure 2.44+ layout, which has no app.js", () -> {
+            when(chainResultsSummary.isFailed()).thenReturn(true);
+            when(buildDefinition.getCustomConfiguration()).thenReturn(config("exec-1", true, false, null));
+            when(settingsManager.getSettings()).thenReturn(globalConfig(false, false));
+            when(executableProvider.provide(any(AllureGlobalConfig.class), anyString()))
+                    .thenReturn(Optional.of(allureExecutable));
+            when(artifactsManager.downloadAllArtifactsTo(any(ChainResultsSummary.class), any(File.class), anyString()))
+                    .thenAnswer(invocation -> {
+                        final File baseDir = invocation.getArgument(1);
+                        final Path artifactsDir = baseDir.toPath().resolve("artifacts");
+                        Files.createDirectories(artifactsDir);
+                        return new ArrayList<>(java.util.List.of(artifactsDir));
+                    });
+            when(allureExecutable.generate(any(Collection.class), any(Path.class))).thenAnswer(invocation -> {
+                final Path reportDir = invocation.getArgument(1);
+                TestSupport.writeMinimalModernReport(reportDir);
+                attachDirectoryTree("Generated report before upload", reportDir);
+                return new AllureGenerateResult("ok", true);
+            });
+            when(
+                    artifactsManager.uploadReportArtifacts(
+                            any(ImmutableChain.class),
+                            any(ChainResultsSummary.class), any(File.class)
+                    )
+            ).thenAnswer(invocation -> {
+                final Path reportDir = ((File) invocation.getArgument(2)).toPath();
+                final Summary summary = new JsonMapper()
+                        .readValue(reportDir.resolve("widgets").resolve("summary.json").toFile(), Summary.class);
+                attachDirectoryTree("Uploaded report contents", reportDir);
+                assertThat(summary.getReportName()).isEqualTo("Build 5 - Smoke Build");
+                assertThat(reportDir.resolve("app.js")).doesNotExist();
+                assertThat(Files.readString(reportDir.resolve("index.html")))
+                        .contains("<title> Build 5 - Smoke Build </title>");
+                assertThat(reportDir.resolve("report.zip")).exists();
+                return Optional.of(allureBuildResult(true, null).withHandlerClass("handler"));
+            });
+        });
+
+        step(
+                "execute the build completion action",
+                () -> newAction().execute(chain, chainResultsSummary, chainExecution)
+        );
+
+        step("verify report finalization succeeds without app.js", () -> {
+            final AllureBuildResult buildResult = fromCustomData(chainResultsSummary.getCustomBuildData());
+            attachText("Failure details", String.valueOf(buildResult.getFailureDetails()));
+            assertThat(buildResult.isSuccess()).isTrue();
+        });
+    }
+
+    @Test
     public void itShouldCopyHistoryFromThePreviousBuild() throws Exception {
         when(chainResultsSummary.isFailed()).thenReturn(true);
         when(buildDefinition.getCustomConfiguration()).thenReturn(config("exec-1", true, false, null));
