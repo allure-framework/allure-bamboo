@@ -19,7 +19,7 @@
         <aspectj.version>1.9.25.1</aspectj.version>
         <jacoco.version>0.8.15</jacoco.version>
         <spotless.version>3.8.0</spotless.version>
-        <checkstyle.version>12.3.1</checkstyle.version>
+        <checkstyle.version>13.7.0</checkstyle.version>
         <pmd.version>7.25.0</pmd.version>
         <amps.version>9.12.5</amps.version>
         <bamboo.version>12.1.9</bamboo.version>
