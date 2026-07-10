@@ -4,13 +4,22 @@ set -euo pipefail
 # Publishes a built plugin jar as a new public version of the Atlassian
 # Marketplace listing, using the Marketplace REST API v3 (the v2 API sunset
 # on June 30, 2026). Compatibility range, license, payment model, and the
-# listing content all carry over from the latest published version.
+# listing content carry over from the latest published version of the SAME
+# major line (1.x releases inherit from 1.x, 2.x from 2.x), so concurrent
+# release lines with different Bamboo compatibility do not cross-pollute.
+# The first release of a new major line has no predecessor to copy from: the
+# script still uploads the artifact, then exits successfully with a warning —
+# finish that one release in the Marketplace developer console (create the
+# version from the uploaded artifact and set the new line's compatibility
+# range); subsequent releases of the line are fully automated. Build numbers
+# stay globally monotonic (allocated past the newest version of ANY line) so
+# they never collide across lines.
 # API reference: https://developer.atlassian.com/platform/marketplace/rest/v4/
 #
 # Flow:
 #   1. upload the jar                        POST /rest/3/artifacts
 #   2. resolve the app software id           GET  /rest/3/app-software/app-key/{key}
-#   3. read the latest version + listing     GET  .../versions, .../versions/{build}/listing
+#   3. read same-line latest version+listing GET  .../versions, .../versions/{build}/listing
 #   4. create the new version                POST .../versions
 #   5. publish the new version's listing     POST .../versions/{build}/listing
 #
@@ -74,11 +83,35 @@ app_software_id=$(api "${BASE}/app-software/app-key/${APP_KEY}" \
   | jq -re 'map(select(.hosting == "datacenter")) | first | .appSoftwareId')
 echo "App software id: ${app_software_id}"
 
-latest=$(api "${BASE}/app-software/${app_software_id}/versions?limit=50" \
-  | jq -e '.versions | max_by(.buildNumber)')
+versions=$(api "${BASE}/app-software/${app_software_id}/versions?limit=50")
+
+# New build numbers are allocated past the newest version of ANY line so they
+# stay unique when 1.x and 2.x releases interleave.
+max_build=$(jq -re '.versions | max_by(.buildNumber) | .buildNumber' <<<"$versions")
+new_build=$((max_build + 100))
+
+# Compatibility, license, payment model, and the listing carry over from the
+# latest version of the SAME major line as $VERSION.
+major="${VERSION%%.*}"
+if ! latest=$(jq -e --arg major "$major" \
+  '.versions | map(select((.versionNumber | split(".")[0]) == $major)) | max_by(.buildNumber)' \
+  <<<"$versions"); then
+  message="No published ${major}.x version exists to carry compatibility from. \
+The artifact is uploaded (id ${artifact_id}) — create version ${VERSION} from it in the \
+Marketplace developer console, set the ${major}.x compatibility range, and publish its \
+listing there. Subsequent ${major}.x releases will then publish automatically."
+  echo "::warning title=Marketplace version not created::${message}"
+  if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+    {
+      echo "## Marketplace publish skipped: first ${major}.x release"
+      echo ""
+      echo "${message}"
+    } >> "$GITHUB_STEP_SUMMARY"
+  fi
+  exit 0
+fi
 prev_build=$(jq -re '.buildNumber' <<<"$latest")
-new_build=$((prev_build + 100))
-echo "Latest version: $(jq -r '.versionNumber' <<<"$latest") (build ${prev_build}); new build: ${new_build}"
+echo "Latest ${major}.x version: $(jq -r '.versionNumber' <<<"$latest") (build ${prev_build}); new build: ${new_build}"
 
 version_payload=$(jq -e \
   --arg version "$VERSION" \
@@ -106,7 +139,7 @@ version_payload=$(jq -e \
   + (if .licenseType.id then {licenseType: {id: .licenseType.id}} else {} end)
   | if (.compatibilities | length) == 0
       or any(.compatibilities[]; .parentSoftwareId == null or .minBuildNumber == null or .maxBuildNumber == null)
-    then error("cannot carry compatibilities over from the latest version") else . end' \
+    then error("cannot carry compatibilities over from the previous release of this line") else . end' \
   <<<"$latest")
 
 prev_listing=$(api "${BASE}/app-software/${app_software_id}/versions/${prev_build}/listing")
