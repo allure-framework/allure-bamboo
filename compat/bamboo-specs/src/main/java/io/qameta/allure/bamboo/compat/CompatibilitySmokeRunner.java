@@ -22,8 +22,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -32,12 +32,17 @@ import java.util.stream.Stream;
 
 /**
  * Starts Bamboo in Docker, loads the plugin from Bamboo home, publishes a smoke plan, and verifies report rendering.
+ *
+ * <p>Bamboo 12 disables basic authentication for new instances, so the runner authenticates with a
+ * browser-style form login (session cookie) and mints a personal access token for the Bamboo Specs
+ * publishing step, which needs embedded credentials.
  */
 public final class CompatibilitySmokeRunner {
 
     private static final int BAMBOO_HTTP_PORT = 8085;
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(30);
     private static final Duration BAMBOO_READY_TIMEOUT = Duration.ofMinutes(15);
+    private static final Duration LOGIN_TIMEOUT = Duration.ofMinutes(2);
     private static final Duration REPORT_READY_TIMEOUT = Duration.ofMinutes(2);
     private static final Duration HTTP_RETRY_DELAY = Duration.ofSeconds(2);
     private static final int HTTP_SEND_ATTEMPTS = 5;
@@ -87,13 +92,14 @@ public final class CompatibilitySmokeRunner {
                 bamboo.start();
                 currentBaseUrl = "http://" + bamboo.getHost() + ":" + bamboo.getMappedPort(BAMBOO_HTTP_PORT);
                 waitForBamboo(currentBaseUrl);
+                loginWithSession(currentBaseUrl);
                 installPlugin(bamboo, pluginJar);
                 verifyPluginPage(currentBaseUrl);
                 configurePlugin(currentBaseUrl);
                 agent = createAgentContainer(network, resolveContainerHostname(bamboo), resolveContainerIpAddress(bamboo));
                 agent.start();
                 waitForRemoteAgent(currentBaseUrl, agent, resolveAgentIdentity(agent));
-                SmokePlanSpecs.publish(currentBaseUrl, BAMBOO_ADMIN_USERNAME, BAMBOO_ADMIN_PASSWORD);
+                SmokePlanSpecs.publish(currentBaseUrl, createAccessToken(currentBaseUrl));
                 final int firstBuildNumber = queueAndWaitForBuild(currentBaseUrl);
                 verifyReportEndpoints(currentBaseUrl, firstBuildNumber);
                 final int secondBuildNumber = queueAndWaitForBuild(currentBaseUrl);
@@ -233,6 +239,70 @@ public final class CompatibilitySmokeRunner {
         resetClient();
     }
 
+    private void loginWithSession(final String baseUrl) throws Exception {
+        final Map<String, String> form = new LinkedHashMap<>();
+        form.put("os_username", BAMBOO_ADMIN_USERNAME);
+        form.put("os_password", BAMBOO_ADMIN_PASSWORD);
+        form.put("os_cookie", "true");
+        form.put("checkBoxFields", "os_cookie");
+        form.put("save", "Log in");
+        form.put("os_destination", "/start.action");
+        final String formData = toFormData(form);
+
+        pollUntil(baseUrl + "/userlogin.action", LOGIN_TIMEOUT, "session login",
+                response -> response.statusCode() == 200 && isLoggedInPage(response.body()),
+                url -> {
+                    final HttpRequest request = HttpRequest.newBuilder()
+                            .uri(URI.create(url))
+                            .timeout(REQUEST_TIMEOUT)
+                            .header("X-Atlassian-Token", "no-check")
+                            .header("Content-Type", "application/x-www-form-urlencoded")
+                            .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+                            .POST(HttpRequest.BodyPublishers.ofString(formData))
+                            .build();
+                    return sendWithRetry(request, HttpResponse.BodyHandlers.ofString());
+                });
+    }
+
+    private boolean isLoggedInPage(final String html) {
+        return !html.isBlank() && !html.contains("name=\"os_username\"");
+    }
+
+    /**
+     * Mints a personal access token with the creator's ("same as user") permissions. Bamboo Specs
+     * publishing needs embedded credentials, and basic authentication is disabled by default since
+     * Bamboo 12, so the admin session mints a token instead.
+     */
+    private String createAccessToken(final String baseUrl) throws Exception {
+        final String payload = MAPPER.writeValueAsString(Map.of(
+                "name", "compat-smoke",
+                "permissions", List.of("READ", "TRIGGER", "USER"),
+                "daysUntilExpiry", 1
+        ));
+        final HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/rest/api/latest/access-token"))
+                .timeout(REQUEST_TIMEOUT)
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .header("X-Atlassian-Token", "no-check")
+                .POST(HttpRequest.BodyPublishers.ofString(payload))
+                .build();
+        final HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            Files.writeString(responsesDir.resolve("access-token-error.json"),
+                    response.body(), StandardCharsets.UTF_8);
+            throw new IllegalStateException("Failed to create an access token, HTTP " + response.statusCode());
+        }
+        // The response body carries the raw token, so it is deliberately not written to diagnostics.
+        final JsonNode node = readJson(response.body());
+        return Stream.of("token", "rawToken", "accessToken", "value")
+                .map(field -> node.path(field).asText(null))
+                .filter(value -> value != null && !value.isBlank())
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Access token response did not contain a recognisable token field"));
+    }
+
     private void installPlugin(final GenericContainer<?> bamboo,
                                final Path pluginJar) throws Exception {
         final String targetPath = BAMBOO_HOME_PATH + "/shared/plugins/" + pluginJar.getFileName();
@@ -271,7 +341,6 @@ public final class CompatibilitySmokeRunner {
         final HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/admin/saveAllureReportConfig.action"))
                 .timeout(REQUEST_TIMEOUT)
-                .header("Authorization", basicAuth())
                 .header("X-Atlassian-Token", "no-check")
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .POST(HttpRequest.BodyPublishers.ofString(toFormData(form)))
@@ -358,7 +427,6 @@ public final class CompatibilitySmokeRunner {
         final HttpRequest request = HttpRequest.newBuilder()
                 .uri(resolveRelativeUri(baseUrl, form.action()))
                 .timeout(REQUEST_TIMEOUT)
-                .header("Authorization", basicAuth())
                 .header("X-Atlassian-Token", "no-check")
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .POST(HttpRequest.BodyPublishers.ofString(toFormData(form.fields())))
@@ -419,7 +487,6 @@ public final class CompatibilitySmokeRunner {
         final HttpRequest request = HttpRequest.newBuilder()
                 .uri(resolveRelativeUri(baseUrl, action))
                 .timeout(REQUEST_TIMEOUT)
-                .header("Authorization", basicAuth())
                 .header("X-Atlassian-Token", "no-check")
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .POST(HttpRequest.BodyPublishers.ofString(toFormData(form)))
@@ -698,7 +765,6 @@ public final class CompatibilitySmokeRunner {
         final HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .timeout(REQUEST_TIMEOUT)
-                .header("Authorization", basicAuth())
                 .header("Accept", "application/json, text/html;q=0.9, */*;q=0.8")
                 .GET()
                 .build();
@@ -709,7 +775,6 @@ public final class CompatibilitySmokeRunner {
         final HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .timeout(REQUEST_TIMEOUT)
-                .header("Authorization", basicAuth())
                 .GET()
                 .build();
         return sendWithRetry(request, HttpResponse.BodyHandlers.ofByteArray());
@@ -719,7 +784,6 @@ public final class CompatibilitySmokeRunner {
         final HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .timeout(REQUEST_TIMEOUT)
-                .header("Authorization", basicAuth())
                 .header("Accept", "text/html, application/json;q=0.9, */*;q=0.8")
                 .method("HEAD", HttpRequest.BodyPublishers.noBody())
                 .build();
@@ -730,8 +794,8 @@ public final class CompatibilitySmokeRunner {
         final HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .timeout(REQUEST_TIMEOUT)
-                .header("Authorization", basicAuth())
                 .header("Accept", "application/json")
+                .header("X-Atlassian-Token", "no-check")
                 .POST(HttpRequest.BodyPublishers.noBody())
                 .build();
         return sendWithRetry(request, HttpResponse.BodyHandlers.ofString());
@@ -741,7 +805,6 @@ public final class CompatibilitySmokeRunner {
         final HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .timeout(REQUEST_TIMEOUT)
-                .header("Authorization", basicAuth())
                 .header("Accept", "application/json")
                 .header("X-Atlassian-Token", "no-check")
                 .PUT(HttpRequest.BodyPublishers.noBody())
@@ -1145,11 +1208,6 @@ public final class CompatibilitySmokeRunner {
                         + "=" + URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8))
                 .reduce((left, right) -> left + "&" + right)
                 .orElse("");
-    }
-
-    private String basicAuth() {
-        final String token = BAMBOO_ADMIN_USERNAME + ":" + BAMBOO_ADMIN_PASSWORD;
-        return "Basic " + Base64.getEncoder().encodeToString(token.getBytes(StandardCharsets.UTF_8));
     }
 
     @FunctionalInterface
