@@ -18,6 +18,7 @@ package io.qameta.allure.bamboo;
 import com.atlassian.bamboo.configuration.GlobalAdminAction;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.struts2.Preparable;
+import org.apache.struts2.interceptor.parameter.StrutsParameter;
 
 public class ConfigureAllureReportAction extends GlobalAdminAction implements Preparable {
 
@@ -82,6 +83,7 @@ public class ConfigureAllureReportAction extends GlobalAdminAction implements Pr
         return downloadEnabled;
     }
 
+    @StrutsParameter
     public void setDownloadEnabled(final boolean downloadEnabled) {
         this.downloadEnabled = downloadEnabled;
     }
@@ -90,6 +92,7 @@ public class ConfigureAllureReportAction extends GlobalAdminAction implements Pr
         return customLogoEnabled;
     }
 
+    @StrutsParameter
     public void setCustomLogoEnabled(final boolean customLogoEnabled) {
         this.customLogoEnabled = customLogoEnabled;
     }
@@ -98,6 +101,7 @@ public class ConfigureAllureReportAction extends GlobalAdminAction implements Pr
         return enabledByDefault;
     }
 
+    @StrutsParameter
     public void setEnabledByDefault(final boolean enabledByDefault) {
         this.enabledByDefault = enabledByDefault;
     }
@@ -106,6 +110,7 @@ public class ConfigureAllureReportAction extends GlobalAdminAction implements Pr
         return enabledReportsCleanup;
     }
 
+    @StrutsParameter
     public void setEnabledReportsCleanup(final boolean enabledReportsCleanup) {
         this.enabledReportsCleanup = enabledReportsCleanup;
     }
@@ -114,6 +119,7 @@ public class ConfigureAllureReportAction extends GlobalAdminAction implements Pr
         return localStoragePath;
     }
 
+    @StrutsParameter
     public void setLocalStoragePath(final String localStoragePath) {
         this.localStoragePath = localStoragePath;
     }
@@ -122,6 +128,7 @@ public class ConfigureAllureReportAction extends GlobalAdminAction implements Pr
         return downloadBaseUrl;
     }
 
+    @StrutsParameter
     public void setDownloadBaseUrl(final String downloadBaseUrl) {
         this.downloadBaseUrl = downloadBaseUrl;
     }
