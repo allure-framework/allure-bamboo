@@ -1,6 +1,9 @@
 # release.yml
 
 changelog:
+  exclude:
+    labels:
+      - "pr:invalid"
   categories:
     - title: "🚀 New Features"
       labels:
