@@ -21,7 +21,7 @@ jobs:
           cache: 'maven'
       - run: echo "VERSION=${GITHUB_REF:10}" >> $GITHUB_ENV
       - run: ./mvnw clean package -q
-      - uses: softprops/action-gh-release@v3
+      - uses: softprops/action-gh-release@v3.0.1
         with:
           files: ./target/allure-bamboo-${{ env.VERSION }}.jar
       - name: Publish to Atlassian Marketplace
